@@ -25,7 +25,7 @@ const customerSchema = new mongoose.Schema({
   driver_license: { type: String }, // Có thể null nếu thuê có tài xế
   date_of_birth: { type: Date },
   address: { type: String },
-  rating: { type: Number, default: 5.0 },
+  rating: { type: Number, default: 0.0 },
   total_bookings: { type: Number, default: 0 },
   total_spent: { type: Number, default: 0 },
   loyalty_points: { type: Number, default: 0 },
@@ -43,7 +43,7 @@ const driverSchema = new mongoose.Schema({
   license_type: { type: String, required: true }, // B2, C, D...
   license_expiry: { type: Date, required: true },
   experience_years: { type: Number, required: true },
-  rating: { type: Number, default: 5.0 },
+  rating: { type: Number, default: 0.0 },
   total_trips: { type: Number, default: 0 },
   status: {
     type: String,
