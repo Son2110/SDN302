@@ -1,55 +1,59 @@
-import { Users, Gauge, Fuel } from "lucide-react";
+import { Users, Gauge, Fuel, Star } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const FleetCard = ({ car }) => {
   return (
-    <div className="rounded-2xl bg-white shadow-sm hover:shadow-lg transition overflow-hidden">
+    <div className="rounded-2xl bg-white shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group">
       {/* Image */}
-      <div className="relative h-44 overflow-hidden">
+      <div className="relative h-52 overflow-hidden bg-gray-100 flex items-center justify-center">
         <img
           src={car.image}
           alt={car.name}
-          className="h-full w-full object-cover hover:scale-105 transition duration-500"
+          className="h-full w-full object-contain p-4 group-hover:scale-110 transition duration-500"
         />
-        <span className="absolute top-3 right-3 rounded-full bg-black/70 px-3 py-1 text-[11px] text-white">
+        <span className="absolute top-4 left-4 rounded-lg bg-blue-600 px-3 py-1 text-[10px] font-bold text-white uppercase tracking-wider">
           {car.type}
         </span>
       </div>
 
       {/* Content */}
-      <div className="p-5">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-bold text-gray-900">{car.name}</h3>
-          <span className="text-xs text-yellow-500 font-semibold">
-            ★ {car.rating}
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-bold text-lg text-gray-900">{car.name}</h3>
+          <span className="flex items-center gap-1 text-xs text-yellow-500 font-bold">
+            <Star size={14} fill="currentColor" /> {car.rating}
           </span>
         </div>
 
-        {/* Specs */}
-        <div className="flex gap-4 text-xs text-gray-500 mb-4">
-          <span className="flex items-center gap-1">
-            <Users size={14} /> {car.seats} Seats
+        {/* Specs - Việt hóa */}
+        <div className="grid grid-cols-3 gap-2 text-[11px] text-gray-500 mb-6 border-y border-gray-50 py-3">
+          <span className="flex flex-col items-center gap-1">
+            <Users size={16} className="text-blue-500" /> {car.seats} Chỗ
           </span>
-          <span className="flex items-center gap-1">
-            <Gauge size={14} /> {car.transmission}
+          <span className="flex flex-col items-center gap-1 border-x border-gray-100">
+            <Gauge size={16} className="text-blue-500" /> {car.transmission}
           </span>
-          <span className="flex items-center gap-1">
-            <Fuel size={14} /> {car.fuel}
+          <span className="flex flex-col items-center gap-1">
+            <Fuel size={16} className="text-blue-500" /> {car.fuel.split(' ')[0]}
           </span>
         </div>
 
-        {/* Price */}
-        <div className="flex items-center justify-between">
+        {/* Price & Action */}
+        <div className="flex items-center justify-between mt-4">
           <div>
-            <p className="text-xs text-gray-400">Daily Rate</p>
-            <p className="text-lg font-bold text-gray-900">
-              ${car.price}
-              <span className="text-sm font-normal text-gray-500"> / day</span>
+            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-tight">Giá thuê ngày</p>
+            <p className="text-lg font-black text-gray-900">
+              {car.price}
+              <span className="text-xs font-medium text-gray-500"> đ</span>
             </p>
           </div>
 
-          <button className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700">
-            View Details →
-          </button>
+          <Link
+          to={`/fleet/${car.id}`} 
+          className="rounded-xl bg-gray-900 px-5 py-2.5 text-xs font-bold text-white hover:bg-blue-600 transition-colors shadow-lg shadow-gray-200"
+        >
+          Chi tiết →
+        </Link>
         </div>
       </div>
     </div>

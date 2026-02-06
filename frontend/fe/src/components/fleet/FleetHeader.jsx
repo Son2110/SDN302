@@ -1,16 +1,18 @@
 const FleetHeader = () => {
   return (
-    <div className="mb-10">
-
-
-      <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-3">
-        Discover Our Premium Fleet
+    <div className="mb-12">
+      <p className="text-xs tracking-[0.4em] text-blue-600 font-bold uppercase mb-3">
+        Đội xe VinFast
+      </p>
+      <h1 className="text-3xl md:text-5xl font-black text-gray-900 mb-4 uppercase tracking-tight">
+        Khám Phá <span className="text-blue-600">Đội Xe</span> Cao Cấp
       </h1>
 
-      <p className="max-w-2xl text-gray-500">
-        Choose from our exclusive collection of high-end vehicles. Whether you
-        need a chauffeur or a self-drive adventure, we have the perfect car for you.
+      <p className="max-w-2xl text-gray-500 text-lg leading-relaxed">
+        Lựa chọn từ bộ sưu tập xe điện độc quyền của VinFast. Dù bạn cần dịch vụ có tài xế 
+        hay trải nghiệm tự lái, chúng tôi luôn có chiếc xe hoàn hảo cho bạn.
       </p>
+      <div className="w-20 h-1.5 bg-blue-600 mt-6 rounded-full" />
     </div>
   );
 };
