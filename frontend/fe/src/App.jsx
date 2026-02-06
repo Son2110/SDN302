@@ -1,7 +1,25 @@
-export default function App() {
+import { Routes, Route } from "react-router-dom";
+
+
+
+import Navbar from "./components/layout/Navbar";
+import Footer from "./components/layout/Footer";
+import Home from "./pages/Home";
+import FleetPage from "./pages/Fleet";
+
+function App() {
   return (
-    <h1 className="text-3xl font-bold text-blue-600">
-      Tailwind v4 chạy rồi 🚀
-    </h1>
-  )
+    <>
+      <Navbar />
+
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/fleet" element={<FleetPage />} />
+      </Routes>
+
+      <Footer />
+    </>
+  );
 }
+
+export default App;
