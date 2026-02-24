@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { getUser, logout } from "../../services/api";
+import { User, LogOut } from "lucide-react";
 
 const menuItems = [
   { title: "DỊCH VỤ", to: "/#services", type: "anchor" },
@@ -10,8 +12,17 @@ const menuItems = [
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [user, setUser] = useState(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const isHome = location.pathname === "/";
+
+  // Check user login status
+  useEffect(() => {
+    const currentUser = getUser();
+    setUser(currentUser);
+  }, [location]);
 
   // Đổi nền khi scroll
   useEffect(() => {
@@ -34,18 +45,25 @@ const Navbar = () => {
     }
   }, [location]);
 
+  const handleLogout = () => {
+    logout();
+    setUser(null);
+    setShowUserMenu(false);
+    navigate("/");
+  };
+
   return (
     <nav
-  className={`fixed top-0 left-0 w-full z-50 transition-all duration-300
-    ${
-      isHome
-        ? isScrolled
-          ? "bg-black/80 backdrop-blur-lg border-b border-white/10 py-4"
-          : "bg-transparent py-6"
-        : "bg-black/90 backdrop-blur-lg border-b border-white/10 py-4"
-    }
-  `}
->
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300
+        ${
+          isHome
+            ? isScrolled
+              ? "bg-black/80 backdrop-blur-lg border-b border-white/10 py-4"
+              : "bg-transparent py-6"
+            : "bg-black/90 backdrop-blur-lg border-b border-white/10 py-4"
+        }
+      `}
+    >
       <div className="max-w-7xl mx-auto px-6 md:px-12">
         <div className="flex items-center justify-between">
           {/* Logo */}
@@ -85,17 +103,65 @@ const Navbar = () => {
                 >
                   {item.title}
                 </a>
-              )
+              ),
             )}
 
-            {/* CTA */}
-            <Link
-              to="/register"
-              className="ml-4 rounded-full bg-blue-600 px-8 py-2.5 text-[12px] font-bold uppercase tracking-wider text-white
-              hover:bg-blue-700 hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all"
-            >
-              ĐĂNG KÝ NGAY
-            </Link>
+            {/* User Menu or Auth Buttons */}
+            {user ? (
+              <div className="relative ml-4">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2.5 text-[12px] font-bold uppercase tracking-wider text-white
+                  hover:bg-blue-700 transition-all"
+                >
+                  <User size={16} />
+                  {user.full_name || user.email}
+                </button>
+
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2">
+                    <Link
+                      to="/profile"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      Hồ Sơ Của Tôi
+                    </Link>
+                    <Link
+                      to="/bookings"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      Đặt Xe Của Tôi
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2"
+                    >
+                      <LogOut size={14} />
+                      Đăng Xuất
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 ml-4">
+                <Link
+                  to="/login"
+                  className="rounded-full border-2 border-blue-600 px-6 py-2 text-[12px] font-bold uppercase tracking-wider text-blue-600
+                  hover:bg-blue-600 hover:text-white transition-all"
+                >
+                  ĐĂNG NHẬP
+                </Link>
+                <Link
+                  to="/register"
+                  className="rounded-full bg-blue-600 px-6 py-2 text-[12px] font-bold uppercase tracking-wider text-white
+                  hover:bg-blue-700 hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all"
+                >
+                  ĐĂNG KÝ
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Icon */}
