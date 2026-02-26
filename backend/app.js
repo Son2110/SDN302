@@ -1,15 +1,20 @@
 import express from "express";
 import cors from "cors";
-import authRoutes from "./routes/authRoutes.js";
-
+import authRouter from "./routes/authRoutes.js";
+import bookingRouter from "./routes/bookingRoutes.js";
+import paymentRouter from "./routes/paymentRoutes.js";
+import driverAssignmentRouter from "./routes/driverAssignmentRoutes.js";
 const app = express();
 
 //middleware
 app.use(cors());
 app.use(express.json());
 
-//auth
-app.use("/api/auth", authRoutes);
+//api
+app.use("/api/auth", authRouter);
+app.use("/api/bookings", bookingRouter);
+app.use("/api/payments", paymentRouter);
+app.use("/api/driver-assignment", driverAssignmentRouter);
 
 app.get("/", (req, res) => {
   res.send("App is working");

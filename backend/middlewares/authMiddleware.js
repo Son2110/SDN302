@@ -17,7 +17,7 @@ export const protect = async (req, res, next) => {
         .lean();
 
       if (!user) {
-        return res.status(401).json({ message: "User is not existed" });
+        return res.status(401).json({ message: "Người dùng không tồn tại" });
       }
 
       // 2. Tìm roles
@@ -30,12 +30,12 @@ export const protect = async (req, res, next) => {
 
       next(); // Cho đi tiếp
     } catch (error) {
-      return res.status(401).json({ message: "Invalid token" });
+      return res.status(401).json({ message: "Phiên đăng nhập không hợp lệ" });
     }
   }
 
   if (!token) {
-    return res.status(401).json({ message: "You are not login!" });
+    return res.status(401).json({ message: "Vui lòng đăng nhập để tiếp tục" });
   }
 };
 
@@ -45,7 +45,7 @@ export const authorize = (...allowedRoles) => {
     if (!hasRole) {
       return res.status(403).json({
         success: false,
-        message: "You are not allowed to do this!",
+        message: "Bạn không có quyền thực hiện thao tác này",
       });
     }
     next();
