@@ -15,7 +15,8 @@ export const register = async (req, res) => {
 
     const userExists = await User.findOne({ email });
     //check mail
-    if (userExists) return res.status(400).json({ message: "Email is used" });
+    if (userExists)
+      return res.status(400).json({ message: "Email này đã được sử dụng" });
 
     //hash password
     const salt = await bcrypt.genSalt(10);
@@ -63,7 +64,7 @@ export const login = async (req, res) => {
         },
         token: generateToken(user._id),
       });
-    } else res.status(401).json({ message: "Wrong email or password" });
+    } else res.status(401).json({ message: "Sai email hoặc mật khẩu" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
