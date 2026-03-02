@@ -28,7 +28,7 @@ export const protect = async (req, res, next) => {
         roles, // Bây giờ req.user.roles là 1 mảng. VD: ['customer', 'driver']
       };
 
-      next(); // Cho đi tiếp
+      return next(); // Cho đi tiếp
     } catch (error) {
       return res.status(401).json({ message: "Phiên đăng nhập không hợp lệ" });
     }

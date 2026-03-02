@@ -141,3 +141,246 @@ export const respondToAssignment = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// ==================== STAFF: LẤY TẤT CẢ PHÂN CÔNG ====================
+// @route GET /api/driver-assignment
+// @access Private (Staff)
+export const getAllAssignments = async (req, res) => {
+  try {
+    const { status, driver_id, booking_id } = req.query;
+
+    const filter = {};
+    if (status) filter.status = status;
+    if (driver_id) filter.driver = driver_id;
+    if (booking_id) filter.booking = booking_id;
+
+    const assignments = await DriverAssignment.find(filter)
+      .populate({
+        path: "booking",
+        populate: [
+          { path: "vehicle" },
+          {
+            path: "customer",
+            populate: { path: "user", select: "full_name phone email" },
+          },
+        ],
+      })
+      .populate({
+        path: "driver",
+        populate: { path: "user", select: "full_name phone" },
+      })
+      .populate({
+        path: "assigned_by",
+        populate: { path: "user", select: "full_name" },
+      })
+      .sort({ assigned_at: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: assignments.length,
+      data: assignments,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ==================== XEM CHI TIẾT 1 PHÂN CÔNG ====================
+// @route GET /api/driver-assignment/:id
+// @access Private (Staff, Driver)
+export const getAssignmentById = async (req, res) => {
+  try {
+    const assignment = await DriverAssignment.findById(req.params.id)
+      .populate({
+        path: "booking",
+        populate: [
+          {
+            path: "vehicle",
+            populate: { path: "vehicle_type" },
+          },
+          {
+            path: "customer",
+            populate: {
+              path: "user",
+              select: "full_name phone email avatar_url",
+            },
+          },
+        ],
+      })
+      .populate({
+        path: "driver",
+        populate: { path: "user", select: "full_name phone email" },
+      })
+      .populate({
+        path: "assigned_by",
+        populate: { path: "user", select: "full_name" },
+      });
+
+    if (!assignment) {
+      return res
+        .status(404)
+        .json({ message: "Không tìm thấy yêu cầu phân công này." });
+    }
+
+    // Driver chỉ xem được assignment của mình
+    const driver = await Driver.findOne({ user: req.user._id });
+    if (driver && assignment.driver._id.toString() !== driver._id.toString()) {
+      return res.status(403).json({
+        message: "Bạn không có quyền xem phân công của người khác.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: assignment,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ==================== STAFF: CẬP NHẬT PHÂN CÔNG (ĐỔI TÀI XẾ) ====================
+// @route PUT /api/driver-assignment/:id
+// @access Private (Staff)
+export const updateAssignment = async (req, res) => {
+  try {
+    const { driver_id } = req.body;
+
+    const staff = await Staff.findOne({ user: req.user._id });
+    if (!staff) {
+      return res
+        .status(403)
+        .json({
+          message: "Chỉ nhân viên mới có quyền thực hiện thao tác này.",
+        });
+    }
+
+    const assignment = await DriverAssignment.findById(req.params.id);
+    if (!assignment) {
+      return res
+        .status(404)
+        .json({ message: "Không tìm thấy yêu cầu phân công này." });
+    }
+
+    // Chỉ cho phép cập nhật khi đang pending hoặc bị rejected
+    if (assignment.status === "accepted") {
+      return res.status(400).json({
+        message:
+          "Không thể sửa phân công đã được tài xế nhận. Hãy huỷ trước rồi tạo mới.",
+      });
+    }
+
+    if (driver_id) {
+      const newDriver = await Driver.findById(driver_id);
+      if (!newDriver || newDriver.status !== "available") {
+        return res
+          .status(400)
+          .json({
+            message: "Tài xế mới không tồn tại hoặc đang không sẵn sàng.",
+          });
+      }
+      assignment.driver = newDriver._id;
+      assignment.status = "pending"; // Reset về pending khi đổi tài xế
+      assignment.response_note = undefined;
+      assignment.assigned_by = staff._id;
+      assignment.assigned_at = Date.now();
+    }
+
+    await assignment.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Đã cập nhật phân công. Tài xế mới sẽ nhận yêu cầu.",
+      data: assignment,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ==================== STAFF: HUỶ PHÂN CÔNG ====================
+// @route DELETE /api/driver-assignment/:id
+// @access Private (Staff)
+export const deleteAssignment = async (req, res) => {
+  try {
+    const staff = await Staff.findOne({ user: req.user._id });
+    if (!staff) {
+      return res
+        .status(403)
+        .json({
+          message: "Chỉ nhân viên mới có quyền thực hiện thao tác này.",
+        });
+    }
+
+    const assignment = await DriverAssignment.findById(req.params.id);
+    if (!assignment) {
+      return res
+        .status(404)
+        .json({ message: "Không tìm thấy yêu cầu phân công này." });
+    }
+
+    // Nếu tài xế đã nhận chuyến → phải rollback booking và driver status
+    if (assignment.status === "accepted") {
+      const booking = await Booking.findById(assignment.booking);
+      if (booking) {
+        booking.driver = null;
+        await booking.save();
+      }
+
+      const driver = await Driver.findById(assignment.driver);
+      if (driver && driver.status === "busy") {
+        driver.status = "available";
+        await driver.save();
+      }
+    }
+
+    await DriverAssignment.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      message: "Đã huỷ phân công thành công.",
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ==================== TÀI XẾ XEM CHUYẾN CỦA MÌNH ====================
+// @route GET /api/driver-assignment/my-assignments
+// @access Private (Driver)
+export const getMyAssignments = async (req, res) => {
+  try {
+    const driver = await Driver.findOne({ user: req.user._id });
+    if (!driver) {
+      return res
+        .status(403)
+        .json({ message: "Chỉ tài xế mới xem được danh sách chuyến." });
+    }
+
+    const { status } = req.query;
+
+    const filter = { driver: driver._id };
+    if (status) filter.status = status;
+
+    const assignments = await DriverAssignment.find(filter)
+      .populate({
+        path: "booking",
+        populate: [
+          { path: "vehicle" },
+          {
+            path: "customer",
+            populate: { path: "user", select: "full_name phone" },
+          },
+        ],
+      })
+      .sort({ assigned_at: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: assignments.length,
+      data: assignments,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
