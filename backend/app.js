@@ -4,6 +4,8 @@ import authRouter from "./routes/authRoutes.js";
 import bookingRouter from "./routes/bookingRoutes.js";
 import paymentRouter from "./routes/paymentRoutes.js";
 import driverAssignmentRouter from "./routes/driverAssignmentRoutes.js";
+import handoverRouter from "./routes/handoverRoutes.js";
+import extensionRouter from "./routes/extensionRoutes.js";
 const app = express();
 
 //middleware
@@ -15,6 +17,8 @@ app.use("/api/auth", authRouter);
 app.use("/api/bookings", bookingRouter);
 app.use("/api/payments", paymentRouter);
 app.use("/api/driver-assignment", driverAssignmentRouter);
+app.use("/api/handovers", handoverRouter);
+app.use("/api/extensions", extensionRouter);
 
 app.get("/", (req, res) => {
   res.send("App is working");

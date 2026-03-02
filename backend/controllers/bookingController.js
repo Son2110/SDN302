@@ -1,6 +1,7 @@
 import { Booking } from "../models/booking.model.js";
 import { Vehicle } from "../models/vehicle.model.js";
-import { Customer } from "../models/user.model.js";
+import { Customer, Staff } from "../models/user.model.js";
+import { Payment } from "../models/finance.model.js";
 export const getAvailableVehicles = async (req, res) => {
   try {
     const { start_date, end_date } = req.query;
@@ -150,6 +151,373 @@ export const createBooking = async (req, res) => {
         deposit_amount: newBooking.deposit_amount,
         status: newBooking.status,
       },
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ==================== HUỶ ĐƠN ====================
+// @route PUT /api/bookings/:id/cancel
+// @access Private (Customer hoặc Staff)
+export const cancelBooking = async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking)
+      return res.status(404).json({ message: "Không tìm thấy đơn đặt xe." });
+
+    // Chỉ huỷ khi đơn đang pending hoặc confirmed
+    if (!["pending", "confirmed"].includes(booking.status)) {
+      return res.status(400).json({
+        message: `Đơn đang ở trạng thái "${booking.status}", không thể huỷ.`,
+      });
+    }
+
+    // Kiểm tra quyền: customer chỉ huỷ đơn của mình, staff huỷ bất kỳ
+    const customer = await Customer.findOne({ user: req.user._id });
+    const staff = await Staff.findOne({ user: req.user._id });
+
+    if (customer) {
+      if (booking.customer.toString() !== customer._id.toString()) {
+        return res
+          .status(403)
+          .json({ message: "Bạn không có quyền huỷ đơn này." });
+      }
+    } else if (!staff) {
+      return res
+        .status(403)
+        .json({ message: "Bạn không có quyền thực hiện thao tác này." });
+    }
+
+    const previousStatus = booking.status;
+
+    // Nếu đơn đã confirmed (đã cọc) → tạo record hoàn tiền
+    if (previousStatus === "confirmed") {
+      await Payment.create({
+        booking: booking._id,
+        customer: booking.customer,
+        payment_type: "refund",
+        amount: booking.deposit_amount,
+        payment_method: "cash",
+        status: "completed",
+        transaction_id: `REFUND_${Date.now()}`,
+        processed_by: staff ? staff._id : null,
+      });
+    }
+
+    booking.status = "cancelled";
+    await booking.save();
+
+    res.status(200).json({
+      success: true,
+      message:
+        previousStatus === "confirmed"
+          ? "Đã huỷ đơn thành công. Tiền cọc sẽ được hoàn lại."
+          : "Đã huỷ đơn thành công.",
+      data: {
+        booking_id: booking._id,
+        booking_status: booking.status,
+        refunded: previousStatus === "confirmed",
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ==================== XEM ĐƠN CỦA TÔI (Customer) ====================
+// @route GET /api/bookings/my-bookings
+// @access Private (Customer)
+export const getMyBookings = async (req, res) => {
+  try {
+    const customer = await Customer.findOne({ user: req.user._id });
+    if (!customer)
+      return res
+        .status(403)
+        .json({ message: "Chỉ khách hàng mới xem được đơn của mình." });
+
+    const { status, page = 1, limit = 10 } = req.query;
+
+    const filter = { customer: customer._id };
+    if (status) filter.status = status;
+
+    const bookings = await Booking.find(filter)
+      .populate("vehicle")
+      .populate("driver")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+
+    const total = await Booking.countDocuments(filter);
+
+    res.status(200).json({
+      success: true,
+      count: bookings.length,
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / limit),
+      data: bookings,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ==================== XEM CHI TIẾT ĐƠN ====================
+// @route GET /api/bookings/:id
+// @access Private
+export const getBookingById = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id)
+      .populate({
+        path: "vehicle",
+        populate: { path: "vehicle_type" },
+      })
+      .populate({
+        path: "customer",
+        populate: { path: "user", select: "full_name email phone" },
+      })
+      .populate({
+        path: "driver",
+        populate: { path: "user", select: "full_name email phone" },
+      });
+
+    if (!booking)
+      return res.status(404).json({ message: "Không tìm thấy đơn đặt xe." });
+
+    // Customer chỉ xem đơn của mình
+    const customer = await Customer.findOne({ user: req.user._id });
+    const staff = await Staff.findOne({ user: req.user._id });
+
+    if (
+      customer &&
+      booking.customer._id.toString() !== customer._id.toString() &&
+      !staff
+    ) {
+      return res
+        .status(403)
+        .json({ message: "Bạn không có quyền xem đơn này." });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: booking,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ==================== STAFF CẬP NHẬT ĐƠN ====================
+// @route PUT /api/bookings/:id
+// @access Private (Staff)
+export const updateBooking = async (req, res) => {
+  try {
+    const staff = await Staff.findOne({ user: req.user._id });
+    if (!staff) {
+      return res
+        .status(403)
+        .json({
+          message: "Chỉ nhân viên mới có quyền thực hiện thao tác này.",
+        });
+    }
+
+    const booking = await Booking.findById(req.params.id);
+    if (!booking)
+      return res.status(404).json({ message: "Không tìm thấy đơn đặt xe." });
+
+    // Chỉ cho sửa khi đơn pending hoặc confirmed
+    if (!["pending", "confirmed"].includes(booking.status)) {
+      return res.status(400).json({
+        message: `Đơn đang ở trạng thái "${booking.status}", không thể chỉnh sửa.`,
+      });
+    }
+
+    const {
+      vehicle_id,
+      start_date,
+      end_date,
+      pickup_location,
+      return_location,
+      rental_type,
+    } = req.body;
+
+    // Cập nhật ngày nếu có
+    const checkIn = start_date ? new Date(start_date) : booking.start_date;
+    const checkOut = end_date ? new Date(end_date) : booking.end_date;
+
+    if (checkIn >= checkOut) {
+      return res
+        .status(400)
+        .json({ message: "Ngày kết thúc phải sau ngày bắt đầu." });
+    }
+
+    // Đổi xe nếu có
+    let vehicle;
+    if (vehicle_id && vehicle_id !== booking.vehicle.toString()) {
+      // Check xe mới có available không
+      vehicle = await Vehicle.findById(vehicle_id);
+      if (!vehicle || vehicle.status !== "available") {
+        return res
+          .status(400)
+          .json({ message: "Xe mới không tồn tại hoặc không khả dụng." });
+      }
+
+      // Check trùng lịch xe mới
+      const overlapping = await Booking.findOne({
+        _id: { $ne: booking._id },
+        vehicle: vehicle_id,
+        status: {
+          $nin: ["cancelled", "completed", "deposit_lost", "vehicle_returned"],
+        },
+        $and: [
+          { start_date: { $lt: checkOut } },
+          { end_date: { $gt: checkIn } },
+        ],
+      });
+
+      if (overlapping) {
+        return res.status(400).json({
+          message: "Xe mới đã có khách đặt trong khoảng thời gian này.",
+        });
+      }
+
+      booking.vehicle = vehicle._id;
+    } else {
+      vehicle = await Vehicle.findById(booking.vehicle);
+
+      // Check trùng lịch nếu đổi ngày
+      if (start_date || end_date) {
+        const overlapping = await Booking.findOne({
+          _id: { $ne: booking._id },
+          vehicle: booking.vehicle,
+          status: {
+            $nin: [
+              "cancelled",
+              "completed",
+              "deposit_lost",
+              "vehicle_returned",
+            ],
+          },
+          $and: [
+            { start_date: { $lt: checkOut } },
+            { end_date: { $gt: checkIn } },
+          ],
+        });
+
+        if (overlapping) {
+          return res.status(400).json({
+            message: "Xe đã có lịch đặt trùng trong khoảng thời gian mới.",
+          });
+        }
+      }
+    }
+
+    // Cập nhật fields
+    if (start_date) booking.start_date = checkIn;
+    if (end_date) booking.end_date = checkOut;
+    if (pickup_location) booking.pickup_location = pickup_location;
+    if (return_location) booking.return_location = return_location;
+    if (rental_type) booking.rental_type = rental_type;
+
+    // Tính lại tiền
+    const diffTime = Math.abs(booking.end_date - booking.start_date);
+    const rentalDay = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const actualDays = rentalDay > 0 ? rentalDay : 1;
+
+    let total_amount = actualDays * vehicle.daily_rate;
+    if (booking.rental_type === "with_driver") {
+      const DRIVER_FEE_PER_DAY = 500000;
+      total_amount += actualDays * DRIVER_FEE_PER_DAY;
+    }
+
+    booking.total_amount = total_amount;
+    booking.deposit_amount = total_amount * 0.3;
+    booking.max_checkin_time = new Date(
+      booking.start_date.getTime() + 3 * 60 * 60 * 1000,
+    );
+    booking.managed_by = staff._id;
+
+    await booking.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Đã cập nhật đơn đặt xe thành công.",
+      data: booking,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ==================== STAFF XOÁ ĐƠN ====================
+// @route DELETE /api/bookings/:id
+// @access Private (Staff)
+export const deleteBooking = async (req, res) => {
+  try {
+    const staff = await Staff.findOne({ user: req.user._id });
+    if (!staff) {
+      return res
+        .status(403)
+        .json({
+          message: "Chỉ nhân viên mới có quyền thực hiện thao tác này.",
+        });
+    }
+
+    const booking = await Booking.findById(req.params.id);
+    if (!booking)
+      return res.status(404).json({ message: "Không tìm thấy đơn đặt xe." });
+
+    // Chỉ cho xoá khi đơn đã cancelled hoặc đang pending
+    if (!["pending", "cancelled"].includes(booking.status)) {
+      return res.status(400).json({
+        message: `Đơn đang ở trạng thái "${booking.status}", không thể xoá. Chỉ xoá được đơn pending hoặc cancelled.`,
+      });
+    }
+
+    await Booking.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      message: "Đã xoá đơn đặt xe thành công.",
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ==================== STAFF XEM TẤT CẢ ĐƠN ====================
+// @route GET /api/bookings/all
+// @access Private (Staff)
+export const getAllBookings = async (req, res) => {
+  try {
+    const { status, page = 1, limit = 20 } = req.query;
+
+    const filter = {};
+    if (status) filter.status = status;
+
+    const bookings = await Booking.find(filter)
+      .populate("vehicle")
+      .populate({
+        path: "customer",
+        populate: { path: "user", select: "full_name email phone" },
+      })
+      .populate("driver")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+
+    const total = await Booking.countDocuments(filter);
+
+    res.status(200).json({
+      success: true,
+      count: bookings.length,
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / limit),
+      data: bookings,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

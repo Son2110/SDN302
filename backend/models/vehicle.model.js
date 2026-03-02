@@ -14,7 +14,9 @@ const vehicleTypeSchema = new mongoose.Schema({
     type: String,
     enum: ["gasoline", "diesel", "electric", "hybrid"],
   },
+  battery_capacity_kwh: { type: Number }, // Dung lượng pin (kWh) — chỉ dùng cho xe điện/hybrid
   base_price_per_day: { type: Number, required: true },
+  charging_cost_per_kwh: { type: Number, default: 3500 }, // Giá sạc VND/kWh (mặc định 3,500đ)
   image_url: { type: String },
 });
 

@@ -2,3 +2,4 @@ backend/.env
 /backend/node_modules
 backend/seed.js
 frontend/fe/.env
+backend/seedTestRoles.js
