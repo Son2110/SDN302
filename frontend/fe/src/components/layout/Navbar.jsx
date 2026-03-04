@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 const menuItems = [
   { title: "DỊCH VỤ", to: "/#services", type: "anchor" },
@@ -10,8 +11,10 @@ const menuItems = [
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const location = useLocation();
   const isHome = location.pathname === "/";
+  const { isAuthenticated, user, logout } = useAuth();
 
   // Đổi nền khi scroll
   useEffect(() => {
@@ -33,6 +36,17 @@ const Navbar = () => {
       }
     }
   }, [location]);
+
+  // Đóng user menu khi click bên ngoài
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showUserMenu && !event.target.closest('.relative')) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showUserMenu]);
 
   return (
     <nav
@@ -88,14 +102,79 @@ const Navbar = () => {
               )
             )}
 
-            {/* CTA */}
-            <Link
-              to="/register"
-              className="ml-4 rounded-full bg-blue-600 px-8 py-2.5 text-[12px] font-bold uppercase tracking-wider text-white
+            {/* Auth Buttons */}
+            {isAuthenticated ? (
+              <div className="ml-4 relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-2 rounded-full bg-blue-600 px-6 py-2.5 text-[12px] font-bold uppercase tracking-wider text-white hover:bg-blue-700 hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all"
+                >
+                  <span>{user?.full_name || user?.email || "User"}</span>
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-black/90 backdrop-blur-lg rounded-lg border border-white/20 shadow-lg z-50">
+                    <div className="py-2">
+                      <div className="px-4 py-2 text-sm text-gray-300 border-b border-white/10">
+                        <div className="font-medium text-white">{user?.full_name || "User"}</div>
+                        <div className="text-xs text-gray-400">{user?.email}</div>
+                      </div>
+                      <Link
+                        to="/dashboard"
+                        onClick={() => setShowUserMenu(false)}
+                        className="block px-4 py-2 text-sm text-gray-300 hover:bg-white/10 transition-colors"
+                      >
+                        Dashboard
+                      </Link>
+                      <Link
+                        to="/bookings"
+                        onClick={() => setShowUserMenu(false)}
+                        className="block px-4 py-2 text-sm text-gray-300 hover:bg-white/10 transition-colors"
+                      >
+                        Bookings của tôi
+                      </Link>
+                      <button
+                        onClick={() => {
+                          logout();
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/10 transition-colors"
+                      >
+                        Đăng xuất
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="ml-4 text-[13px] font-bold tracking-[0.2em] text-gray-300 hover:text-blue-400 transition-colors"
+                >
+                  ĐĂNG NHẬP
+                </Link>
+                <Link
+                  to="/register"
+                  className="ml-4 rounded-full bg-blue-600 px-8 py-2.5 text-[12px] font-bold uppercase tracking-wider text-white
               hover:bg-blue-700 hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all"
-            >
-              ĐĂNG KÝ NGAY
-            </Link>
+                >
+                  ĐĂNG KÝ NGAY
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Icon */}
