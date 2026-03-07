@@ -13,11 +13,12 @@
 ## Mục lục
 
 1. [Auth](#1-auth)
-2. [Bookings](#2-bookings)
-3. [Payments](#3-payments)
-4. [Driver Assignment](#4-driver-assignment)
-5. [Handovers](#5-handovers)
-6. [Extensions](#6-extensions)
+2. [Users](#2-users)
+3. [Bookings](#3-bookings)
+4. [Payments](#4-payments)
+5. [Driver Assignment](#5-driver-assignment)
+6. [Handovers](#6-handovers)
+7. [Extensions](#7-extensions)
 
 ---
 
@@ -117,9 +118,475 @@
 
 ---
 
-## 2. Bookings
+## 2. Users
 
-### 2.1 Xem xe khả dụng 🔒
+### 2.1 Xem thông tin cá nhân 🔒
+
+| | |
+|---|---|
+| **Method** | `GET` |
+| **URL** | `/api/users/my-profile` |
+| **Auth** | 🔒 Bearer Token |
+| **Role** | Bất kỳ (customer, staff, driver) |
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "_id": "665a...",
+      "email": "customer@test.com",
+      "full_name": "Nguyễn Văn A",
+      "phone": "0901234567",
+      "avatar_url": "",
+      "is_active": true
+    },
+    "roles": ["customer"],
+    "customer": {
+      "_id": "665b...",
+      "user": "665a...",
+      "id_card": "001099012345",
+      "driver_license": "B2-123456",
+      "date_of_birth": "1990-05-15T00:00:00.000Z",
+      "address": "123 Nguyễn Huệ, Q1",
+      "rating": 4.8,
+      "total_bookings": 5,
+      "total_spent": 15000000,
+      "loyalty_points": 150
+    },
+    "driver": null
+  }
+}
+```
+
+> **Lưu ý:** Nếu user cũng là driver, `driver` sẽ có dữ liệu. Nếu user có cả 2 role, cả `customer` và `driver` đều có dữ liệu.
+
+---
+
+### 2.2 Đăng ký làm tài xế 🔒
+
+| | |
+|---|---|
+| **Method** | `POST` |
+| **URL** | `/api/users/driver-registration` |
+| **Auth** | 🔒 Bearer Token |
+| **Role** | `customer` |
+
+**Body (JSON):**
+
+```json
+{
+  "license_number": "B2-987654",
+  "license_type": "B2",
+  "license_expiry": "2028-12-31",
+  "experience_years": 5
+}
+```
+
+| Field | Type | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `license_number` | `string` | ✅ | Số giấy phép lái xe (unique) |
+| `license_type` | `string` | ✅ | Loại bằng (B1, B2, C, D...) |
+| `license_expiry` | `date` | ✅ | Ngày hết hạn (phải > ngày hiện tại) |
+| `experience_years` | `number` | ✅ | Số năm kinh nghiệm |
+
+**Response (201):**
+
+```json
+{
+  "success": true,
+  "message": "Đăng ký làm tài xế thành công! Bạn có thể bắt đầu nhận chuyến.",
+  "data": {
+    "driver": {
+      "_id": "665c...",
+      "user": {
+        "_id": "665a...",
+        "email": "customer@test.com",
+        "full_name": "Nguyễn Văn A",
+        "phone": "0901234567"
+      },
+      "license_number": "B2-987654",
+      "license_type": "B2",
+      "license_expiry": "2028-12-31T00:00:00.000Z",
+      "experience_years": 5,
+      "rating": 0,
+      "total_trips": 0,
+      "status": "available"
+    },
+    "roles": ["customer", "driver"]
+  }
+}
+```
+
+**Lỗi (400):**
+
+```json
+{ "success": false, "message": "Bạn đã là tài xế rồi" }
+```
+
+```json
+{ "success": false, "message": "Số giấy phép lái xe đã được đăng ký" }
+```
+
+```json
+{ "success": false, "message": "Giấy phép lái xe đã hết hạn" }
+```
+
+---
+
+### 2.3 Lấy danh sách khách hàng 🔒
+
+| | |
+|---|---|
+| **Method** | `GET` |
+| **URL** | `/api/users/customers` |
+| **Auth** | 🔒 Bearer Token |
+| **Role** | `staff` |
+
+**Query Params:**
+
+| Param | Type | Mặc định | Mô tả |
+|---|---|---|---|
+| `page` | `number` | 1 | Trang hiện tại |
+| `limit` | `number` | 10 | Số bản ghi mỗi trang |
+| `search` | `string` | "" | Tìm theo tên, email, SĐT |
+
+**Ví dụ:**
+
+```
+GET /api/users/customers?page=1&limit=10&search=nguyen
+```
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "count": 2,
+  "total": 15,
+  "page": 1,
+  "pages": 2,
+  "data": [
+    {
+      "_id": "665b...",
+      "user": {
+        "_id": "665a...",
+        "email": "customer1@test.com",
+        "full_name": "Nguyễn Văn A",
+        "phone": "0901234567",
+        "avatar_url": "",
+        "is_active": true
+      },
+      "id_card": "001099012345",
+      "driver_license": "B2-123456",
+      "date_of_birth": "1990-05-15T00:00:00.000Z",
+      "address": "123 Nguyễn Huệ, Q1",
+      "rating": 4.8,
+      "total_bookings": 5,
+      "total_spent": 15000000,
+      "loyalty_points": 150
+    }
+  ]
+}
+```
+
+---
+
+### 2.4 Xem chi tiết khách hàng 🔒
+
+| | |
+|---|---|
+| **Method** | `GET` |
+| **URL** | `/api/users/customers/:id` |
+| **Auth** | 🔒 Bearer Token |
+| **Role** | `customer` (chỉ xem profile của mình) hoặc `staff` (xem tất cả) |
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "665b...",
+    "user": {
+      "_id": "665a...",
+      "email": "customer@test.com",
+      "full_name": "Nguyễn Văn A",
+      "phone": "0901234567",
+      "avatar_url": "",
+      "is_active": true
+    },
+    "id_card": "001099012345",
+    "driver_license": "B2-123456",
+    "date_of_birth": "1990-05-15T00:00:00.000Z",
+    "address": "123 Nguyễn Huệ, Q1",
+    "rating": 4.8,
+    "total_bookings": 5,
+    "total_spent": 15000000,
+    "loyalty_points": 150
+  }
+}
+```
+
+**Lỗi (403):**
+
+```json
+{ "success": false, "message": "Bạn không có quyền xem thông tin này" }
+```
+
+**Lỗi (404):**
+
+```json
+{ "success": false, "message": "Không tìm thấy khách hàng" }
+```
+
+---
+
+### 2.5 Cập nhật thông tin khách hàng 🔒
+
+| | |
+|---|---|
+| **Method** | `PUT` |
+| **URL** | `/api/users/customers/:id` |
+| **Auth** | 🔒 Bearer Token |
+| **Role** | `customer` (chỉ cập nhật của mình) hoặc `staff` (cập nhật tất cả) |
+
+**Body (JSON):**
+
+```json
+{
+  "full_name": "Nguyễn Văn B",
+  "phone": "0907654321",
+  "avatar_url": "https://example.com/avatar.jpg",
+  "driver_license": "B2-999888",
+  "date_of_birth": "1992-08-20",
+  "address": "456 Lê Lợi, Q1"
+}
+```
+
+| Field | Type | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `full_name` | `string` | ❌ | Họ tên mới |
+| `phone` | `string` | ❌ | SĐT mới |
+| `avatar_url` | `string` | ❌ | URL ảnh đại diện |
+| `driver_license` | `string` | ❌ | Số GPLX |
+| `date_of_birth` | `date` | ❌ | Ngày sinh |
+| `address` | `string` | ❌ | Địa chỉ |
+
+> **Lưu ý:** Chỉ gửi các field cần cập nhật. Không cần gửi tất cả.
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Cập nhật thông tin khách hàng thành công",
+  "data": {
+    "_id": "665b...",
+    "user": {
+      "_id": "665a...",
+      "email": "customer@test.com",
+      "full_name": "Nguyễn Văn B",
+      "phone": "0907654321",
+      "avatar_url": "https://example.com/avatar.jpg"
+    },
+    "driver_license": "B2-999888",
+    "date_of_birth": "1992-08-20T00:00:00.000Z",
+    "address": "456 Lê Lợi, Q1"
+  }
+}
+```
+
+---
+
+### 2.6 Lấy danh sách tài xế 🔒
+
+| | |
+|---|---|
+| **Method** | `GET` |
+| **URL** | `/api/users/drivers` |
+| **Auth** | 🔒 Bearer Token |
+| **Role** | `staff` |
+
+**Query Params:**
+
+| Param | Type | Mặc định | Mô tả |
+|---|---|---|---|
+| `page` | `number` | 1 | Trang hiện tại |
+| `limit` | `number` | 10 | Số bản ghi mỗi trang |
+| `search` | `string` | "" | Tìm theo tên, email, SĐT |
+| `status` | `string` | "" | `available`, `busy`, `offline` |
+
+**Ví dụ:**
+
+```
+GET /api/users/drivers?page=1&limit=10&status=available
+GET /api/users/drivers?search=tran
+```
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "count": 3,
+  "total": 8,
+  "page": 1,
+  "pages": 1,
+  "data": [
+    {
+      "_id": "665c...",
+      "user": {
+        "_id": "665d...",
+        "email": "driver@test.com",
+        "full_name": "Trần Văn B",
+        "phone": "0911122233",
+        "avatar_url": "",
+        "is_active": true
+      },
+      "license_number": "B2-555444",
+      "license_type": "B2",
+      "license_expiry": "2027-06-30T00:00:00.000Z",
+      "experience_years": 3,
+      "rating": 4.9,
+      "total_trips": 25,
+      "status": "available"
+    }
+  ]
+}
+```
+
+---
+
+### 2.7 Xem chi tiết tài xế 🔒
+
+| | |
+|---|---|
+| **Method** | `GET` |
+| **URL** | `/api/users/drivers/:id` |
+| **Auth** | 🔒 Bearer Token |
+| **Role** | `driver` (chỉ xem profile của mình) hoặc `staff` (xem tất cả) |
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "665c...",
+    "user": {
+      "_id": "665d...",
+      "email": "driver@test.com",
+      "full_name": "Trần Văn B",
+      "phone": "0911122233",
+      "avatar_url": "",
+      "is_active": true
+    },
+    "license_number": "B2-555444",
+    "license_type": "B2",
+    "license_expiry": "2027-06-30T00:00:00.000Z",
+    "experience_years": 3,
+    "rating": 4.9,
+    "total_trips": 25,
+    "status": "available"
+  }
+}
+```
+
+**Lỗi (403):**
+
+```json
+{ "success": false, "message": "Bạn không có quyền xem thông tin này" }
+```
+
+**Lỗi (404):**
+
+```json
+{ "success": false, "message": "Không tìm thấy tài xế" }
+```
+
+---
+
+### 2.8 Cập nhật thông tin tài xế 🔒
+
+| | |
+|---|---|
+| **Method** | `PUT` |
+| **URL** | `/api/users/drivers/:id` |
+| **Auth** | 🔒 Bearer Token |
+| **Role** | `driver` (chỉ cập nhật của mình) hoặc `staff` (cập nhật tất cả) |
+
+**Body (JSON):**
+
+```json
+{
+  "full_name": "Trần Văn C",
+  "phone": "0999888777",
+  "avatar_url": "https://example.com/driver.jpg",
+  "license_number": "B2-111222",
+  "license_type": "C",
+  "license_expiry": "2029-12-31",
+  "experience_years": 7,
+  "status": "offline"
+}
+```
+
+| Field | Type | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `full_name` | `string` | ❌ | Họ tên mới |
+| `phone` | `string` | ❌ | SĐT mới |
+| `avatar_url` | `string` | ❌ | URL ảnh đại diện |
+| `license_number` | `string` | ❌ | Số GPLX (unique) |
+| `license_type` | `string` | ❌ | Loại bằng |
+| `license_expiry` | `date` | ❌ | Ngày hết hạn |
+| `experience_years` | `number` | ❌ | Số năm kinh nghiệm |
+| `status` | `string` | ❌ | `available`, `busy`, `offline` (chỉ staff mới được đổi) |
+
+> **Lưu ý:** 
+> - Chỉ gửi các field cần cập nhật
+> - `status` chỉ staff mới có quyền thay đổi
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Cập nhật thông tin tài xế thành công",
+  "data": {
+    "_id": "665c...",
+    "user": {
+      "_id": "665d...",
+      "email": "driver@test.com",
+      "full_name": "Trần Văn C",
+      "phone": "0999888777",
+      "avatar_url": "https://example.com/driver.jpg"
+    },
+    "license_number": "B2-111222",
+    "license_type": "C",
+    "license_expiry": "2029-12-31T00:00:00.000Z",
+    "experience_years": 7,
+    "status": "offline"
+  }
+}
+```
+
+**Lỗi (400):**
+
+```json
+{ "success": false, "message": "Số giấy phép lái xe đã tồn tại" }
+```
+
+```json
+{ "success": false, "message": "Trạng thái không hợp lệ" }
+```
+
+---
+
+## 3. Bookings
+
+### 3.1 Xem xe khả dụng 🔒
 
 | | |
 |---|---|
@@ -461,9 +928,9 @@ DELETE /api/bookings/665c...
 
 ---
 
-## 3. Payments
+## 4. Payments
 
-### 3.1 Thanh toán tiền cọc 🔒 (Customer)
+### 4.1 Thanh toán tiền cọc 🔒 (Customer)
 
 | | |
 |---|---|
@@ -754,9 +1221,9 @@ GET /api/payments/booking/665c...
 
 ---
 
-## 4. Driver Assignment
+## 5. Driver Assignment
 
-### 4.1 Phân công tài xế 🔒 (Staff)
+### 5.1 Phân công tài xế 🔒 (Staff)
 
 | | |
 |---|---|
@@ -1066,9 +1533,9 @@ GET /api/driver-assignment?booking_id=665c...
 
 ---
 
-## 5. Handovers (Biên bản bàn giao xe)
+## 6. Handovers (Biên bản bàn giao xe)
 
-### 5.1 Lập biên bản giao xe (Delivery) 🔒 (Staff)
+### 6.1 Lập biên bản giao xe (Delivery) 🔒 (Staff)
 
 | | |
 |---|---|
@@ -1320,9 +1787,9 @@ GET /api/handovers/booking/665c...
 
 ---
 
-## 6. Extensions (Gia hạn thuê xe)
+## 7. Extensions (Gia hạn thuê xe)
 
-### 6.1 Yêu cầu gia hạn 🔒 (Customer)
+### 7.1 Yêu cầu gia hạn 🔒 (Customer)
 
 | | |
 |---|---|

@@ -23,6 +23,8 @@
 | D2 | Danh sách gia hạn của tôi | `/my-extensions` | 🟡 |
 | D3 | Chi tiết gia hạn | `/extensions/:id` | 🟡 |
 | E1 | Xem biên bản bàn giao | (section trong B3) | 🟡 |
+| **F1** | **Xem & cập nhật thông tin cá nhân** | `/profile` | 🟡 |
+| **F2** | **Đăng ký làm tài xế** | `/driver-registration` | 🟡 |
 
 ---
 
@@ -662,6 +664,286 @@ Authorization: Bearer <token>
 
 ---
 
+## F. User Profile & Driver Registration
+
+---
+
+### F1. Xem & cập nhật thông tin cá nhân
+
+#### API 1: Lấy thông tin profile đầy đủ
+
+```
+GET /api/users/my-profile
+```
+
+**Header:**
+```
+Authorization: Bearer <token>
+```
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "_id": "665a...",
+      "email": "customer@test.com",
+      "full_name": "Nguyễn Văn A",
+      "phone": "0901234567",
+      "avatar_url": "",
+      "is_active": true
+    },
+    "roles": ["customer"],
+    "customer": {
+      "_id": "665b...",
+      "user": "665a...",
+      "id_card": "001099012345",
+      "driver_license": "B2-123456",
+      "date_of_birth": "1990-05-15T00:00:00.000Z",
+      "address": "123 Nguyễn Huệ, Q1",
+      "rating": 4.8,
+      "total_bookings": 5,
+      "total_spent": 15000000,
+      "loyalty_points": 150
+    },
+    "driver": null
+  }
+}
+```
+
+> **Lưu ý:** Nếu user cũng là driver, `driver` sẽ có dữ liệu thay vì `null`.
+
+**UI gợi ý:**
+
+**1. Nếu user chỉ là `customer`:**
+- Hiển thị thông tin customer (avatar, tên, email, phone, CMND, địa chỉ, ngày sinh)
+- Hiển thị thống kê: Rating ⭐, Tổng đơn đã đặt, Tổng chi tiêu, Điểm tích luỹ
+- 2 nút action: **Chỉnh sửa** | **Đăng ký làm tài xế**
+
+**2. Nếu user có cả 2 role `customer` + `driver`:**
+- Hiển thị 2 tabs: **Khách hàng** | **Tài xế**
+- Tab Khách hàng: thông tin customer như trên
+- Tab Tài xế: Số GPLX, Loại bằng, Hạn GPLX, Kinh nghiệm, Rating tài xế, Tổng chuyến
+- KHÔNG hiện nút "Đăng ký làm tài xế" nữa
+
+---
+
+#### API 2: Cập nhật thông tin customer
+
+```
+PUT /api/users/customers/:id
+```
+
+> **Lấy `:id`** từ `data.customer._id` trong response của API 1
+
+**Header:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Body (JSON):**
+```json
+{
+  "full_name": "Nguyễn Văn B",
+  "phone": "0907654321",
+  "avatar_url": "https://example.com/avatar.jpg",
+  "driver_license": "B2-999888",
+  "date_of_birth": "1992-08-20",
+  "address": "456 Lê Lợi, Q1"
+}
+```
+
+| Field | Type | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `full_name` | `string` | ❌ | Họ tên mới |
+| `phone` | `string` | ❌ | SĐT mới |
+| `avatar_url` | `string` | ❌ | URL ảnh đại diện |
+| `driver_license` | `string` | ❌ | Số GPLX (nếu có) |
+| `date_of_birth` | `date` | ❌ | Ngày sinh (format: YYYY-MM-DD) |
+| `address` | `string` | ❌ | Địa chỉ |
+
+> **Lưu ý:** Chỉ gửi các field cần cập nhật. Không cần gửi tất cả.
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "message": "Cập nhật thông tin khách hàng thành công",
+  "data": {
+    "_id": "665b...",
+    "user": {
+      "_id": "665a...",
+      "email": "customer@test.com",
+      "full_name": "Nguyễn Văn B",
+      "phone": "0907654321",
+      "avatar_url": "https://example.com/avatar.jpg"
+    },
+    "driver_license": "B2-999888",
+    "date_of_birth": "1992-08-20T00:00:00.000Z",
+    "address": "456 Lê Lợi, Q1"
+  }
+}
+```
+
+**UI gợi ý:**
+
+**Form chỉnh sửa:**
+```jsx
+// Tạo modal hoặc edit mode trong /profile
+
+// Form fields (pre-fill từ API 1):
+- Avatar (upload image hoặc URL input)
+- Họ tên (text input)
+- Số điện thoại (text input)
+- CMND/CCCD (readonly - không cho sửa)
+- Ngày sinh (date picker)
+- Địa chỉ (textarea)
+- GPLX (text input, optional)
+
+// Submit:
+- Gọi PUT /api/users/customers/:id với data
+- Success → Toast "Cập nhật thành công" → Refresh profile
+- Error → Toast hiện error message
+```
+
+---
+
+### F2. Đăng ký làm tài xế (Customer → Driver)
+
+```
+POST /api/users/driver-registration
+```
+
+**Header:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+> **Role required:** `customer` — Chỉ khách hàng mới có thể đăng ký
+
+**Body (JSON):**
+```json
+{
+  "license_number": "B2-987654",
+  "license_type": "B2",
+  "license_expiry": "2028-12-31",
+  "experience_years": 5
+}
+```
+
+| Field | Type | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `license_number` | `string` | ✅ | Số giấy phép lái xe (phải unique) |
+| `license_type` | `string` | ✅ | Loại bằng (B1, B2, C, D...) |
+| `license_expiry` | `date` | ✅ | Ngày hết hạn (phải > ngày hiện tại, format: YYYY-MM-DD) |
+| `experience_years` | `number` | ✅ | Số năm kinh nghiệm lái xe |
+
+**Response 201:**
+```json
+{
+  "success": true,
+  "message": "Đăng ký làm tài xế thành công! Bạn có thể bắt đầu nhận chuyến.",
+  "data": {
+    "driver": {
+      "_id": "665c...",
+      "user": {
+        "_id": "665a...",
+        "email": "customer@test.com",
+        "full_name": "Nguyễn Văn A",
+        "phone": "0901234567"
+      },
+      "license_number": "B2-987654",
+      "license_type": "B2",
+      "license_expiry": "2028-12-31T00:00:00.000Z",
+      "experience_years": 5,
+      "rating": 0,
+      "total_trips": 0,
+      "status": "available"
+    },
+    "roles": ["customer", "driver"]
+  }
+}
+```
+
+**Lỗi 400:**
+```json
+{ "success": false, "message": "Vui lòng cung cấp đầy đủ thông tin: license_number, license_type, license_expiry, experience_years" }
+```
+
+```json
+{ "success": false, "message": "Bạn đã là tài xế rồi" }
+```
+
+```json
+{ "success": false, "message": "Số giấy phép lái xe đã được đăng ký" }
+```
+
+```json
+{ "success": false, "message": "Giấy phép lái xe đã hết hạn" }
+```
+
+**UI gợi ý:**
+
+**1. Vị trí hiển thị:**
+- Thêm link/nút "Đăng ký làm tài xế" trong `/profile` page
+- Chỉ hiện khi:
+  - `user.roles` chứa `"customer"` VÀ
+  - `user.roles` KHÔNG chứa `"driver"`
+
+**2. Form đăng ký:**
+```jsx
+// Tạo page /driver-registration (ProtectedRoute role="customer")
+// Hoặc modal trong /profile
+
+// Form fields:
+- Số giấy phép lái xe (text input, required, placeholder: "B2-123456")
+- Loại bằng (dropdown: B1, B2, C, D, E, F, required)
+- Ngày hết hạn (date picker, required, validation: phải >= ngày hiện tại)
+- Số năm kinh nghiệm (number input, required, min: 0, max: 50)
+
+// Submit button:
+- Loading state khi đang submit
+- Sau khi success:
+  1. Toast: "Đăng ký làm tài xế thành công!"
+  2. Cập nhật AuthContext với roles mới: ["customer", "driver"]
+  3. Navbar tự động hiện thêm Driver menu (do FE3 quản lý)
+  4. Redirect → /driver/assignments (trang dashboard tài xế)
+```
+
+**3. Flow hoàn chỉnh:**
+
+```
+Customer login → Vào /profile → Nút "Đăng ký làm tài xế"
+                        ↓
+              Click → /driver-registration (hoặc modal)
+                        ↓
+              Điền form và Submit
+                        ↓
+        POST /api/users/driver-registration → Success
+                        ↓
+        Cập nhật user.roles = ["customer", "driver"] trong AuthContext
+                        ↓
+        Navbar xuất hiện menu Driver (do FE3 xử lý)
+                        ↓
+        Redirect → /driver/assignments
+```
+
+**4. Validation FE:**
+- Tất cả fields required
+- `license_expiry` phải >= ngày hiện tại
+- `experience_years`: min = 0, max = 50
+- `license_number` format đề xuất: "XX-NNNNNN" (2 chữ + gạch ngang + 6 số)
+
+**5. Edge cases:**
+- Nếu user đã là driver → API trả 400 → Modal confirm "Bạn đã là tài xế rồi" → redirect /driver/assignments
+- Nếu license_number trùng → API trả 400 → Hiện lỗi dưới field "Số giấy phép đã được đăng ký"
+- Nếu license hết hạn → API trả 400 → Hiện lỗi "Giấy phép lái xe đã hết hạn, vui lòng gia hạn trước khi đăng ký"
+
+---
+
 ## 📁 Cấu trúc thư mục gợi ý
 
 ```
@@ -674,6 +956,8 @@ src/
       MyPayments.jsx          ← C3
       MyExtensions.jsx        ← D2
       ExtensionDetail.jsx     ← D3
+      Profile.jsx             ← F1 (xem & cập nhật thông tin)
+      DriverRegistration.jsx  ← F2 (đăng ký làm tài xế)
   components/
     customer/
       BookingList.jsx
@@ -682,11 +966,14 @@ src/
       PaymentSummary.jsx      ← C4
       ExtensionForm.jsx       ← D1
       HandoverInfo.jsx        ← E1
+      ProfileForm.jsx         ← F1 (form chỉnh sửa profile)
+      DriverRegForm.jsx       ← F2 (form đăng ký driver)
   services/
     bookingApi.js
     paymentApi.js
     extensionApi.js
     handoverApi.js
+    userApi.js              ← F1, F2 (my-profile, update customer, register driver)
 ```
 
 ---
@@ -701,3 +988,44 @@ src/
 | `vehicle_returned` | 🟠 Chờ thanh toán | Thanh toán cuối |
 | `completed` | ✅ Hoàn tất | Không |
 | `cancelled` | ❌ Đã huỷ | Không |
+
+---
+
+## ✅ Checklist cho FE1
+
+### Phase 1: Booking Flow (Ưu tiên cao)
+- [ ] B1: Chọn xe + Tạo đơn (`CreateBooking.jsx`)
+- [ ] B2: Danh sách đơn của tôi (`MyBookings.jsx`)
+- [ ] B3: Chi tiết đơn đặt xe (`BookingDetail.jsx`)
+- [ ] B4: Huỷ đơn (action button trong B3)
+- [ ] C1: Thanh toán cọc (`PaymentForm.jsx`)
+- [ ] C2: Thanh toán cuối (`PaymentForm.jsx`)
+
+### Phase 2: Extensions & History (Ưu tiên trung bình)
+- [ ] C3: Lịch sử thanh toán (`MyPayments.jsx`)
+- [ ] C4: Chi tiết thanh toán theo đơn (section trong B3)
+- [ ] D1: Yêu cầu gia hạn (`ExtensionForm.jsx`)
+- [ ] D2: Danh sách gia hạn (`MyExtensions.jsx`)
+- [ ] D3: Chi tiết gia hạn (`ExtensionDetail.jsx`)
+- [ ] E1: Xem biên bản bàn giao (`HandoverInfo.jsx` trong B3)
+
+### Phase 3: User Profile & Driver Registration (MỚI)
+- [ ] F1: Xem & cập nhật thông tin cá nhân (`Profile.jsx`)
+  - [ ] Hiển thị thông tin user + customer
+  - [ ] Form chỉnh sửa profile
+  - [ ] Upload/change avatar
+  - [ ] Hiển thị tabs Customer/Driver nếu có cả 2 role
+  - [ ] Nút "Đăng ký làm tài xế" (chỉ hiện khi chưa là driver)
+- [ ] F2: Đăng ký làm tài xế (`DriverRegistration.jsx`)
+  - [ ] Form đăng ký với validation FE
+  - [ ] Date picker cho license_expiry (phải >= ngày hiện tại)
+  - [ ] Dropdown loại bằng (B1, B2, C, D, E, F)
+  - [ ] Success → update AuthContext roles → redirect /driver/assignments
+- [ ] Tạo `userApi.js` service với 3 functions:
+  - [ ] `getMyProfile()` - GET /api/users/my-profile
+  - [ ] `updateCustomer(id, data)` - PUT /api/users/customers/:id
+  - [ ] `registerAsDriver(data)` - POST /api/users/driver-registration
+
+### Notes:
+- **Phụ thuộc FE3:** Đợi FE3 hoàn thành AuthContext, ProtectedRoute, Toast trước khi bắt đầu
+- **Driver Registration Flow:** Sau khi đăng ký thành công, Navbar sẽ tự động hiện Driver menu (do FE3 quản lý)
