@@ -714,27 +714,65 @@ Authorization: Bearer <token>
 
 > **Lưu ý:** Nếu user cũng là driver, `driver` sẽ có dữ liệu thay vì `null`.
 
-**UI gợi ý:**
+---
 
-**1. Nếu user chỉ là `customer`:**
-- Hiển thị thông tin customer (avatar, tên, email, phone, CMND, địa chỉ, ngày sinh)
-- Hiển thị thống kê: Rating ⭐, Tổng đơn đã đặt, Tổng chi tiêu, Điểm tích luỹ
-- 2 nút action: **Chỉnh sửa** | **Đăng ký làm tài xế**
+#### API 2: Cập nhật thông tin chung (Tên, SĐT, Avatar) ⭐ MỚI
 
-**2. Nếu user có cả 2 role `customer` + `driver`:**
-- Hiển thị 2 tabs: **Khách hàng** | **Tài xế**
-- Tab Khách hàng: thông tin customer như trên
-- Tab Tài xế: Số GPLX, Loại bằng, Hạn GPLX, Kinh nghiệm, Rating tài xế, Tổng chuyến
-- KHÔNG hiện nút "Đăng ký làm tài xế" nữa
+```
+PUT /api/users/me
+```
+
+**Header:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+> **Sử dụng cho:** Update thông tin chung của User (full_name, phone, avatar_url)  
+> **Không phụ thuộc vào role** - Dùng chung cho cả Customer và Driver
+
+**Body (JSON):**
+```json
+{
+  "full_name": "Nguyễn Văn B",
+  "phone": "0907654321",
+  "avatar_url": "https://example.com/avatar.jpg"
+}
+```
+
+| Field | Type | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `full_name` | `string` | ❌ | Họ tên mới |
+| `phone` | `string` | ❌ | SĐT mới |
+| `avatar_url` | `string` | ❌ | URL ảnh đại diện |
+
+> **Lưu ý:** Chỉ gửi các field cần cập nhật. Không cần gửi tất cả.
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "message": "Cập nhật thông tin thành công",
+  "data": {
+    "_id": "665a...",
+    "email": "customer@test.com",
+    "full_name": "Nguyễn Văn B",
+    "phone": "0907654321",
+    "avatar_url": "https://example.com/avatar.jpg",
+    "is_active": true
+  }
+}
+```
 
 ---
 
-#### API 2: Cập nhật thông tin customer
+#### API 3: Cập nhật thông tin khách hàng (CMND, địa chỉ, ngày sinh)
 
 ```
 PUT /api/users/customers/:id
 ```
 
+> **Sử dụng cho:** Update thông tin RIÊNG của Customer (address, date_of_birth, driver_license)  
 > **Lấy `:id`** từ `data.customer._id` trong response của API 1
 
 **Header:**
@@ -742,6 +780,346 @@ PUT /api/users/customers/:id
 Authorization: Bearer <token>
 Content-Type: application/json
 ```
+
+**Body (JSON):**
+```json
+{
+  "driver_license": "B2-999888",
+  "date_of_birth": "1992-08-20",
+  "address": "456 Lê Lợi, Q1"
+}
+```
+
+| Field | Type | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `driver_license` | `string` | ❌ | Số GPLX (nếu có) |
+| `date_of_birth` | `date` | ❌ | Ngày sinh (format: YYYY-MM-DD) |
+| `address` | `string` | ❌ | Địa chỉ |
+
+> **⚠️ Quan trọng:** API này CŨNG có thể nhận `full_name`, `phone`, `avatar_url` nhưng **KHÔNG NÊN** gửi để tránh conflict khi user vừa là Customer vừa là Driver. Chỉ gửi Customer-specific fields.
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "message": "Cập nhật thông tin khách hàng thành công",
+  "data": {
+    "_id": "665b...",
+    "user": {
+      "_id": "665a...",
+      "email": "customer@test.com",
+      "full_name": "Nguyễn Văn A",
+      "phone": "0901234567"
+    },
+    "driver_license": "B2-999888",
+    "date_of_birth": "1992-08-20T00:00:00.000Z",
+    "address": "456 Lê Lợi, Q1"
+  }
+}
+```
+
+---
+
+### 🎯 LUỒNG CẬP NHẬT THÔNG TIN (Quan trọng!)
+
+#### **Trường hợp 1: User chỉ có role `customer`**
+
+```javascript
+// 1. Load profile
+const profile = await getMyProfile();
+// profile.data = { user, roles: ["customer"], customer, driver: null }
+
+// 2. User sửa Tên/SĐT/Avatar → Gọi API 2
+await updateUserInfo({
+  full_name: "Tên mới",
+  phone: "SĐT mới",
+  avatar_url: "URL mới"
+});
+
+// 3. User sửa Địa chỉ/Ngày sinh/GPLX → Gọi API 3
+await updateCustomer(profile.data.customer._id, {
+  address: "Địa chỉ mới",
+  date_of_birth: "1990-01-01",
+  driver_license: "B2-123456"
+});
+```
+
+#### **Trường hợp 2: User có cả 2 role `customer` + `driver`**
+
+```javascript
+// 1. Load profile
+const profile = await getMyProfile();
+// profile.data = { user, roles: ["customer", "driver"], customer, driver }
+
+// 2. Sửa Tên/SĐT/Avatar (chung cho cả Customer & Driver) → CHỈ GỌI API 2
+await updateUserInfo({
+  full_name: "Tên mới",
+  phone: "SĐT mới"
+});
+// ✅ Cả Customer và Driver đều thấy thông tin mới
+
+// 3. Sửa thông tin RIÊNG Customer (địa chỉ, ngày sinh) → Gọi API 3
+await updateCustomer(profile.data.customer._id, {
+  address: "Địa chỉ mới"
+  // ❌ KHÔNG gửi full_name, phone, avatar_url ở đây
+});
+
+// 4. Sửa thông tin RIÊNG Driver (GPLX, loại bằng, kinh nghiệm)
+//    → Gọi PUT /api/users/drivers/:id (FE3 quản lý)
+```
+
+---
+
+### 📱 UI Implementation Guide
+
+#### **Layout: Profile Page với Sections**
+
+```jsx
+// Profile.jsx
+
+const ProfilePage = () => {
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    // Load profile on mount
+    const loadProfile = async () => {
+      const data = await getMyProfile();
+      setProfile(data.data);
+    };
+    loadProfile();
+  }, []);
+
+  return (
+    <div>
+      {/* Section 1: Thông tin chung (User) - Dùng chung cho tất cả roles */}
+      <UserInfoSection 
+        data={profile.user}
+        onUpdate={async (data) => {
+          await updateUserInfo(data); // API 2: PUT /api/users/me
+          // Reload profile
+        }}
+      />
+      
+      {/* Section 2: Thông tin khách hàng - Chỉ hiện khi có role customer */}
+      {profile.roles.includes('customer') && (
+        <CustomerInfoSection
+          data={profile.customer}
+          onUpdate={async (data) => {
+            await updateCustomer(profile.customer._id, data); // API 3
+            // Reload profile
+          }}
+        />
+      )}
+      
+      {/* Section 3: Thông tin tài xế - Chỉ hiện khi có role driver */}
+      {profile.roles.includes('driver') && (
+        <DriverInfoSection
+          data={profile.driver}
+          // Driver update do FE3 quản lý
+        />
+      )}
+      
+      {/* Nút đăng ký tài xế - Chỉ hiện khi là customer nhưng chưa là driver */}
+      {profile.roles.includes('customer') && !profile.roles.includes('driver') && (
+        <Button onClick={() => navigate('/driver-registration')}>
+          Đăng ký làm tài xế
+        </Button>
+      )}
+    </div>
+  );
+};
+```
+
+---
+
+#### **Component 1: UserInfoSection (Thông tin chung)**
+
+```jsx
+// components/customer/UserInfoSection.jsx
+
+const UserInfoSection = ({ data, onUpdate }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    full_name: data.full_name,
+    phone: data.phone,
+    avatar_url: data.avatar_url
+  });
+
+  const handleSubmit = async () => {
+    try {
+      // Chỉ gửi các field thay đổi
+      const updates = {};
+      if (formData.full_name !== data.full_name) updates.full_name = formData.full_name;
+      if (formData.phone !== data.phone) updates.phone = formData.phone;
+      if (formData.avatar_url !== data.avatar_url) updates.avatar_url = formData.avatar_url;
+      
+      await onUpdate(updates); // PUT /api/users/me
+      toast.success("Cập nhật thành công!");
+      setIsEditing(false);
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+  return (
+    <div className="card">
+      <h3>Thông tin chung</h3>
+      {isEditing ? (
+        <>
+          <input value={formData.full_name} onChange={...} placeholder="Họ tên" />
+          <input value={formData.phone} onChange={...} placeholder="SĐT" />
+          <input value={formData.avatar_url} onChange={...} placeholder="Avatar URL" />
+          <button onClick={handleSubmit}>Lưu</button>
+          <button onClick={() => setIsEditing(false)}>Hủy</button>
+        </>
+      ) : (
+        <>
+          <p>Email: {data.email}</p>
+          <p>Họ tên: {data.full_name}</p>
+          <p>SĐT: {data.phone}</p>
+          <img src={data.avatar_url || '/default-avatar.png'} alt="Avatar" />
+          <button onClick={() => setIsEditing(true)}>Chỉnh sửa</button>
+        </>
+      )}
+    </div>
+  );
+};
+```
+
+---
+
+#### **Component 2: CustomerInfoSection (Thông tin khách hàng)**
+
+```jsx
+// components/customer/CustomerInfoSection.jsx
+
+const CustomerInfoSection = ({ data, onUpdate }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    address: data.address || '',
+    date_of_birth: data.date_of_birth ? data.date_of_birth.split('T')[0] : '',
+    driver_license: data.driver_license || ''
+  });
+
+  const handleSubmit = async () => {
+    try {
+      // Chỉ gửi Customer fields, KHÔNG gửi full_name/phone/avatar
+      await onUpdate(formData); // PUT /api/users/customers/:id
+      toast.success("Cập nhật thành công!");
+      setIsEditing(false);
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+  return (
+    <div className="card">
+      <h3>Thông tin khách hàng</h3>
+      {isEditing ? (
+        <>
+          <input value={formData.address} onChange={...} placeholder="Địa chỉ" />
+          <input type="date" value={formData.date_of_birth} onChange={...} />
+          <input value={formData.driver_license} onChange={...} placeholder="Số GPLX (nếu có)" />
+          <button onClick={handleSubmit}>Lưu</button>
+          <button onClick={() => setIsEditing(false)}>Hủy</button>
+        </>
+      ) : (
+        <>
+          <p>CMND/CCCD: {data.id_card}</p>
+          <p>Địa chỉ: {data.address || 'Chưa cập nhật'}</p>
+          <p>Ngày sinh: {data.date_of_birth || 'Chưa cập nhật'}</p>
+          <p>GPLX: {data.driver_license || 'Không có'}</p>
+          <p>⭐ Rating: {data.rating}/5</p>
+          <p>📦 Tổng đơn: {data.total_bookings}</p>
+          <p>💰 Tổng chi: {data.total_spent.toLocaleString('vi-VN')} VND</p>
+          <p>🎁 Điểm tích luỹ: {data.loyalty_points}</p>
+          <button onClick={() => setIsEditing(true)}>Chỉnh sửa</button>
+        </>
+      )}
+    </div>
+  );
+};
+```
+
+---
+
+#### **service/userApi.js**
+
+```javascript
+// services/userApi.js
+
+import api from './api'; // axios instance với token auto-attach
+
+/**
+ * Lấy thông tin profile đầy đủ (user + customer + driver)
+ */
+export const getMyProfile = async () => {
+  const response = await api.get('/users/my-profile');
+  return response.data;
+};
+
+/**
+ * Cập nhật thông tin chung (full_name, phone, avatar_url)
+ * Dùng chung cho tất cả roles
+ */
+export const updateUserInfo = async (data) => {
+  const response = await api.put('/users/me', data);
+  return response.data;
+};
+
+/**
+ * Cập nhật thông tin Customer (address, date_of_birth, driver_license)
+ */
+export const updateCustomer = async (customerId, data) => {
+  const response = await api.put(`/users/customers/${customerId}`, data);
+  return response.data;
+};
+
+/**
+ * Đăng ký làm tài xế
+ */
+export const registerAsDriver = async (data) => {
+  const response = await api.post('/users/driver-registration', data);
+  return response.data;
+};
+```
+
+---
+
+### ✅ Checklist Implementation cho F1
+
+- [ ] Tạo `services/userApi.js` với 4 functions
+- [ ] Tạo `Profile.jsx` page với logic hiển thị 3 sections
+- [ ] Tạo `UserInfoSection.jsx` component:
+  - [ ] Form edit: full_name, phone, avatar_url
+  - [ ] Submit → gọi `updateUserInfo()` → PUT /api/users/me ⭐ API MỚI
+- [ ] Tạo `CustomerInfoSection.jsx` component:
+  - [ ] Form edit: address, date_of_birth, driver_license
+  - [ ] Submit → gọi `updateCustomer(customerId, data)` → PUT /api/users/customers/:id
+  - [ ] **CHỈ gửi Customer fields**, KHÔNG gửi full_name/phone/avatar
+- [ ] Logic hiện/ẩn:
+  - [ ] Nút "Đăng ký tài xế" chỉ hiện khi `roles.includes('customer') && !roles.includes('driver')`
+  - [ ] DriverInfoSection chỉ hiện khi `roles.includes('driver')` (read-only, FE3 quản lý update)
+- [ ] Toast notification cho success/error
+- [ ] Reload profile sau khi update thành công
+
+---
+
+**UI gợi ý:**
+
+**1. Nếu user chỉ là `customer`:**
+- Hiển thị 2 sections: **Thông tin chung** + **Thông tin khách hàng**
+- Nút action: **Đăng ký làm tài xế**
+
+**2. Nếu user có cả 2 role `customer` + `driver`:**
+- Hiển thị 3 sections: **Thông tin chung** + **Thông tin khách hàng** + **Thông tin tài xế**
+- KHÔNG hiện nút "Đăng ký làm tài xế"
+
+---
+
+#### API 4: Cập nhật thông tin customer (DEPRECATED - Chỉ dùng cho legacy)
+
+**⚠️ Lưu ý:** API này CÒN hoạt động nhưng KHÔNG khuyến khích dùng để update User fields. Dùng API 2 (PUT /api/users/me) thay thế.
 
 **Body (JSON):**
 ```json
