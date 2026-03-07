@@ -8,6 +8,7 @@ import {
   updateDriver,
   registerAsDriver,
   getMyProfile,
+  updateUserInfo,
 } from "../controllers/userController.js";
 import { protect, authorize } from "../middlewares/authMiddleware.js";
 
@@ -17,6 +18,9 @@ const router = express.Router();
 
 // Get my profile (any authenticated user)
 router.get("/my-profile", protect, getMyProfile);
+
+// Update my basic info (any authenticated user)
+router.put("/me", protect, updateUserInfo);
 
 // ==================== CUSTOMER ROUTES ====================
 

@@ -533,3 +533,48 @@ export const getMyProfile = async (req, res) => {
     });
   }
 };
+
+/**
+ * @desc    Update user basic info (full_name, phone, avatar_url)
+ * @route   PUT /api/users/me
+ * @access  Authenticated
+ */
+export const updateUserInfo = async (req, res) => {
+  try {
+    const { full_name, phone, avatar_url } = req.body;
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy người dùng",
+      });
+    }
+
+    // Update only User fields
+    if (full_name) user.full_name = full_name;
+    if (phone) user.phone = phone;
+    if (avatar_url !== undefined) user.avatar_url = avatar_url;
+
+    await user.save();
+
+    // Return updated user without password
+    const updatedUser = await User.findById(req.user._id)
+      .select("-password_hash")
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      message: "Cập nhật thông tin thành công",
+      data: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error in updateUserInfo:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi cập nhật thông tin",
+      error: error.message,
+    });
+  }
+};
