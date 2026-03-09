@@ -36,8 +36,14 @@ const Login = () => {
           _id: data._id,
           email: data.email,
           full_name: data.full_name,
+          role: data.role // Ensure role is saved if it's returned by the API
         });
-        navigate("/");
+        
+        if (data.role === "staff") {
+          navigate("/staff/bookings");
+        } else {
+          navigate("/");
+        }
       }
     } catch (err) {
       setError(err.message || "Login failed. Please try again.");
