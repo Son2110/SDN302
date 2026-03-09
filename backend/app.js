@@ -8,6 +8,7 @@ import handoverRouter from "./routes/handoverRoutes.js";
 import extensionRouter from "./routes/extensionRoutes.js";
 import vehicleRouter from "./routes/vehicleRoutes.js";
 import reviewRouter from "./routes/reviewRoutes.js";
+import userRouter from "./routes/userRoutes.js";
 const app = express();
 
 //middleware
@@ -23,6 +24,7 @@ app.use("/api/handovers", handoverRouter);
 app.use("/api/extensions", extensionRouter);
 app.use("/api/vehicles", vehicleRouter);
 app.use("/api/reviews", reviewRouter);
+app.use("/api/users", userRouter);
 
 app.get("/", (req, res) => {
   res.send("App is working");
