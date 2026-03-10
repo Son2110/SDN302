@@ -28,16 +28,23 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const data = await loginUser(formData);
+      const response = await loginUser(formData);
 
-      if (data.success) {
-        saveToken(data.token);
+      if (response.success) {
+        saveToken(response.token);
         saveUser({
-          _id: data._id,
-          email: data.email,
-          full_name: data.full_name,
+          _id: response.data._id,
+          email: response.data.email,
+          full_name: response.data.full_name,
+          roles: response.data.roles || [],
         });
-        navigate("/");
+
+        // Redirect based on role
+        if (response.data.roles?.includes("staff")) {
+          navigate("/staff/bookings");
+        } else {
+          navigate("/");
+        }
       }
     } catch (err) {
       setError(err.message || "Login failed. Please try again.");
