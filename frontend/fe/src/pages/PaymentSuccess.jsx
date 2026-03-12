@@ -2,19 +2,21 @@ import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { CheckCircle, Download, AlertCircle, Clock, XCircle, ArrowRight, Calendar, MapPin, CreditCard, FileText } from "lucide-react";
 import * as paymentService from "../services/paymentService";
-import * as bookingService from "../services/bookingService";
+import { getBookingById } from "../services/bookingApi";
 
 const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
   const paymentId = searchParams.get("payment");
+  const bookingId = searchParams.get("booking_id") || searchParams.get("booking"); // Support both params
+  const paymentType = searchParams.get("type");
   const error = searchParams.get("error");
-  
+
   // Check if VNPay params are in URL (direct redirect from VNPay)
   const vnpResponseCode = searchParams.get("vnp_ResponseCode");
   const vnpTxnRef = searchParams.get("vnp_TxnRef");
   const vnpTransactionStatus = searchParams.get("vnp_TransactionStatus");
   const vnpSecureHash = searchParams.get("vnp_SecureHash");
-  
+
   const [payment, setPayment] = useState(null);
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -25,11 +27,50 @@ const PaymentSuccess = () => {
       verifyVNPayPayment();
     } else if (paymentId) {
       loadPayment();
+    } else if (bookingId) {
+      fetchBookingData();
     } else {
       setLoading(false);
     }
-  }, [paymentId, vnpTxnRef, vnpResponseCode]);
-  
+  }, [paymentId, bookingId, vnpTxnRef, vnpResponseCode]);
+
+  const fetchBookingData = async () => {
+    try {
+      const response = await getBookingById(bookingId);
+      setBooking(response.data);
+
+      // Nếu booking đã confirmed (từ QR payment), tạo mock payment object để hiển thị success
+      if (response.data.status === "confirmed" && paymentType === "deposit") {
+        setPayment({
+          _id: response.data._id, // Dùng booking ID làm payment ID tạm
+          status: "completed",
+          payment_type: "deposit",
+          amount: response.data.deposit_amount,
+          payment_method: "bank_transfer",
+          transaction_id: `QR_DEPOSIT_${response.data._id.slice(-8).toUpperCase()}`,
+          booking: response.data._id,
+          payment_date: new Date().toISOString()
+        });
+      } else if (response.data.status === "completed" && paymentType === "final") {
+        setPayment({
+          _id: response.data._id, // Dùng booking ID làm payment ID tạm
+          status: "completed",
+          payment_type: "rental_fee",
+          amount: response.data.final_amount,
+          payment_method: "bank_transfer",
+          transaction_id: `QR_FINAL_${response.data._id.slice(-8).toUpperCase()}`,
+          booking: response.data._id,
+          payment_date: new Date().toISOString()
+        });
+      }
+
+      setLoading(false);
+    } catch (err) {
+      console.error("❌ [PaymentSuccess] Error loading booking:", err);
+      setLoading(false);
+    }
+  };
+
   const verifyVNPayPayment = async () => {
     try {
       // Collect ALL VNPay params from URL (needed for signature verification)
@@ -40,10 +81,10 @@ const PaymentSuccess = () => {
           allVnpayParams[key] = value;
         }
       });
-      
+
       // Call backend to verify and update payment with ALL params
       await paymentService.verifyPayment(vnpTxnRef, allVnpayParams);
-      
+
       // Reload payment after verification
       if (vnpTxnRef) {
         await loadPaymentById(vnpTxnRef);
@@ -56,20 +97,21 @@ const PaymentSuccess = () => {
       }
     }
   };
-  
+
   const loadPaymentById = async (id) => {
     try {
       const paymentData = await paymentService.getPaymentById(id);
       setPayment(paymentData.payment);
-      
+
       // Load booking info
       if (paymentData.payment.booking) {
-        const bookingId = typeof paymentData.payment.booking === 'string' 
-          ? paymentData.payment.booking 
+        const bookingId = typeof paymentData.payment.booking === 'string'
+          ? paymentData.payment.booking
           : paymentData.payment.booking._id || paymentData.payment.booking.toString();
-        await loadBooking(bookingId);
+        const response = await getBookingById(bookingId);
+        setBooking(response.data);
       }
-      
+
       setLoading(false);
 
       // Nếu payment vẫn pending, poll một vài lần để đợi webhook/return handler update
@@ -86,16 +128,17 @@ const PaymentSuccess = () => {
     try {
       const paymentData = await paymentService.getPaymentById(paymentId);
       setPayment(paymentData.payment);
-      
+
       // Load booking info
       // Handle both cases: booking can be ObjectId string or populated object
       if (paymentData.payment.booking) {
-        const bookingId = typeof paymentData.payment.booking === 'string' 
-          ? paymentData.payment.booking 
+        const bookingId = typeof paymentData.payment.booking === 'string'
+          ? paymentData.payment.booking
           : paymentData.payment.booking._id || paymentData.payment.booking.toString();
-        await loadBooking(bookingId);
+        const response = await getBookingById(bookingId);
+        setBooking(response.data);
       }
-      
+
       setLoading(false);
 
       // Nếu payment vẫn pending, poll một vài lần để đợi webhook/return handler update
@@ -116,8 +159,8 @@ const PaymentSuccess = () => {
         console.error("❌ [PaymentSuccess] Invalid booking ID:", bookingId);
         return;
       }
-      const bookingData = await bookingService.getBookingById(id);
-      setBooking(bookingData.booking);
+      const response = await getBookingById(id);
+      setBooking(response.data);
     } catch (err) {
       console.error("❌ [PaymentSuccess] Error loading booking:", err);
     }
@@ -131,20 +174,20 @@ const PaymentSuccess = () => {
       attempts++;
       try {
         const response = await paymentService.checkPaymentStatus(id);
-        
+
         if (response.status === "completed" || response.status === "failed") {
           const paymentData = await paymentService.getPaymentById(id);
           setPayment(paymentData.payment);
-          
+
           // Reload booking để lấy status mới nhất
           // Handle both cases: booking can be ObjectId string or populated object
           if (paymentData.payment.booking) {
-            const bookingId = typeof paymentData.payment.booking === 'string' 
-              ? paymentData.payment.booking 
+            const bookingId = typeof paymentData.payment.booking === 'string'
+              ? paymentData.payment.booking
               : paymentData.payment.booking._id || paymentData.payment.booking.toString();
             await loadBooking(bookingId);
           }
-          
+
           clearInterval(interval);
         } else if (attempts >= maxAttempts) {
           // Sau 5 lần vẫn pending → có thể webhook chưa được gọi
@@ -249,11 +292,10 @@ const PaymentSuccess = () => {
                   </div>
                   <div className="flex items-start gap-4">
                     <div className="flex flex-col items-center">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                        booking?.status === "confirmed" || booking?.status === "vehicle_delivered" || booking?.status === "in_progress"
-                          ? "bg-green-500 text-white"
-                          : "bg-gray-200 text-gray-500"
-                      }`}>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${booking?.status === "confirmed" || booking?.status === "vehicle_delivered" || booking?.status === "in_progress"
+                        ? "bg-green-500 text-white"
+                        : "bg-gray-200 text-gray-500"
+                        }`}>
                         {booking?.status === "confirmed" || booking?.status === "vehicle_delivered" || booking?.status === "in_progress" ? (
                           <CheckCircle size={20} />
                         ) : (
@@ -273,11 +315,10 @@ const PaymentSuccess = () => {
                   </div>
                   <div className="flex items-start gap-4">
                     <div className="flex flex-col items-center">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                        booking?.status === "vehicle_delivered" || booking?.status === "in_progress"
-                          ? "bg-green-500 text-white"
-                          : "bg-gray-200 text-gray-500"
-                      }`}>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${booking?.status === "vehicle_delivered" || booking?.status === "in_progress"
+                        ? "bg-green-500 text-white"
+                        : "bg-gray-200 text-gray-500"
+                        }`}>
                         {booking?.status === "vehicle_delivered" || booking?.status === "in_progress" ? (
                           <CheckCircle size={20} />
                         ) : (
@@ -368,12 +409,12 @@ const PaymentSuccess = () => {
                         {payment.payment_type === "deposit"
                           ? "Tiền cọc"
                           : payment.payment_type === "rental_fee"
-                          ? "Tiền thuê"
-                          : payment.payment_type === "extension_fee"
-                          ? "Phí gia hạn"
-                          : payment.payment_type === "penalty"
-                          ? "Phí phạt"
-                          : payment.payment_type}
+                            ? "Tiền thuê"
+                            : payment.payment_type === "extension_fee"
+                              ? "Phí gia hạn"
+                              : payment.payment_type === "penalty"
+                                ? "Phí phạt"
+                                : payment.payment_type}
                       </p>
                     </div>
                     {payment.payment_date && (

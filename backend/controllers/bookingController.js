@@ -6,38 +6,56 @@ export const getAvailableVehicles = async (req, res) => {
   try {
     const { start_date, end_date } = req.query;
 
-    //1. validate
-    if (!start_date || !end_date)
-      return res
-        .status(400)
-        .json({ message: "Vui lòng nhập ngày bắt đầu và ngày kết thúc" });
+    // If NO dates provided: Return ALL vehicles with status="available" (for Fleet page)
+    if (!start_date || !end_date) {
+      const allVehicles = await Vehicle.find({
+        status: "available",
+      }).populate("vehicle_type");
+
+      return res.status(200).json({
+        success: true,
+        count: allVehicles.length,
+        data: allVehicles,
+      });
+    }
+
+    //1. validate dates
     const checkIn = new Date(start_date);
     const checkOut = new Date(end_date);
+    const today = new Date();
 
-    if (checkIn >= checkOut)
+    // Reset to start of day for date-only comparison
+    today.setHours(0, 0, 0, 0);
+    checkIn.setHours(0, 0, 0, 0);
+    checkOut.setHours(0, 0, 0, 0);
+
+    if (checkIn.getTime() >= checkOut.getTime())
       return res
         .status(400)
         .json({ message: "Ngày bắt đầu phải trước ngày kết thúc" });
-    if (checkIn < new Date())
+
+    // Allow today and future dates only
+    if (checkIn.getTime() < today.getTime())
       return res
         .status(400)
         .json({ message: "Ngày bắt đầu không được là ngày trong quá khứ" });
 
-    //2. find busy car
+    //2. find busy car (chỉ check booking đã confirmed - đã thanh toán cọc)
     const busyBookings = await Booking.find({
       status: {
-        $nin: ["cancelled", "completed", "deposit_lost", "vehicle_returned"],
+        $in: ["confirmed", "in_progress"],
       },
       $and: [{ start_date: { $lt: checkOut } }, { end_date: { $gt: checkIn } }],
     }).select("vehicle");
 
     const busyVehiclesIds = busyBookings.map((booking) => booking.vehicle);
 
-    //3. find available car
+    //3. find available car (status="available" AND không có trong busyVehiclesIds)
     const availableVehicles = await Vehicle.find({
       status: "available",
       _id: { $nin: busyVehiclesIds },
     }).populate("vehicle_type");
+
     res.status(200).json({
       success: true,
       count: availableVehicles.length,
@@ -76,22 +94,29 @@ export const createBooking = async (req, res) => {
     //2. validate
     const checkIn = new Date(start_date);
     const checkOut = new Date(end_date);
-    const now = new Date();
+    const today = new Date();
 
-    if (checkIn >= checkOut)
+    // Reset to start of day for date-only comparison
+    today.setHours(0, 0, 0, 0);
+    checkIn.setHours(0, 0, 0, 0);
+    checkOut.setHours(0, 0, 0, 0);
+
+    if (checkIn.getTime() >= checkOut.getTime())
       return res
         .status(400)
         .json({ message: "Ngày kết thúc phải sau ngày bắt đầu" });
-    if (checkIn < now)
+
+    // Allow today and future dates only
+    if (checkIn.getTime() < today.getTime())
       return res
         .status(400)
         .json({ message: "Ngày bắt đầu không được là ngày trong quá khứ" });
 
-    //3. double check (race condition)
+    //3. double check (race condition - chỉ check booking đã confirmed - chỉ check booking đã confirmed)
     const overlappingBooking = await Booking.findOne({
       vehicle: vehicle_id,
       status: {
-        $nin: ["cancelled", "completed", "deposit_lost", "vehicle_returned"],
+        $in: ["confirmed", "in_progress"],
       },
       $and: [{ start_date: { $lt: checkOut } }, { end_date: { $gt: checkIn } }],
     });
@@ -108,7 +133,7 @@ export const createBooking = async (req, res) => {
         .status(404)
         .json({ message: "Xe không tồn tại hoặc hiện không khả dụng" });
 
-    //5. count money
+    //5. count money (billable days: 13-16 = 3 days, exclude last day for handover)
     const diffTime = Math.abs(checkOut - checkIn);
     const rentalDay = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     const actualDays = rentalDay > 0 ? rentalDay : 1;
@@ -518,6 +543,38 @@ export const getAllBookings = async (req, res) => {
       page: Number(page),
       totalPages: Math.ceil(total / limit),
       data: bookings,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ==================== LẤY CÁC NGÀY ĐÃ ĐƯỢC BOOK CỦA XE ====================
+// @route GET /api/bookings/vehicle/:vehicleId/booked-dates
+// @access Public
+export const getVehicleBookedDates = async (req, res) => {
+  try {
+    const { vehicleId } = req.params;
+
+    // ONLY return confirmed/in_progress bookings (đã thanh toán cọc)
+    // Pending bookings chưa thanh toán nên không block calendar
+    const bookings = await Booking.find({
+      vehicle: vehicleId,
+      status: {
+        $in: ["confirmed", "in_progress"],
+      },
+    }).select("start_date end_date status");
+
+    // Return array of date ranges
+    const bookedRanges = bookings.map((booking) => ({
+      start: booking.start_date,
+      end: booking.end_date,
+    }));
+
+    res.status(200).json({
+      success: true,
+      count: bookedRanges.length,
+      data: bookedRanges,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

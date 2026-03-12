@@ -1,4 +1,6 @@
-import apiClient from './api.js';
+import { getToken } from "./api";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 /**
  * Payment Service - Tất cả các API calls liên quan đến payments
@@ -10,10 +12,27 @@ import apiClient from './api.js';
  * @returns {Promise} Payment object với payment_url nếu online
  */
 export const createPayment = async (paymentData) => {
-  return apiClient('/payments', {
-    method: 'POST',
-    body: JSON.stringify(paymentData),
-  });
+  const token = getToken();
+  try {
+    const response = await fetch(`${API_URL}/payments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(paymentData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to create payment');
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
 };
 
 /**
@@ -22,9 +41,25 @@ export const createPayment = async (paymentData) => {
  * @returns {Promise} Payment object
  */
 export const getPaymentById = async (id) => {
-  return apiClient(`/payments/${id}`, {
-    method: 'GET',
-  });
+  const token = getToken();
+  try {
+    const response = await fetch(`${API_URL}/payments/${id}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch payment');
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
 };
 
 /**
@@ -33,20 +68,93 @@ export const getPaymentById = async (id) => {
  * @returns {Promise} Response với payments và pagination
  */
 export const getPayments = async (params = {}) => {
-  const queryParams = new URLSearchParams();
-  
-  Object.keys(params).forEach(key => {
-    if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
-      queryParams.append(key, params[key]);
-    }
-  });
+  const token = getToken();
+  try {
+    const queryParams = new URLSearchParams();
 
-  const queryString = queryParams.toString();
-  const url = queryString ? `/payments?${queryString}` : '/payments';
-  
-  return apiClient(url, {
-    method: 'GET',
-  });
+    Object.keys(params).forEach(key => {
+      if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
+        queryParams.append(key, params[key]);
+      }
+    });
+
+    const url = `${API_URL}/payments${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch payments');
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Thanh toán cọc (deposit)
+ * @param {Object} paymentData - { booking_id, payment_method }
+ * @returns {Promise} Payment response
+ */
+export const processDepositPayment = async (paymentData) => {
+  const token = getToken();
+  try {
+    const response = await fetch(`${API_URL}/payments/deposit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(paymentData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to process deposit payment');
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Thanh toán cuối (final payment)
+ * @param {Object} paymentData - { booking_id, payment_method }
+ * @returns {Promise} Payment response
+ */
+export const processFinalPayment = async (paymentData) => {
+  const token = getToken();
+  try {
+    const response = await fetch(`${API_URL}/payments/final`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(paymentData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to process final payment');
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
 };
 
 /**
@@ -55,9 +163,25 @@ export const getPayments = async (params = {}) => {
  * @returns {Promise} Array of payments với summary
  */
 export const getBookingPayments = async (bookingId) => {
-  return apiClient(`/payments/booking/${bookingId}`, {
-    method: 'GET',
-  });
+  const token = getToken();
+  try {
+    const response = await fetch(`${API_URL}/payments/booking/${bookingId}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch booking payments');
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
 };
 
 /**
@@ -66,9 +190,25 @@ export const getBookingPayments = async (bookingId) => {
  * @returns {Promise} Payment summary
  */
 export const getPaymentSummary = async (bookingId) => {
-  return apiClient(`/payments/booking/${bookingId}/summary`, {
-    method: 'GET',
-  });
+  const token = getToken();
+  try {
+    const response = await fetch(`${API_URL}/payments/booking/${bookingId}/summary`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch payment summary');
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
 };
 
 /**
@@ -78,10 +218,27 @@ export const getPaymentSummary = async (bookingId) => {
  * @returns {Promise} Updated payment
  */
 export const processPayment = async (id, transactionId) => {
-  return apiClient(`/payments/${id}/process`, {
-    method: 'POST',
-    body: JSON.stringify({ transaction_id: transactionId }),
-  });
+  const token = getToken();
+  try {
+    const response = await fetch(`${API_URL}/payments/${id}/process`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ transaction_id: transactionId }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to process payment');
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
 };
 
 /**
@@ -91,10 +248,27 @@ export const processPayment = async (id, transactionId) => {
  * @returns {Promise} Payment status
  */
 export const verifyPayment = async (id, vnpayParams = null) => {
-  return apiClient(`/payments/${id}/verify`, {
-    method: 'POST',
-    body: JSON.stringify(vnpayParams || {}),
-  });
+  const token = getToken();
+  try {
+    const response = await fetch(`${API_URL}/payments/${id}/verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(vnpayParams || {}),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to verify payment');
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
 };
 
 /**
@@ -103,9 +277,25 @@ export const verifyPayment = async (id, vnpayParams = null) => {
  * @returns {Promise} Updated payment
  */
 export const cancelPayment = async (id) => {
-  return apiClient(`/payments/${id}/cancel`, {
-    method: 'POST',
-  });
+  const token = getToken();
+  try {
+    const response = await fetch(`${API_URL}/payments/${id}/cancel`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to cancel payment');
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
 };
 
 /**
@@ -115,10 +305,27 @@ export const cancelPayment = async (id) => {
  * @returns {Promise} Payment URL
  */
 export const createPaymentUrl = async (id, returnUrl) => {
-  return apiClient(`/payments/${id}/create-payment-url`, {
-    method: 'POST',
-    body: JSON.stringify({ return_url: returnUrl }),
-  });
+  const token = getToken();
+  try {
+    const response = await fetch(`${API_URL}/payments/${id}/create-payment-url`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ return_url: returnUrl }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to create payment URL');
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
 };
 
 /**
@@ -127,9 +334,25 @@ export const createPaymentUrl = async (id, returnUrl) => {
  * @returns {Promise} Payment status
  */
 export const checkPaymentStatus = async (id) => {
-  return apiClient(`/payments/${id}/check-status`, {
-    method: 'GET',
-  });
+  const token = getToken();
+  try {
+    const response = await fetch(`${API_URL}/payments/${id}/check-status`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to check payment status');
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
 };
 
 /**
@@ -139,10 +362,27 @@ export const checkPaymentStatus = async (id) => {
  * @returns {Promise} Refund payment
  */
 export const createRefund = async (id, data) => {
-  return apiClient(`/payments/${id}/refund`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+  const token = getToken();
+  try {
+    const response = await fetch(`${API_URL}/payments/${id}/refund`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      throw new Error(responseData.message || 'Failed to create refund');
+    }
+
+    return responseData;
+  } catch (error) {
+    throw error;
+  }
 };
 
 /**
@@ -151,7 +391,23 @@ export const createRefund = async (id, data) => {
  * @returns {Promise} Array of refunds
  */
 export const getRefunds = async (id) => {
-  return apiClient(`/payments/${id}/refunds`, {
-    method: 'GET',
-  });
+  const token = getToken();
+  try {
+    const response = await fetch(`${API_URL}/payments/${id}/refunds`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch refunds');
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
 };

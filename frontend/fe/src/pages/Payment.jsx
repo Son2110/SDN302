@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { CreditCard, AlertCircle, CheckCircle, Clock, Shield, Lock, ArrowRight } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
+import { getToken } from "../services/api";
 import * as paymentService from "../services/paymentService";
-import * as bookingService from "../services/bookingService";
+import { getBookingById } from "../services/bookingApi";
 
 const Payment = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
 
   const bookingId = searchParams.get("booking");
   const paymentType = searchParams.get("type") || "rental_fee"; // rental_fee (full payment), extension_fee, penalty
@@ -20,8 +19,9 @@ const Payment = () => {
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate("/login?redirect=/payments" + (bookingId ? `?booking=${bookingId}` : ""));
+    const token = getToken();
+    if (!token) {
+      navigate("/login?redirect=/payment" + (bookingId ? `?booking=${bookingId}&type=${paymentType}` : ""));
       return;
     }
 
@@ -31,17 +31,36 @@ const Payment = () => {
       setError("Booking ID is required");
       setLoading(false);
     }
-  }, [bookingId, isAuthenticated, navigate]);
+  }, [bookingId, paymentType, navigate]);
 
   const loadBookingData = async () => {
     try {
       setLoading(true);
-      const [bookingResponse, summaryResponse] = await Promise.all([
-        bookingService.getBookingById(bookingId),
-        paymentService.getPaymentSummary(bookingId),
-      ]);
-      setBooking(bookingResponse.booking);
-      setPaymentSummary(summaryResponse.summary);
+      const bookingResponse = await getBookingById(bookingId);
+      const bookingData = bookingResponse.data;
+      setBooking(bookingData);
+
+      // Tính payment summary trực tiếp từ booking data (không cần API riêng)
+      const summary = {
+        booking_id: bookingData._id,
+        booking_status: bookingData.status,
+        total_amount: bookingData.total_amount || 0,
+        deposit_amount: bookingData.deposit_amount || 0,
+        extension_fee: bookingData.extension_fee || 0,
+        penalty: bookingData.penalty || 0,
+        breakdown: {
+          rental_fee: {
+            total: bookingData.total_amount || 0,
+            paid: 0, // Chưa thanh toán
+            remaining: bookingData.total_amount || 0,
+          },
+        },
+        total_paid: 0,
+        grand_total: bookingData.total_amount || 0,
+        remaining_balance: bookingData.total_amount || 0,
+      };
+
+      setPaymentSummary(summary);
     } catch (err) {
       setError(err.message || "Failed to load booking data");
     } finally {
