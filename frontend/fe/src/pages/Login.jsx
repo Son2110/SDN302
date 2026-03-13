@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import AuthLayout from "../components/auth/AuthLayout";
-import { loginUser, saveToken, saveUser } from "../services/api";
+import { useAuth } from "../context/AuthContext";
+import toast from "react-hot-toast";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     setFormData({
@@ -28,26 +30,23 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await loginUser(formData);
+      const response = await login(formData);
 
       if (response.success) {
-        saveToken(response.token);
-        saveUser({
-          _id: response.data._id,
-          email: response.data.email,
-          full_name: response.data.full_name,
-          roles: response.data.roles || [],
-        });
-
+        toast.success("Đăng nhập thành công!");
         // Redirect based on role
         if (response.data.roles?.includes("staff")) {
           navigate("/staff/bookings");
+        } else if (response.data.roles?.includes("driver")) {
+          navigate("/driver/assignments");
         } else {
-          navigate("/");
+          navigate("/profile"); // Default to profile if customer part is not fully there or my-bookings
         }
       }
     } catch (err) {
-      setError(err.message || "Login failed. Please try again.");
+      const errorMsg = err.message || "Đăng nhập thất bại. Vui lòng thử lại.";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }

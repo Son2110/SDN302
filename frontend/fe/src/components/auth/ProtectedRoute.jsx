@@ -1,12 +1,19 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { getToken, getUser } from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 
 const ProtectedRoute = ({ allowedRoles }) => {
-    const token = getToken();
-    const user = getUser();
+    const { user, isAuthenticated, loading } = useAuth();
+
+    if (loading) {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+        );
+    }
 
     // Not logged in
-    if (!token || !user) {
+    if (!isAuthenticated || !user) {
         return <Navigate to="/login" replace />;
     }
 
@@ -16,7 +23,7 @@ const ProtectedRoute = ({ allowedRoles }) => {
         const hasRole = allowedRoles.some((role) => userRoles.includes(role));
 
         if (!hasRole) {
-            return <Navigate to="/" replace />;
+            return <Navigate to="/unauthorized" replace />;
         }
     }
 

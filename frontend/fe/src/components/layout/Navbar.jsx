@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { getUser, logout } from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 import { User, LogOut } from "lucide-react";
 
 const menuItems = [
@@ -12,17 +12,11 @@ const menuItems = [
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [user, setUser] = useState(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const { user, logout: handleLogoutContext } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const isHome = location.pathname === "/";
-
-  // Check user login status
-  useEffect(() => {
-    const currentUser = getUser();
-    setUser(currentUser);
-  }, [location]);
 
   // Đổi nền khi scroll
   useEffect(() => {
@@ -46,8 +40,7 @@ const Navbar = () => {
   }, [location]);
 
   const handleLogout = () => {
-    logout();
-    setUser(null);
+    handleLogoutContext();
     setShowUserMenu(false);
     navigate("/");
   };
@@ -127,13 +120,33 @@ const Navbar = () => {
                     >
                       Hồ Sơ Của Tôi
                     </Link>
-                    <Link
-                      to="/bookings"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      Đặt Xe Của Tôi
-                    </Link>
+                    {(!user.roles || user.roles.includes("customer")) && (
+                      <Link
+                        to="/bookings"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        Đặt Xe Của Tôi
+                      </Link>
+                    )}
+                    {user.roles?.includes("staff") && (
+                      <Link
+                        to="/staff/bookings"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        Quản Lý Nội Bộ
+                      </Link>
+                    )}
+                    {user.roles?.includes("driver") && (
+                      <Link
+                        to="/driver/assignments"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        Chuyến Đi Của Tôi
+                      </Link>
+                    )}
                     <button
                       onClick={handleLogout}
                       className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2"
