@@ -90,7 +90,7 @@ const AssignmentDetail = () => {
   const endStr = dayjs(booking.end_date).format("DD/MM/YYYY HH:mm");
 
   return (
-    <div className="bg-gray-50 min-h-screen pt-24 pb-20 px-4 sm:px-6">
+    <div className="space-y-6">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">

@@ -73,12 +73,11 @@ const DriverAssignments = () => {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen pt-24 pb-12 px-4 sm:px-6">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Phân Công Của Tôi</h1>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900">Phân Công Của Tôi</h1>
 
         {/* Filter Tabs */}
-        <div className="flex bg-white rounded-lg shadow-sm p-1 mb-6 border border-gray-200 sticky top-20 z-10 w-full overflow-x-auto">
+        <div className="flex bg-white rounded-lg shadow-sm p-1 border border-gray-200 w-full overflow-x-auto">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -185,7 +184,6 @@ const DriverAssignments = () => {
             })}
           </div>
         )}
-      </div>
     </div>
   );
 };

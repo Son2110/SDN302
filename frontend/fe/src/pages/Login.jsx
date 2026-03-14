@@ -32,20 +32,15 @@ const Login = () => {
     try {
       const response = await login(formData);
 
-      if (data.success) {
-        saveToken(data.token);
-        saveUser({
-          _id: data._id,
-          email: data.email,
-          full_name: data.full_name,
-          role: data.role // Ensure role is saved if it's returned by the API
-        });
-
-        if (data.role === "staff") {
-          navigate("/staff/bookings");
-        } else {
-          navigate("/");
-        }
+      // AuthContext.login() already saves token & user
+      const roles = response?.data?.roles || response?.roles || [];
+      
+      if (roles.includes("staff")) {
+        navigate("/staff/bookings");
+      } else if (roles.includes("driver")) {
+        navigate("/driver/assignments");
+      } else {
+        navigate("/");
       }
     } catch (err) {
       const errorMsg = err.message || "Đăng nhập thất bại. Vui lòng thử lại.";
