@@ -89,7 +89,8 @@ export const requestExtension = async (req, res) => {
 
       return res.status(200).json({
         success: false,
-        message: "Yêu cầu gia hạn bị từ chối do xe đã có người đặt trong khoảng thời gian này.",
+        message:
+          "Yêu cầu gia hạn bị từ chối do xe đã có người đặt trong khoảng thời gian này.",
         data: extensionRequest,
       });
     }
@@ -219,6 +220,9 @@ export const rejectExtension = async (req, res) => {
     // 3. Cập nhật trạng thái
     extensionRequest.status = "rejected";
     extensionRequest.processed_by = staff._id;
+    if (reject_reason) {
+      extensionRequest.reject_reason = reject_reason;
+    }
     await extensionRequest.save();
 
     res.status(200).json({

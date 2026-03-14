@@ -13,6 +13,6 @@ reviewRouter
   .post("/", protect, authorize("customer"), createReview)
   .put("/:reviewId", protect, authorize("customer"), updateReview)
   .get("/booking/:bookingId", getReviewsByBooking)
-  .get("/driver/:driverId", getDriverReviews)
+  .get("/driver/:driverId", getDriverReviews);
 
 export default reviewRouter;
