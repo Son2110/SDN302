@@ -6,6 +6,8 @@ import paymentRouter from "./routes/paymentRoutes.js";
 import driverAssignmentRouter from "./routes/driverAssignmentRoutes.js";
 import handoverRouter from "./routes/handoverRoutes.js";
 import extensionRouter from "./routes/extensionRoutes.js";
+import vehicleRouter from "./routes/vehicleRoutes.js";
+import reviewRouter from "./routes/reviewRoutes.js";
 import userRouter from "./routes/userRoutes.js";
 const app = express();
 
@@ -20,6 +22,8 @@ app.use("/api/payments", paymentRouter);
 app.use("/api/driver-assignment", driverAssignmentRouter);
 app.use("/api/handovers", handoverRouter);
 app.use("/api/extensions", extensionRouter);
+app.use("/api/vehicles", vehicleRouter);
+app.use("/api/reviews", reviewRouter);
 app.use("/api/users", userRouter);
 
 app.get("/", (req, res) => {
