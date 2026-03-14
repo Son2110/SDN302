@@ -6,8 +6,8 @@ import { User, LogOut } from "lucide-react";
 const menuItems = [
   { title: "DỊCH VỤ", to: "/#services", type: "anchor" },
   { title: "ĐỘI XE", to: "/fleet", type: "route" },
-  { title: "VỀ CHÚNG TÔI", to: "/#about", type: "anchor" },
-  { title: "LIÊN HỆ", to: "/#contact", type: "anchor" },
+  { title: "VỀ CHÚNG TÔI", to: "/about", type: "route" },
+  { title: "LIÊN HỆ", to: "/contact", type: "route" },
 ];
 
 const Navbar = () => {
@@ -48,12 +48,11 @@ const Navbar = () => {
   return (
     <nav
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-300
-        ${
-          isHome
-            ? isScrolled
-              ? "bg-black/80 backdrop-blur-lg border-b border-white/10 py-4"
-              : "bg-transparent py-6"
-            : "bg-black/90 backdrop-blur-lg border-b border-white/10 py-4"
+        ${isHome
+          ? isScrolled
+            ? "bg-black/80 backdrop-blur-lg border-b border-white/10 py-4"
+            : "bg-transparent py-6"
+          : "bg-black/90 backdrop-blur-lg border-b border-white/10 py-4"
         }
       `}
     >
@@ -80,11 +79,10 @@ const Navbar = () => {
                 <Link
                   key={item.title}
                   to={item.to}
-                  className={`text-[13px] font-bold tracking-[0.2em] transition-colors ${
-                    location.pathname === item.to
-                      ? "text-blue-400"
-                      : "text-gray-300 hover:text-blue-400"
-                  }`}
+                  className={`text-[13px] font-bold tracking-[0.2em] transition-colors ${location.pathname === item.to
+                    ? "text-blue-400"
+                    : "text-gray-300 hover:text-blue-400"
+                    }`}
                 >
                   {item.title}
                 </Link>
