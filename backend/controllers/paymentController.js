@@ -7,7 +7,7 @@ export const processDepositPayment = async (req, res) => {
     const { booking_id, payment_method, transaction_id } = req.body;
 
     //1. validate payment
-    const validMethods = ["cash", "card", "momo", "zalopay", "vnpay"];
+    const validMethods = ["cash", "card", "momo", "zalopay", "vnpay", "bank_transfer"];
     if (!validMethods.includes(payment_method))
       return res
         .status(400)
@@ -76,7 +76,7 @@ export const processFinalPayment = async (req, res) => {
     const { booking_id, payment_method, transaction_id } = req.body;
 
     // 0. Validate phương thức thanh toán
-    const validMethods = ["cash", "card", "momo", "zalopay", "vnpay"];
+    const validMethods = ["cash", "card", "momo", "zalopay", "vnpay", "bank_transfer"];
     if (!validMethods.includes(payment_method))
       return res
         .status(400)

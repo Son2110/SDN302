@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import AuthLayout from "../components/auth/AuthLayout";
-import { loginUser, saveToken, saveUser } from "../services/api";
+import { useAuth } from "../context/AuthContext";
+import toast from "react-hot-toast";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     setFormData({
@@ -28,25 +30,22 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const data = await loginUser(formData);
+      const response = await login(formData);
 
-      if (data.success) {
-        saveToken(data.token);
-        saveUser({
-          _id: data._id,
-          email: data.email,
-          full_name: data.full_name,
-          role: data.role // Ensure role is saved if it's returned by the API
-        });
-        
-        if (data.role === "staff") {
-          navigate("/staff/bookings");
-        } else {
-          navigate("/");
-        }
+      // AuthContext.login() already saves token & user
+      const roles = response?.data?.roles || response?.roles || [];
+      
+      if (roles.includes("staff")) {
+        navigate("/staff/bookings");
+      } else if (roles.includes("driver")) {
+        navigate("/driver/assignments");
+      } else {
+        navigate("/");
       }
     } catch (err) {
-      setError(err.message || "Login failed. Please try again.");
+      const errorMsg = err.message || "Đăng nhập thất bại. Vui lòng thử lại.";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }

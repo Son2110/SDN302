@@ -9,12 +9,14 @@ import {
   getMyBookings,
   getBookingById,
   getAllBookings,
+  getVehicleBookedDates,
 } from "../controllers/bookingController.js";
 
 const bookingRouter = express.Router();
 
 bookingRouter
-  .get("/available", protect, getAvailableVehicles)
+  .get("/available", getAvailableVehicles) // Public route - no auth needed
+  .get("/vehicle/:vehicleId/booked-dates", getVehicleBookedDates) // Public - get booked dates for calendar
   .get("/my-bookings", protect, authorize("customer"), getMyBookings)
   .get("/all", protect, authorize("staff"), getAllBookings)
   .get("/:id", protect, getBookingById)
