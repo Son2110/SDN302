@@ -1,139 +1,86 @@
-import { useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { getUser, logout } from "../../services/api";
-import {
-    ClipboardList,
-    Users,
-    ArrowLeftRight,
-    Clock,
-    CreditCard,
-    LogOut,
-    Menu,
-    X,
-    ChevronRight,
-} from "lucide-react";
-
-const sidebarItems = [
-    {
-        title: "Quản lý đơn",
-        to: "/staff/bookings",
-        icon: ClipboardList,
-    },
-    {
-        title: "Phân công tài xế",
-        to: "/staff/assignments",
-        icon: Users,
-    },
-    {
-        title: "Bàn giao xe",
-        to: "/staff/handovers",
-        icon: ArrowLeftRight,
-    },
-    {
-        title: "Gia hạn",
-        to: "/staff/extensions",
-        icon: Clock,
-    },
-    {
-        title: "Thanh toán",
-        to: "/staff/payments",
-        icon: CreditCard,
-    },
-];
+import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { Car, Users, Clock, CreditCard, LogOut, FileText, Home as HomeIcon } from "lucide-react";
+import { logout } from "../../services/api";
 
 const StaffLayout = () => {
-    const [sidebarOpen, setSidebarOpen] = useState(true);
-    const user = getUser();
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    const handleLogout = () => {
-        logout();
-        navigate("/login");
-    };
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
-    return (
-        <div className="flex h-screen bg-gray-100">
-            {/* Sidebar */}
-            <aside
-                className={`${sidebarOpen ? "w-64" : "w-20"
-                    } bg-gray-900 text-white transition-all duration-300 flex flex-col`}
-            >
-                {/* Logo */}
-                <div className="flex items-center justify-between px-4 py-5 border-b border-gray-700">
-                    {sidebarOpen && (
-                        <span className="text-lg font-bold tracking-wider">
-                            LUXEDRIVE
-                        </span>
-                    )}
-                    <button
-                        onClick={() => setSidebarOpen(!sidebarOpen)}
-                        className="p-1.5 rounded-lg hover:bg-gray-700 transition-colors"
-                    >
-                        {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-                    </button>
-                </div>
+  const navItems = [
+    { label: "Đơn đặt xe", icon: <Car className="w-5 h-5" />, path: "/staff/bookings" },
+    { label: "Phân công tài xế", icon: <Users className="w-5 h-5" />, path: "/staff/assignments" },
+    { label: "Biên bản bàn giao", icon: <FileText className="w-5 h-5" />, path: "/staff/handovers" },
+    { label: "Yêu cầu gia hạn", icon: <Clock className="w-5 h-5" />, path: "/staff/extensions" },
+    { label: "Thanh toán", icon: <CreditCard className="w-5 h-5" />, path: "/staff/payments" },
+  ];
 
-                {/* Staff badge */}
-                {sidebarOpen && (
-                    <div className="px-4 py-3">
-                        <span className="inline-block px-3 py-1 text-xs font-semibold bg-blue-600 rounded-full uppercase tracking-wider">
-                            Staff Panel
-                        </span>
-                    </div>
-                )}
-
-                {/* Navigation */}
-                <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-                    {sidebarItems.map((item) => (
-                        <NavLink
-                            key={item.to}
-                            to={item.to}
-                            className={({ isActive }) =>
-                                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${isActive
-                                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30"
-                                    : "text-gray-300 hover:bg-gray-800 hover:text-white"
-                                }`
-                            }
-                        >
-                            <item.icon size={20} />
-                            {sidebarOpen && (
-                                <>
-                                    <span className="flex-1">{item.title}</span>
-                                    <ChevronRight size={16} className="opacity-50" />
-                                </>
-                            )}
-                        </NavLink>
-                    ))}
-                </nav>
-
-                {/* User info + Logout */}
-                <div className="border-t border-gray-700 px-3 py-4">
-                    {sidebarOpen && (
-                        <div className="mb-3 px-3">
-                            <p className="text-sm font-medium text-white truncate">
-                                {user?.full_name || user?.email}
-                            </p>
-                            <p className="text-xs text-gray-400 truncate">{user?.email}</p>
-                        </div>
-                    )}
-                    <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:bg-red-900/30 hover:text-red-300 transition-all"
-                    >
-                        <LogOut size={20} />
-                        {sidebarOpen && <span>Đăng xuất</span>}
-                    </button>
-                </div>
-            </aside>
-
-            {/* Main Content */}
-            <main className="flex-1 overflow-auto">
-                <div className="p-6">
-                    <Outlet />
-                </div>
-            </main>
+  return (
+    <div className="flex h-screen bg-gray-50 text-gray-800">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col hidden md:flex">
+        <div className="p-6 border-b border-gray-100">
+          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+            Staff Panel
+          </h2>
         </div>
-    );
+        <nav className="flex-1 p-4 space-y-1">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) =>
+                `flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                  isActive
+                    ? "bg-blue-50 text-blue-600 shadow-sm"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`
+              }
+            >
+              {item.icon}
+              <span className="font-medium">{item.label}</span>
+            </NavLink>
+          ))}
+        </nav>
+        <div className="p-4 border-t border-gray-100 flex flex-col gap-2">
+          <NavLink
+            to="/"
+            className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 w-full px-4 py-3 rounded-xl transition-colors font-medium border border-gray-200"
+          >
+            <HomeIcon className="w-5 h-5" />
+            <span>Trở về Trang chủ</span>
+          </NavLink>
+          <button
+            onClick={handleLogout}
+            className="flex items-center space-x-3 text-red-600 hover:bg-red-50 w-full px-4 py-3 rounded-xl transition-colors font-medium"
+          >
+            <LogOut className="w-5 h-5" />
+            <span>Đăng xuất</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        {/* Mobile Header */}
+        <header className="md:hidden bg-white border-b border-gray-200 h-16 flex items-center px-4 justify-between">
+          <h2 className="text-lg font-bold text-blue-600">Staff Panel</h2>
+          <button onClick={handleLogout} className="text-red-500">
+            <LogOut className="w-5 h-5" />
+          </button>
+        </header>
+        
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 md:p-8">
+          <div className="max-w-7xl mx-auto h-full">
+            <Outlet />
+          </div>
+        </main>
+      </div>
+    </div>
+  );
 };
 
 export default StaffLayout;

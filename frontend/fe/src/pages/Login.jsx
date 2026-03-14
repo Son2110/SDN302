@@ -32,15 +32,19 @@ const Login = () => {
     try {
       const response = await login(formData);
 
-      if (response.success) {
-        toast.success("Đăng nhập thành công!");
-        // Redirect based on role
-        if (response.data.roles?.includes("staff")) {
+      if (data.success) {
+        saveToken(data.token);
+        saveUser({
+          _id: data._id,
+          email: data.email,
+          full_name: data.full_name,
+          role: data.role // Ensure role is saved if it's returned by the API
+        });
+
+        if (data.role === "staff") {
           navigate("/staff/bookings");
-        } else if (response.data.roles?.includes("driver")) {
-          navigate("/driver/assignments");
         } else {
-          navigate("/profile"); // Default to profile if customer part is not fully there or my-bookings
+          navigate("/");
         }
       }
     } catch (err) {
