@@ -444,14 +444,14 @@ export const registerAsDriver = async (req, res) => {
       });
     }
 
-    // Create Driver record
+    // Create Driver record with pending status
     const newDriver = await Driver.create({
       user: req.user._id,
       license_number,
       license_type,
       license_expiry: expiryDate,
       experience_years: parseInt(experience_years),
-      status: "available", // Default status
+      status: "pending", // Chờ staff duyệt
     });
 
     // Populate user info
@@ -459,22 +459,304 @@ export const registerAsDriver = async (req, res) => {
       .populate("user", "-password_hash")
       .lean();
 
-    // Get updated roles
-    const roles = await getUserRoles(req.user._id);
-
     res.status(201).json({
       success: true,
-      message: "Đăng ký làm tài xế thành công! Bạn có thể bắt đầu nhận chuyến.",
-      data: {
-        driver,
-        roles, // Now includes 'driver'
-      },
+      message:
+        "Đăng ký làm tài xế thành công! Vui lòng chờ nhân viên xét duyệt.",
+      data: driver,
     });
   } catch (error) {
     console.error("Error in registerAsDriver:", error);
     res.status(500).json({
       success: false,
       message: "Lỗi khi đăng ký làm tài xế",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Re-apply driver registration after rejection (Customer only)
+ * @route   PUT /api/users/driver-registration
+ * @access  Customer only
+ */
+export const reapplyAsDriver = async (req, res) => {
+  try {
+    const { license_number, license_type, license_expiry, experience_years } =
+      req.body;
+
+    if (
+      !license_number ||
+      !license_type ||
+      !license_expiry ||
+      experience_years === undefined
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Vui lòng cung cấp đầy đủ thông tin",
+      });
+    }
+
+    // Must have an existing rejected record
+    const existingDriver = await Driver.findOne({ user: req.user._id });
+    if (!existingDriver) {
+      return res.status(400).json({
+        success: false,
+        message: "Bạn chưa đăng ký làm tài xế",
+      });
+    }
+    if (existingDriver.status !== "rejected") {
+      return res.status(400).json({
+        success: false,
+        message: "Chỉ có thể nộp lại khi hồ sơ bị từ chối",
+      });
+    }
+
+    // Check license_expiry is in the future
+    const expiryDate = new Date(license_expiry);
+    if (expiryDate < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "Giấy phép lái xe đã hết hạn",
+      });
+    }
+
+    // Check license_number unique (excluding own record)
+    const duplicateLicense = await Driver.findOne({
+      license_number,
+      _id: { $ne: existingDriver._id },
+    });
+    if (duplicateLicense) {
+      return res.status(400).json({
+        success: false,
+        message: "Số giấy phép lái xe đã được đăng ký bởi người khác",
+      });
+    }
+
+    // Update record back to pending
+    existingDriver.license_number = license_number;
+    existingDriver.license_type = license_type;
+    existingDriver.license_expiry = expiryDate;
+    existingDriver.experience_years = parseInt(experience_years);
+    existingDriver.status = "pending";
+    existingDriver.rejection_reason = undefined;
+    await existingDriver.save();
+
+    const driver = await Driver.findById(existingDriver._id)
+      .populate("user", "-password_hash")
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      message: "Nộp lại hồ sơ thành công! Vui lòng chờ nhân viên xét duyệt.",
+      data: driver,
+    });
+  } catch (error) {
+    console.error("Error in reapplyAsDriver:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi nộp lại hồ sơ",
+      error: error.message,
+    });
+  }
+};
+
+export const getMyDriverStatus = async (req, res) => {
+  try {
+    const driver = await Driver.findOne({ user: req.user._id })
+      .populate("approved_by", "full_name email")
+      .lean();
+
+    if (!driver) {
+      return res.status(200).json({
+        success: true,
+        data: null, // Chưa đăng ký
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: driver,
+    });
+  } catch (error) {
+    console.error("Error in getMyDriverStatus:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy trạng thái đăng ký tài xế",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Get pending drivers (Staff only)
+ * @route   GET /api/users/drivers/pending
+ * @access  Staff only
+ */
+export const getPendingDrivers = async (req, res) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (page - 1) * limit;
+
+    // Get pending drivers only
+    const drivers = await Driver.find({ status: "pending" })
+      .populate("user", "-password_hash")
+      .sort({ createdAt: -1 }) // Newest first
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+
+    const total = await Driver.countDocuments({ status: "pending" });
+
+    res.status(200).json({
+      success: true,
+      count: drivers.length,
+      total,
+      page: parseInt(page),
+      pages: Math.ceil(total / limit),
+      data: drivers,
+    });
+  } catch (error) {
+    console.error("Error in getPendingDrivers:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy danh sách tài xế chờ duyệt",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Get driver statistics (Staff only)
+ * @route   GET /api/users/drivers/stats
+ * @access  Staff only
+ */
+export const getDriverStats = async (req, res) => {
+  try {
+    const total = await Driver.countDocuments();
+    const pending = await Driver.countDocuments({ status: "pending" });
+    const available = await Driver.countDocuments({ status: "available" });
+    const busy = await Driver.countDocuments({ status: "busy" });
+    const offline = await Driver.countDocuments({ status: "offline" });
+    const rejected = await Driver.countDocuments({ status: "rejected" });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        total,
+        pending,
+        available,
+        busy,
+        offline,
+        rejected,
+      },
+    });
+  } catch (error) {
+    console.error("Error in getDriverStats:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy thống kê tài xế",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Approve driver registration (Staff only)
+ * @route   PATCH /api/users/drivers/:id/approve
+ * @access  Staff only
+ */
+export const approveDriver = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const driver = await Driver.findById(id);
+    if (!driver) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy tài xế",
+      });
+    }
+
+    if (driver.status !== "pending") {
+      return res.status(400).json({
+        success: false,
+        message: "Tài xế này đã được xử lý rồi",
+      });
+    }
+
+    // Update driver status to available
+    driver.status = "available";
+    driver.approved_at = new Date();
+    driver.approved_by = req.user._id;
+    await driver.save();
+
+    // Populate user info
+    const updatedDriver = await Driver.findById(driver._id)
+      .populate("user", "-password_hash")
+      .populate("approved_by", "full_name email")
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      message: "Đã duyệt tài xế thành công",
+      data: updatedDriver,
+    });
+  } catch (error) {
+    console.error("Error in approveDriver:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi duyệt tài xế",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Reject driver registration (Staff only)
+ * @route   PATCH /api/users/drivers/:id/reject
+ * @access  Staff only
+ */
+export const rejectDriver = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rejection_reason } = req.body;
+
+    const driver = await Driver.findById(id);
+    if (!driver) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy tài xế",
+      });
+    }
+
+    if (driver.status !== "pending") {
+      return res.status(400).json({
+        success: false,
+        message: "Tài xế này đã được xử lý rồi",
+      });
+    }
+
+    // Update driver status to rejected
+    driver.status = "rejected";
+    driver.rejection_reason = rejection_reason || "Không đáp ứng yêu cầu";
+    await driver.save();
+
+    // Populate user info
+    const updatedDriver = await Driver.findById(driver._id)
+      .populate("user", "-password_hash")
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      message: "Đã từ chối tài xế",
+      data: updatedDriver,
+    });
+  } catch (error) {
+    console.error("Error in rejectDriver:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi từ chối tài xế",
       error: error.message,
     });
   }

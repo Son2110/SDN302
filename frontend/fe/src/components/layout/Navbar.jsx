@@ -48,11 +48,12 @@ const Navbar = () => {
   return (
     <nav
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-300
-        ${isHome
-          ? isScrolled
-            ? "bg-black/80 backdrop-blur-lg border-b border-white/10 py-4"
-            : "bg-transparent py-6"
-          : "bg-black/90 backdrop-blur-lg border-b border-white/10 py-4"
+        ${
+          isHome
+            ? isScrolled
+              ? "bg-black/80 backdrop-blur-lg border-b border-white/10 py-4"
+              : "bg-transparent py-6"
+            : "bg-black/90 backdrop-blur-lg border-b border-white/10 py-4"
         }
       `}
     >
@@ -79,10 +80,11 @@ const Navbar = () => {
                 <Link
                   key={item.title}
                   to={item.to}
-                  className={`text-[13px] font-bold tracking-[0.2em] transition-colors ${location.pathname === item.to
-                    ? "text-blue-400"
-                    : "text-gray-300 hover:text-blue-400"
-                    }`}
+                  className={`text-[13px] font-bold tracking-[0.2em] transition-colors ${
+                    location.pathname === item.to
+                      ? "text-blue-400"
+                      : "text-gray-300 hover:text-blue-400"
+                  }`}
                 >
                   {item.title}
                 </Link>
@@ -119,13 +121,31 @@ const Navbar = () => {
                       Hồ Sơ Của Tôi
                     </Link>
                     {(!user.roles || user.roles.includes("customer")) && (
-                      <Link
-                        to="/bookings"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        Đặt Xe Của Tôi
-                      </Link>
+                      <>
+                        <Link
+                          to="/my-bookings"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          Đặt Xe Của Tôi
+                        </Link>
+                        <Link
+                          to="/my-extensions"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          Yêu Cầu Gia Hạn
+                        </Link>
+                        {!user.roles?.includes("driver") && (
+                          <Link
+                            to="/driver-registration"
+                            className="block px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 font-semibold"
+                            onClick={() => setShowUserMenu(false)}
+                          >
+                            Đăng Ký Làm Tài Xế
+                          </Link>
+                        )}
+                      </>
                     )}
                     {user.roles?.includes("staff") && (
                       <Link

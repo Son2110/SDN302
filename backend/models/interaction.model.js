@@ -20,7 +20,7 @@ const reviewSchema = new mongoose.Schema(
 
     review_type: {
       type: String,
-      enum: ["vehicle", "driver", "overall"],
+      enum: ["driver", "overall"],
       required: true,
     },
     rating: { type: Number, required: true, min: 1, max: 5 },

@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Review } from "../models/interaction.model.js";
 import { Booking } from "../models/booking.model.js";
 import { Customer, Driver } from "../models/user.model.js";
@@ -86,9 +87,10 @@ export const createReview = async (req, res) => {
     });
 
     if (existingReview) {
+      const typeLabel = review_type === "driver" ? "tài xế" : "chuyến đi";
       return res.status(400).json({
         success: false,
-        message: `Bạn đã đánh giá ${review_type === "driver" ? "tài xế" : "chuyến đi"} cho booking này rồi`,
+        message: `Bạn đã đánh giá ${typeLabel} cho booking này rồi`,
       });
     }
 
@@ -109,14 +111,15 @@ export const createReview = async (req, res) => {
 
     const review = await Review.create(reviewData);
 
-    // --- Nếu review driver → cập nhật rating trung bình cho Driver ---
+    // --- Cập nhật rating trung bình cho driver ---
     if (review_type === "driver" && booking.driver) {
       await updateDriverRating(booking.driver);
     }
 
+    const typeLabel = review_type === "driver" ? "tài xế" : "chuyến đi";
     return res.status(201).json({
       success: true,
-      message: `Đánh giá ${review_type === "driver" ? "tài xế" : "chuyến đi"} thành công`,
+      message: `Đánh giá ${typeLabel} thành công`,
       data: review,
     });
   } catch (error) {
@@ -260,7 +263,7 @@ export const updateReview = async (req, res) => {
 
     await review.save();
 
-    // Nếu là review driver → cập nhật lại rating trung bình
+    // Cập nhật lại rating trung bình
     if (review.review_type === "driver" && review.driver) {
       await updateDriverRating(review.driver);
     }
@@ -282,10 +285,11 @@ export const updateReview = async (req, res) => {
 
 // ==================== HELPER: Cập nhật rating trung bình cho Driver ====================
 const updateDriverRating = async (driverId) => {
+  const id = new mongoose.Types.ObjectId(driverId);
   const result = await Review.aggregate([
     {
       $match: {
-        driver: driverId,
+        driver: id,
         review_type: "driver",
       },
     },

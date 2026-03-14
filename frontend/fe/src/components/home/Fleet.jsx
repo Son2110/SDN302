@@ -1,34 +1,60 @@
-const Fleets = [
-  {
-    name: "VinFast VF 8",
-    type: "SUV THỂ THAO",
-    price: "1.200.000",
-    image: "https://shop.vinfastauto.com/on/demandware.static/-/Sites-app_vinfast_vn-Library/default/dw1f936f89/reserves/VF8/vf8plus.webp",
-  },
-  {
-    name: "VinFast VF 9",
-    type: "SUV HẠNG SANG",
-    price: "2.500.000",
-    image:
-      "https://shop.vinfastauto.com/on/demandware.static/-/Sites-app_vinfast_vn-Library/default/dw84760cc5/images/PDP/vf9/202406/exterior/CE18.webp",
-  },
-  {
-    name: "VinFast VF e34",
-    type: "SUV ĐÔ THỊ",
-    price: "900.000",
-    image:
-      "https://vinfast.danang.vn/wp-content/uploads/2023/03/vinfast-vf-e34-mau-trang.png.webp",
-  },
-  {
-    name: "VinFast VF 6",
-    type: "SUV GIA ĐÌNH",
-    price: "1.000.000",
-    image:
-      "https://vinfastotothanhhoa.vn/OTO3602400618/files/san_pham/VF6/mau_xe/CE11.webp",
-  },
-];
+import { useState, useEffect } from "react";
+import { getAllVehicles } from "../../services/vehicleApi";
+import { Link } from "react-router-dom";
 
 const Fleet = () => {
+  const [vehicles, setVehicles] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTopVehicles = async () => {
+      try {
+        setLoading(true);
+        const data = await getAllVehicles();
+
+        // Lấy 4 xe đầu tiên có status available
+        const topVehicles = data
+          .filter((v) => v.status === "available")
+          .slice(0, 4);
+
+        setVehicles(topVehicles);
+      } catch (error) {
+        console.error("Failed to fetch vehicles:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTopVehicles();
+  }, []);
+
+  if (loading) {
+    return (
+      <section className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <p className="text-xs tracking-[0.35em] text-blue-600 font-semibold uppercase mb-3">
+              Bộ Sưu Tập Độc Quyền
+            </p>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 uppercase">
+              Đội Xe Nổi Bật
+            </h2>
+            <div className="w-20 h-1 bg-blue-600 mx-auto mt-4" />
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="animate-pulse">
+                <div className="h-56 bg-gray-200 rounded-2xl mb-4"></div>
+                <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-6">
@@ -45,35 +71,47 @@ const Fleet = () => {
 
         {/* Fleet cards */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {Fleets.map((car) => (
-            <div
-              key={car.name}
+          {vehicles.map((car) => (
+            <Link
+              key={car._id}
+              to={`/fleet/${car._id}`}
               className="group rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden"
             >
               {/* Image Area */}
               <div className="relative h-56 flex items-center justify-center bg-gray-50 overflow-hidden">
                 <img
-                  src={car.image}
-                  alt={car.name}
+                  src={car.image_urls?.[0] || "/placeholder-car.jpg"}
+                  alt={`${car.brand} ${car.model}`}
                   className="w-[90%] object-contain transition-transform duration-700 group-hover:scale-110"
                 />
 
                 <span className="absolute top-4 left-4 bg-blue-600 text-white text-[10px] font-bold tracking-widest px-3 py-1 rounded-full uppercase">
-                  {car.type}
+                  {car.vehicle_type?.category === "luxury"
+                    ? "HẠNG SANG"
+                    : car.vehicle_type?.category === "suv"
+                      ? "SUV"
+                      : car.vehicle_type?.category === "van"
+                        ? "VAN"
+                        : "SEDAN"}
                 </span>
               </div>
 
               {/* Content Area */}
               <div className="p-6">
                 <h3 className="font-bold text-xl text-gray-900 mb-4 group-hover:text-blue-600 transition-colors">
-                  {car.name}
+                  {car.brand} {car.model}
                 </h3>
 
                 <div className="flex items-center justify-between border-t border-gray-100 pt-5">
                   <div className="flex flex-col">
-                    <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Giá thuê từ</span>
+                    <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">
+                      Giá thuê từ
+                    </span>
                     <span className="text-lg font-black text-blue-600">
-                      {car.price} <span className="text-xs font-normal text-gray-500">đ/ngày</span>
+                      {car.daily_rate.toLocaleString("vi-VN")}{" "}
+                      <span className="text-xs font-normal text-gray-500">
+                        đ/ngày
+                      </span>
                     </span>
                   </div>
 
@@ -82,19 +120,21 @@ const Fleet = () => {
                   </button>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 
         {/* View all */}
         <div className="text-center mt-16">
-          <a
-            href="#"
+          <Link
+            to="/fleet"
             className="group inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-gray-400 hover:text-blue-600 transition-all"
           >
-            Xem tất cả các dòng xe 
-            <span className="group-hover:translate-x-2 transition-transform">→</span>
-          </a>
+            Xem tất cả các dòng xe
+            <span className="group-hover:translate-x-2 transition-transform">
+              →
+            </span>
+          </Link>
         </div>
       </div>
     </section>

@@ -6,22 +6,59 @@ import { getVehicleBookedDates } from "../../services/vehicleApi";
 import { getToken } from "../../services/api";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import toast from "react-hot-toast";
 
 // Phí tài xế mỗi ngày
 const DRIVER_FEE_PER_DAY = 500000;
 
 // Danh sách địa điểm nổi bật tại TP.HCM
 const POPULAR_LOCATIONS = [
-  { id: 1, name: "Sân bay Tân Sơn Nhất", address: "Trường Sơn, P.2, Tân Bình, TP.HCM" },
-  { id: 2, name: "Tòa Bitexco Financial Tower", address: "2 Hải Triều, Bến Nghé, Q.1, TP.HCM" },
+  {
+    id: 1,
+    name: "Sân bay Tân Sơn Nhất",
+    address: "Trường Sơn, P.2, Tân Bình, TP.HCM",
+  },
+  {
+    id: 2,
+    name: "Tòa Bitexco Financial Tower",
+    address: "2 Hải Triều, Bến Nghé, Q.1, TP.HCM",
+  },
   { id: 3, name: "Chợ Bến Thành", address: "Lê Lợi, Bến Thành, Q.1, TP.HCM" },
-  { id: 4, name: "Phố đi bộ Nguyễn Huệ", address: "Nguyễn Huệ, Bến Nghé, Q.1, TP.HCM" },
-  { id: 5, name: "Nhà hát Thành phố", address: "7 Công Trường Lam Sơn, Q.1, TP.HCM" },
-  { id: 6, name: "Dinh Độc Lập", address: "135 Nam Kỳ Khởi Nghĩa, Q.1, TP.HCM" },
-  { id: 7, name: "Nhà thờ Đức Bà", address: "1 Công xã Paris, Bến Nghé, Q.1, TP.HCM" },
-  { id: 8, name: "Bưu điện Thành phố", address: "2 Công xã Paris, Bến Nghé, Q.1, TP.HCM" },
-  { id: 9, name: "Bảo tàng Chứng tích Chiến tranh", address: "28 Võ Văn Tần, Q.3, TP.HCM" },
-  { id: 10, name: "Landmark 81", address: "720A Điện Biên Phủ, Bình Thạnh, TP.HCM" },
+  {
+    id: 4,
+    name: "Phố đi bộ Nguyễn Huệ",
+    address: "Nguyễn Huệ, Bến Nghé, Q.1, TP.HCM",
+  },
+  {
+    id: 5,
+    name: "Nhà hát Thành phố",
+    address: "7 Công Trường Lam Sơn, Q.1, TP.HCM",
+  },
+  {
+    id: 6,
+    name: "Dinh Độc Lập",
+    address: "135 Nam Kỳ Khởi Nghĩa, Q.1, TP.HCM",
+  },
+  {
+    id: 7,
+    name: "Nhà thờ Đức Bà",
+    address: "1 Công xã Paris, Bến Nghé, Q.1, TP.HCM",
+  },
+  {
+    id: 8,
+    name: "Bưu điện Thành phố",
+    address: "2 Công xã Paris, Bến Nghé, Q.1, TP.HCM",
+  },
+  {
+    id: 9,
+    name: "Bảo tàng Chứng tích Chiến tranh",
+    address: "28 Võ Văn Tần, Q.3, TP.HCM",
+  },
+  {
+    id: 10,
+    name: "Landmark 81",
+    address: "720A Điện Biên Phủ, Bình Thạnh, TP.HCM",
+  },
 ];
 
 const BookingCard = ({ car }) => {
@@ -36,8 +73,10 @@ const BookingCard = ({ car }) => {
 
   const [showPickupDropdown, setShowPickupDropdown] = useState(false);
   const [showReturnDropdown, setShowReturnDropdown] = useState(false);
-  const [filteredPickupLocations, setFilteredPickupLocations] = useState(POPULAR_LOCATIONS);
-  const [filteredReturnLocations, setFilteredReturnLocations] = useState(POPULAR_LOCATIONS);
+  const [filteredPickupLocations, setFilteredPickupLocations] =
+    useState(POPULAR_LOCATIONS);
+  const [filteredReturnLocations, setFilteredReturnLocations] =
+    useState(POPULAR_LOCATIONS);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [bookedDates, setBookedDates] = useState([]);
@@ -54,8 +93,8 @@ const BookingCard = ({ car }) => {
       try {
         setLoadingDates(true);
         const response = await getVehicleBookedDates(car._id);
-        console.log('📅 Booked dates for vehicle:', car._id);
-        console.log('📅 Booked ranges:', response.data);
+        console.log("📅 Booked dates for vehicle:", car._id);
+        console.log("📅 Booked ranges:", response.data);
         setBookedDates(response.data || []);
       } catch (err) {
         console.error("Error loading booked dates:", err);
@@ -151,7 +190,7 @@ const BookingCard = ({ car }) => {
     const filtered = POPULAR_LOCATIONS.filter(
       (loc) =>
         loc.name.toLowerCase().includes(value.toLowerCase()) ||
-        loc.address.toLowerCase().includes(value.toLowerCase())
+        loc.address.toLowerCase().includes(value.toLowerCase()),
     );
     setFilteredPickupLocations(filtered);
     setShowPickupDropdown(true);
@@ -162,19 +201,25 @@ const BookingCard = ({ car }) => {
     const filtered = POPULAR_LOCATIONS.filter(
       (loc) =>
         loc.name.toLowerCase().includes(value.toLowerCase()) ||
-        loc.address.toLowerCase().includes(value.toLowerCase())
+        loc.address.toLowerCase().includes(value.toLowerCase()),
     );
     setFilteredReturnLocations(filtered);
     setShowReturnDropdown(true);
   };
 
   const selectPickupLocation = (location) => {
-    setFormData({ ...formData, pickupLocation: `${location.name} - ${location.address}` });
+    setFormData({
+      ...formData,
+      pickupLocation: `${location.name} - ${location.address}`,
+    });
     setShowPickupDropdown(false);
   };
 
   const selectReturnLocation = (location) => {
-    setFormData({ ...formData, returnLocation: `${location.name} - ${location.address}` });
+    setFormData({
+      ...formData,
+      returnLocation: `${location.name} - ${location.address}`,
+    });
     setShowReturnDropdown(false);
   };
 
@@ -198,13 +243,13 @@ const BookingCard = ({ car }) => {
       return;
     }
 
-    // Check if selected dates have any booked days  
-    console.log('🔍 Checking booking conflict...');
-    console.log('Selected dates:', {
-      start: formData.startDate.toISOString().split('T')[0],
-      end: formData.endDate.toISOString().split('T')[0]
+    // Check if selected dates have any booked days
+    console.log("🔍 Checking booking conflict...");
+    console.log("Selected dates:", {
+      start: formData.startDate.toISOString().split("T")[0],
+      end: formData.endDate.toISOString().split("T")[0],
     });
-    console.log('Booked ranges:', bookedDates);
+    console.log("Booked ranges:", bookedDates);
 
     // Check for overlap with booked ranges
     const hasOverlap = bookedDates.some((range) => {
@@ -223,15 +268,15 @@ const BookingCard = ({ car }) => {
       const overlap = selectedStart < rangeEnd && selectedEnd > rangeStart;
 
       if (overlap) {
-        console.log('❌ Overlap found with:', {
+        console.log("❌ Overlap found with:", {
           bookedRange: {
-            start: rangeStart.toISOString().split('T')[0],
-            end: rangeEnd.toISOString().split('T')[0]
+            start: rangeStart.toISOString().split("T")[0],
+            end: rangeEnd.toISOString().split("T")[0],
           },
           selectedRange: {
-            start: selectedStart.toISOString().split('T')[0],
-            end: selectedEnd.toISOString().split('T')[0]
-          }
+            start: selectedStart.toISOString().split("T")[0],
+            end: selectedEnd.toISOString().split("T")[0],
+          },
         });
       }
 
@@ -239,7 +284,9 @@ const BookingCard = ({ car }) => {
     });
 
     if (hasOverlap) {
-      setError("Xe đã được khách khác đặt trong khoảng thời gian này. Vui lòng chọn thời gian khác.");
+      setError(
+        "Xe đã được khách khác đặt trong khoảng thời gian này. Vui lòng chọn thời gian khác.",
+      );
       return;
     }
 
@@ -252,36 +299,57 @@ const BookingCard = ({ car }) => {
     // Helper function to format date to YYYY-MM-DD in local timezone
     const formatDateLocal = (date) => {
       const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
       return `${year}-${month}-${day}`;
     };
 
-    // Lưu thông tin booking vào localStorage để dùng ở bước tiếp theo
-    const bookingData = {
+    // Check if user is logged in
+    const token = getToken();
+    if (!token) {
+      toast.error("Vui lòng đăng nhập để đặt xe");
+      navigate("/login");
+      return;
+    }
+
+    // Create booking payload for API
+    const bookingPayload = {
       vehicle_id: car._id,
-      vehicle: {
-        brand: car.brand,
-        model: car.model,
-        daily_rate: car.daily_rate,
-        image_urls: car.image_urls,
-        license_plate: car.license_plate,
-      },
       start_date: formatDateLocal(formData.startDate),
       end_date: formatDateLocal(formData.endDate),
       rental_type: formData.rentalType,
       pickup_location: formData.pickupLocation,
       return_location: formData.returnLocation,
-      total_amount: calculateTotalPrice(),
-      vehicle_cost: calculateVehicleCost(),
-      driver_fee: calculateDriverFee(),
-      billable_days: calculateBillableDays(),
     };
 
-    localStorage.setItem('pendingBooking', JSON.stringify(bookingData));
+    try {
+      setLoading(true);
+      setError("");
 
-    // Navigate đến trang điền thông tin khách hàng
-    navigate('/booking/customer-info');
+      const response = await createBooking(bookingPayload);
+
+      if (response.success && response.data) {
+        // Backend returns booking_id, not _id
+        const bookingId = response.data.booking_id || response.data._id;
+
+        if (!bookingId) {
+          throw new Error("Không nhận được mã đơn hàng từ server");
+        }
+
+        toast.success("Đặt xe thành công! Vui lòng thanh toán cọc.");
+
+        // Navigate to deposit payment page
+        navigate(`/booking/deposit/${bookingId}`);
+      } else {
+        throw new Error("Invalid response format");
+      }
+    } catch (err) {
+      console.error("Booking error:", err);
+      setError(err.message || "Không thể tạo đơn đặt xe. Vui lòng thử lại.");
+      toast.error(err.message || "Đặt xe thất bại");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -293,7 +361,10 @@ const BookingCard = ({ car }) => {
             Giá thuê ngày
           </p>
           <span className="text-3xl font-black text-gray-900">
-            {car?.daily_rate ? new Intl.NumberFormat("vi-VN").format(car.daily_rate) : "N/A"}đ
+            {car?.daily_rate
+              ? new Intl.NumberFormat("vi-VN").format(car.daily_rate)
+              : "N/A"}
+            đ
           </span>
           <span className="text-sm text-gray-500 ml-2">/ngày</span>
         </div>
@@ -309,29 +380,42 @@ const BookingCard = ({ car }) => {
             {/* Tổng thời gian thuê (billable days only) */}
             <div className="flex justify-between items-center">
               <p className="text-sm text-gray-600">Tổng thời gian thuê</p>
-              <p className="text-lg font-bold text-gray-900">{calculateBillableDays()} ngày</p>
+              <p className="text-lg font-bold text-gray-900">
+                {calculateBillableDays()} ngày
+              </p>
             </div>
 
             {/* Price Breakdown */}
             <div className="pt-2 border-t border-blue-200 space-y-1">
               <div className="flex justify-between items-center text-sm">
-                <p className="text-gray-600">Giá thuê xe ({calculateBillableDays()} ngày)</p>
+                <p className="text-gray-600">
+                  Giá thuê xe ({calculateBillableDays()} ngày)
+                </p>
                 <p className="font-semibold text-gray-900">
-                  {new Intl.NumberFormat("vi-VN").format(calculateVehicleCost())}đ
+                  {new Intl.NumberFormat("vi-VN").format(
+                    calculateVehicleCost(),
+                  )}
+                  đ
                 </p>
               </div>
               {formData.rentalType === "with_driver" && (
                 <div className="flex justify-between items-center text-sm">
-                  <p className="text-gray-600">Phí tài xế ({calculateBillableDays()} ngày × 500k)</p>
+                  <p className="text-gray-600">
+                    Phí tài xế ({calculateBillableDays()} ngày × 500k)
+                  </p>
                   <p className="font-semibold text-amber-600">
-                    {new Intl.NumberFormat("vi-VN").format(calculateDriverFee())}đ
+                    {new Intl.NumberFormat("vi-VN").format(
+                      calculateDriverFee(),
+                    )}
+                    đ
                   </p>
                 </div>
               )}
               <div className="pt-2 border-t border-blue-300 flex justify-between items-center">
                 <p className="text-sm font-bold text-gray-700">Tổng giá</p>
                 <p className="text-xl font-black text-blue-600">
-                  {new Intl.NumberFormat("vi-VN").format(calculateTotalPrice())}đ
+                  {new Intl.NumberFormat("vi-VN").format(calculateTotalPrice())}
+                  đ
                 </p>
               </div>
             </div>
@@ -399,7 +483,8 @@ const BookingCard = ({ car }) => {
 
         {bookedDates.length > 0 && (
           <p className="text-xs text-gray-600">
-            <span className="font-semibold">Lưu ý:</span> Các ngày hiển thị màu xám trên lịch là ngày xe đã được đặt.
+            <span className="font-semibold">Lưu ý:</span> Các ngày hiển thị màu
+            xám trên lịch là ngày xe đã được đặt.
           </p>
         )}
         {/* Pickup Location with Dropdown */}
@@ -490,22 +575,28 @@ const BookingCard = ({ car }) => {
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
-              onClick={() => setFormData({ ...formData, rentalType: "self_drive" })}
-              className={`flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl font-semibold text-sm transition-all ${formData.rentalType === "self_drive"
-                ? "border-blue-500 bg-blue-50 text-blue-700"
-                : "border-gray-200 text-gray-600 hover:border-gray-300"
-                }`}
+              onClick={() =>
+                setFormData({ ...formData, rentalType: "self_drive" })
+              }
+              className={`flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl font-semibold text-sm transition-all ${
+                formData.rentalType === "self_drive"
+                  ? "border-blue-500 bg-blue-50 text-blue-700"
+                  : "border-gray-200 text-gray-600 hover:border-gray-300"
+              }`}
             >
               <User size={18} />
               Tự lái
             </button>
             <button
               type="button"
-              onClick={() => setFormData({ ...formData, rentalType: "with_driver" })}
-              className={`flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl font-semibold text-sm transition-all ${formData.rentalType === "with_driver"
-                ? "border-blue-500 bg-blue-50 text-blue-700"
-                : "border-gray-200 text-gray-600 hover:border-gray-300"
-                }`}
+              onClick={() =>
+                setFormData({ ...formData, rentalType: "with_driver" })
+              }
+              className={`flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl font-semibold text-sm transition-all ${
+                formData.rentalType === "with_driver"
+                  ? "border-blue-500 bg-blue-50 text-blue-700"
+                  : "border-gray-200 text-gray-600 hover:border-gray-300"
+              }`}
             >
               <Users size={18} />
               Có tài xế

@@ -47,9 +47,15 @@ const driverSchema = new mongoose.Schema({
   total_trips: { type: Number, default: 0 },
   status: {
     type: String,
-    enum: ["available", "busy", "offline"],
-    default: "offline",
+    enum: ["pending", "available", "busy", "offline", "rejected"],
+    default: "pending",
   },
+  approved_at: { type: Date },
+  approved_by: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
+  rejection_reason: { type: String },
 });
 
 // --- Staff Schema ---
