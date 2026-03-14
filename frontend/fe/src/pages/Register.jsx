@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import AuthLayout from "../components/auth/AuthLayout";
-import { registerUser, saveToken, saveUser } from "../services/api";
+import { useAuth } from "../context/AuthContext";
+import toast from "react-hot-toast";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { register } = useAuth();
 
   const handleChange = (e) => {
     setFormData({
@@ -46,18 +48,16 @@ const Register = () => {
 
     try {
       const { confirmPassword, ...userData } = formData;
-      const data = await registerUser(userData);
+      const data = await register(userData);
 
       if (data.success) {
-        saveToken(data.token);
-        saveUser({
-          _id: data._id,
-          email: data.email,
-        });
-        navigate("/");
+        toast.success("Đăng ký thành công!");
+        navigate("/profile");
       }
     } catch (err) {
-      setError(err.message || "Đăng ký thất bại. Vui lòng thử lại.");
+      const errorMsg = err.message || "Đăng ký thất bại. Vui lòng thử lại.";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }

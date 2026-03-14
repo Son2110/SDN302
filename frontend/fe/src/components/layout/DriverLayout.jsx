@@ -1,8 +1,8 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { Car, Users, Clock, CreditCard, LogOut, FileText, Home as HomeIcon } from "lucide-react";
+import { ClipboardList, LogOut, Home as HomeIcon } from "lucide-react";
 import { logout } from "../../services/api";
 
-const StaffLayout = () => {
+const DriverLayout = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -11,11 +11,7 @@ const StaffLayout = () => {
   };
 
   const navItems = [
-    { label: "Đơn đặt xe", icon: <Car className="w-5 h-5" />, path: "/staff/bookings" },
-    { label: "Phân công tài xế", icon: <Users className="w-5 h-5" />, path: "/staff/assignments" },
-    { label: "Biên bản bàn giao", icon: <FileText className="w-5 h-5" />, path: "/staff/handovers" },
-    { label: "Yêu cầu gia hạn", icon: <Clock className="w-5 h-5" />, path: "/staff/extensions" },
-    { label: "Thanh toán", icon: <CreditCard className="w-5 h-5" />, path: "/staff/payments" },
+    { label: "Phân công của tôi", icon: <ClipboardList className="w-5 h-5" />, path: "/driver/assignments" },
   ];
 
   return (
@@ -23,8 +19,8 @@ const StaffLayout = () => {
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col hidden md:flex">
         <div className="p-6 border-b border-gray-100">
-          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
-            Staff Panel
+          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-teal-600">
+            Driver Panel
           </h2>
         </div>
         <nav className="flex-1 p-4 space-y-1">
@@ -35,7 +31,7 @@ const StaffLayout = () => {
               className={({ isActive }) =>
                 `flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${
                   isActive
-                    ? "bg-blue-50 text-blue-600 shadow-sm"
+                    ? "bg-emerald-50 text-emerald-600 shadow-sm"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }`
               }
@@ -67,7 +63,7 @@ const StaffLayout = () => {
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Mobile Header */}
         <header className="md:hidden bg-white border-b border-gray-200 h-16 flex items-center px-4 justify-between">
-          <h2 className="text-lg font-bold text-blue-600">Staff Panel</h2>
+          <h2 className="text-lg font-bold text-emerald-600">Driver Panel</h2>
           <button onClick={handleLogout} className="text-red-500">
             <LogOut className="w-5 h-5" />
           </button>
@@ -83,4 +79,4 @@ const StaffLayout = () => {
   );
 };
 
-export default StaffLayout;
+export default DriverLayout;
