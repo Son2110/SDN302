@@ -9,7 +9,7 @@ const services = [
       "https://www.ecorentacar.com/wp-content/uploads/2019/08/Chauffeur-drive-car-rental.png",
   },
   {
-    title: "Trải Nghiệm Tự Lái",
+    title: "Thuê xe tự lái",
     desc: "Trực tiếp cầm lái những siêu phẩm xe điện hàng đầu thế giới cho những chuyến đi cuối tuần đầy cảm hứng và phấn khích.",
     icon: Car,
     image:
@@ -17,17 +17,19 @@ const services = [
   },
   {
     title: "Đưa Đón Sân Bay",
-    desc: "Chúng tôi luôn theo dõi lịch trình chuyến bay để đảm bảo đón bạn đúng giờ, mang lại sự kết nối hoàn hảo từ phi đạo đến mặt đất.",
+    desc: "Chúng tôi luôn theo dõi lịch trình chuyến bay để đảm bảo đón bạn đúng giờ.",
     icon: Plane,
     image:
-      "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&q=80&w=1000", // Thay link ảnh hỏng (base64) bằng link minh họa sạch hơn
+      "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&q=80&w=1000",
+    comingSoon: true,
   },
   {
     title: "Sự Kiện & Tiệc Cưới",
-    desc: "Tạo nên khoảnh khắc xuất hiện ấn tượng trong những dịp trọng đại với đội xe điện sang trọng và đẳng cấp nhất.",
+    desc: "Tạo nên khoảnh khắc xuất hiện ấn tượng trong những dịp trọng đại.",
     icon: PartyPopper,
     image:
       "https://imgbizhub.vietnamnews.vn//MediaUpload/Article/2025/5/29/427098-5176876930787135-A3.jpeg",
+    comingSoon: true,
   },
 ];
 
@@ -46,61 +48,62 @@ const Services = () => {
               lại sự tiện nghi và bền vững.
             </p>
           </div>
-
-          {/* Điều hướng (demo) */}
-          <div className="flex gap-3">
-            <button className="w-12 h-12 rounded-full border border-gray-300 flex items-center justify-center text-gray-500 hover:bg-black hover:text-white hover:border-black transition-all duration-300">
-              <span className="text-xl">←</span>
-            </button>
-            <button className="w-12 h-12 rounded-full border border-gray-300 flex items-center justify-center text-gray-500 hover:bg-black hover:text-white hover:border-black transition-all duration-300">
-              <span className="text-xl">→</span>
-            </button>
-          </div>
         </div>
 
         {/* Cards */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {services.map((s) => (
-            <div
-              key={s.title}
-              className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group"
-            >
-              {/* Image Container */}
-              <div className="relative">
-                <div className="h-52 overflow-hidden">
+          {services.map((s) => {
+            const Icon = s.icon;
+
+            return (
+              <div
+                key={s.title}
+                className={`relative bg-white rounded-2xl overflow-hidden shadow-sm
+                ${!s.comingSoon ? "hover:shadow-2xl hover:-translate-y-2 cursor-pointer" : "opacity-80 cursor-not-allowed"}
+                transition-all duration-500`}
+              >
+                {/* Image */}
+                <div className="relative h-52 overflow-hidden">
                   <img
                     src={s.image}
                     alt={s.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    className={`w-full h-full object-cover ${
+                      !s.comingSoon
+                        ? "group-hover:scale-110 transition-transform duration-700"
+                        : ""
+                    }`}
                   />
+
+                  {/* Coming Soon Overlay */}
+                  {s.comingSoon && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                      <span className="text-white text-3xl font-extrabold tracking-widest">
+                        Coming Soon
+                      </span>
+                    </div>
+                  )}
                 </div>
 
-                {/* Floating Icon */}
-                <div className="absolute -bottom-6 right-6 z-10 w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg ring-4 ring-white group-hover:rotate-[360deg] transition-transform duration-500">
-                  <s.icon className="w-6 h-6 text-white" />
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="p-7 pt-10">
-                <h3 className="font-bold text-xl mb-3 text-gray-900 group-hover:text-blue-600 transition-colors">
-                  {s.title}
-                </h3>
-                <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-                  {s.desc}
-                </p>
-                <a
-                  href="#"
-                  className="text-blue-600 text-xs font-bold tracking-[0.15em] uppercase inline-flex items-center gap-2 group/link"
+                {/* Icon */}
+                <div
+                  className={`absolute top-44 right-6 z-10 w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg ring-4 ring-white
+                  ${!s.comingSoon ? "hover:rotate-[360deg] transition-transform duration-500" : ""}`}
                 >
-                  Tìm hiểu thêm
-                  <span className="group-hover/link:translate-x-1 transition-transform">
-                    →
-                  </span>
-                </a>
+                  <Icon className="w-6 h-6 text-white" />
+                </div>
+
+                {/* Content */}
+                <div className="p-7 pt-10">
+                  <h3 className="font-bold text-xl mb-3 text-gray-900">
+                    {s.title}
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+                    {s.desc}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

@@ -51,6 +51,7 @@ import AssignmentDetail from "./pages/driver/AssignmentDetail";
 // Vehicle & Driver Management
 import StaffVehicles from "./pages/staff/StaffVehicles";
 import StaffDrivers from "./pages/staff/StaffDrivers";
+import StaffAssignDriver from "./pages/staff/StaffAssignDriver";
 import DriverRegistration from "./pages/customer/DriverRegistration";
 
 function App() {
@@ -141,6 +142,7 @@ function App() {
             <Route index element={<Navigate to="bookings" replace />} />
             <Route path="bookings" element={<StaffBookings />} />
             <Route path="bookings/:id" element={<StaffBookingDetail />} />
+            <Route path="bookings/:id/assign-driver" element={<StaffAssignDriver />} />
             <Route path="assignments" element={<StaffAssignments />} />
             <Route path="handovers" element={<StaffHandovers />} />
             <Route

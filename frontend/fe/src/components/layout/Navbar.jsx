@@ -4,7 +4,6 @@ import { useAuth } from "../../context/AuthContext";
 import { User, LogOut } from "lucide-react";
 
 const menuItems = [
-  { title: "DỊCH VỤ", to: "/#services", type: "anchor" },
   { title: "ĐỘI XE", to: "/fleet", type: "route" },
   { title: "VỀ CHÚNG TÔI", to: "/about", type: "route" },
   { title: "LIÊN HỆ", to: "/contact", type: "route" },

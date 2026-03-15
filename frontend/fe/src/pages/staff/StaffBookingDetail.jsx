@@ -149,11 +149,11 @@ export default function StaffBookingDetail() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Loại thuê</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Dịch vụ</label>
                     <select name="rental_type" value={editForm.rental_type} onChange={handleEditChange} className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition">
                       <option value="">(Bỏ qua nếu không đổi)</option>
-                      <option value="self_drive">Tự lái</option>
-                      <option value="with_driver">Có tài xế</option>
+                      <option value="self_drive">Thuê xe tự lái</option>
+                      <option value="with_driver">Thuê xe kèm tài xế</option>
                     </select>
                   </div>
                   <div>
@@ -198,13 +198,21 @@ export default function StaffBookingDetail() {
                   <p className="font-semibold text-gray-900 mt-1">{formatDate(booking.end_date, true)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Loại thuê</p>
-                  <p className="font-medium text-gray-800 mt-1 uppercase text-xs bg-gray-100 inline-block px-2.5 py-1 rounded">{booking.rental_type}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Tài xế</p>
-                  <p className="font-medium text-gray-900 mt-1">{booking.driver?.user?.full_name || "Chưa phân công / Không có"}</p>
-                </div>
+  <p className="text-sm text-gray-500">Dịch vụ</p>
+  <p className="font-medium text-gray-800 mt-1 uppercase text-xs bg-gray-100 inline-block px-2.5 py-1 rounded">
+    {booking.rental_type === "with_driver"
+      ? "Thuê xe kèm tài xế"
+      : booking.rental_type === "self_drive"
+      ? "Thuê xe tự lái"
+      : booking.rental_type}
+  </p>
+</div>
+                {booking.rental_type === "with_driver" && (
+                  <div>
+                    <p className="text-sm text-gray-500">Tài xế</p>
+                    <p className="font-medium text-gray-900 mt-1">{booking.driver?.user?.full_name || "Chưa phân công"}</p>
+                  </div>
+                )}
                 <div className="md:col-span-2">
                   <p className="text-sm text-gray-500">Điểm nhận xe</p>
                   <p className="font-medium text-gray-900 mt-1">{booking.pickup_location || "Không có thông tin"}</p>
@@ -222,8 +230,8 @@ export default function StaffBookingDetail() {
             {booking.vehicle ? (
               <div className="flex items-start md:items-center space-x-5 flex-col md:flex-row space-y-4 md:space-y-0">
                 <div className="w-32 h-24 bg-gray-100 rounded-xl flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
-                   {booking.vehicle.images?.[0] ? 
-                    <img src={booking.vehicle.images[0]} alt="Car" className="object-cover w-full h-full" /> 
+                   {booking.vehicle.image_urls?.[0] ? 
+                    <img src={booking.vehicle.image_urls[0]} alt="Car" className="object-cover w-full h-full" /> 
                     : <Car className="w-10 h-10 text-gray-400" />}
                 </div>
                 <div>
