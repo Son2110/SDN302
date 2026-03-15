@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { User, Customer, Driver, Staff } from "../models/user.model.js";
+import { User, Customer, Driver, Staff, Admin } from "../models/user.model.js";
 
 export const protect = async (req, res, next) => {
   let token;
@@ -53,16 +53,21 @@ export const authorize = (...allowedRoles) => {
 };
 
 export const getUserRoles = async (userId) => {
-  const [isCustomer, isDriver, isStaff] = await Promise.all([
+  const [isCustomer, isDriver, isStaff, isAdmin] = await Promise.all([
     Customer.exists({ user: userId }),
-    Driver.exists({ user: userId }),
+    Driver.exists({
+      user: userId,
+      status: { $in: ["available", "busy", "offline"] },
+    }),
     Staff.exists({ user: userId }),
+    Admin.exists({ user: userId }),
   ]);
 
   const roles = [];
   if (isCustomer) roles.push("customer");
   if (isDriver) roles.push("driver");
   if (isStaff) roles.push("staff");
+  if (isAdmin) roles.push("admin");
 
   return roles;
 };

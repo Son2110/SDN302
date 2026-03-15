@@ -72,7 +72,18 @@ const staffSchema = new mongoose.Schema({
   hire_date: { type: Date, required: true },
 });
 
+// --- Admin Schema ---
+const adminSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+    unique: true,
+  },
+});
+
 export const User = mongoose.model("User", userSchema);
 export const Customer = mongoose.model("Customer", customerSchema);
 export const Driver = mongoose.model("Driver", driverSchema);
 export const Staff = mongoose.model("Staff", staffSchema);
+export const Admin = mongoose.model("Admin", adminSchema);
