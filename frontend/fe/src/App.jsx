@@ -24,6 +24,7 @@ import Unauthorized from "./pages/shared/Unauthorized";
 // Customer Pages
 import MyBookings from "./pages/customer/MyBookings";
 import BookingDetail from "./pages/customer/BookingDetail";
+import MyPayments from "./pages/customer/MyPayments";
 import DepositPayment from "./pages/customer/DepositPayment";
 import PaymentPage from "./pages/customer/PaymentPage";
 import ExtendBooking from "./pages/customer/ExtendBooking";
@@ -53,6 +54,11 @@ import StaffVehicles from "./pages/staff/StaffVehicles";
 import StaffDrivers from "./pages/staff/StaffDrivers";
 import StaffAssignDriver from "./pages/staff/StaffAssignDriver";
 import DriverRegistration from "./pages/customer/DriverRegistration";
+
+// Admin Pages
+import AdminLayout from "./components/layout/AdminLayout";
+import AdminRevenue from "./pages/admin/AdminRevenue";
+import AdminUsers from "./pages/admin/AdminUsers";
 
 function App() {
   return (
@@ -113,6 +119,7 @@ function App() {
             }
           >
             <Route path="/my-bookings" element={<MyBookings />} />
+            <Route path="/my-payments" element={<MyPayments />} />
             <Route path="/bookings/:id" element={<BookingDetail />} />
             <Route path="/payment/success" element={<PaymentSuccess />} />
             <Route
@@ -166,6 +173,17 @@ function App() {
             <Route index element={<Navigate to="assignments" replace />} />
             <Route path="assignments" element={<DriverAssignments />} />
             <Route path="assignments/:id" element={<AssignmentDetail />} />
+          </Route>
+        </Route>
+
+        {/* ============================== */}
+        {/* 6. ADMIN ROUTES (Admin Only)   */}
+        {/* ============================== */}
+        <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Navigate to="revenue" replace />} />
+            <Route path="revenue" element={<AdminRevenue />} />
+            <Route path="users" element={<AdminUsers />} />
           </Route>
         </Route>
 

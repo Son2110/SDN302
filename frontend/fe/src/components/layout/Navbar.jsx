@@ -135,6 +135,13 @@ const Navbar = () => {
                         >
                           Yêu Cầu Gia Hạn
                         </Link>
+                        <Link
+                          to="/my-payments"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          Lịch Sử Thanh Toán
+                        </Link>
                         {!user.roles?.includes("driver") && (
                           <Link
                             to="/driver-registration"
@@ -162,6 +169,15 @@ const Navbar = () => {
                         onClick={() => setShowUserMenu(false)}
                       >
                         Chuyến Đi Của Tôi
+                      </Link>
+                    )}
+                    {user.roles?.includes("admin") && (
+                      <Link
+                        to="/admin/revenue"
+                        className="block px-4 py-2 text-sm text-gray-900 hover:bg-gray-100 font-semibold"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        Admin Panel
                       </Link>
                     )}
                     <button
