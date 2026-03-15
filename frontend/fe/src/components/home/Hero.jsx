@@ -65,30 +65,8 @@ const Hero = () => {
           transition={{ duration: 1, delay: 0.4, ease: "easeOut" }}
           className="flex flex-wrap gap-4"
         >
-          <button className="border rounded-full border-white/30 px-8 py-4 uppercase text-[11px] font-bold tracking-widest backdrop-blur-md hover:bg-white hover:text-black hover:scale-105 transition-all duration-300">
-            Dịch vụ đưa đón
-          </button>
-
-          <button className="border rounded-full border-white/30 px-8 py-4 uppercase text-[11px] font-bold tracking-widest backdrop-blur-md hover:bg-white hover:text-black hover:scale-105 transition-all duration-300">
-            Trải nghiệm lái
-          </button>
         </motion.div>
       </div>
-
-      {/* Scroll Indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1, duration: 1 }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 text-white/50 text-[10px] uppercase tracking-[0.3em] flex flex-col items-center gap-2"
-      >
-        <span>Cuộn để khám phá</span>
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ repeat: Infinity, duration: 1.5 }}
-          className="w-[1px] h-8 bg-blue-500/50"
-        />
-      </motion.div>
     </header>
   );
 };

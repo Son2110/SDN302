@@ -1,6 +1,6 @@
-import { Eye, Edit, Trash2 } from "lucide-react";
+import { Eye, Trash2, UserPlus } from "lucide-react";
 import { formatDate, formatCurrency } from "../../utils/formatters";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const STATUS_BADGES = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -9,6 +9,7 @@ const STATUS_BADGES = {
   vehicle_returned: "bg-orange-100 text-orange-800",
   completed: "bg-green-100 text-green-800",
   cancelled: "bg-red-100 text-red-800",
+  vehicle_delivered: "bg-cyan-100 text-cyan-800",
 };
 
 const STATUS_LABELS = {
@@ -16,16 +17,19 @@ const STATUS_LABELS = {
   confirmed: "Đã xác nhận",
   in_progress: "Đang thuê",
   vehicle_returned: "Đã trả xe",
+  vehicle_delivered: "Đã bàn giao xe",
   completed: "Hoàn thành",
   cancelled: "Đã huỷ",
 };
 
 const RENTAL_TYPES = {
-  self_drive: "Tự lái",
-  with_driver: "Có tài xế",
+  self_drive: "Thuê xe tự lái",
+  with_driver: "Thuê xe kèm tài xế",
 };
 
 export default function BookingTable({ bookings, onDelete }) {
+  const navigate = useNavigate();
+
   if (!bookings || bookings.length === 0) {
     return (
       <div className="text-center py-10 text-gray-500 bg-white rounded-xl shadow-sm border border-gray-100">
@@ -33,6 +37,10 @@ export default function BookingTable({ bookings, onDelete }) {
       </div>
     );
   }
+
+  // Booking cần phân công: with_driver + confirmed + chưa có driver
+  const needsAssignment = (b) =>
+    b.rental_type === "with_driver" && b.status === "confirmed" && !b.driver;
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -44,6 +52,7 @@ export default function BookingTable({ bookings, onDelete }) {
               <th className="px-5 py-4 border-b">Xe & Loại</th>
               <th className="px-5 py-4 border-b">Thời gian</th>
               <th className="px-5 py-4 border-b">Tổng tiền</th>
+              <th className="px-5 py-4 border-b">Tài xế</th>
               <th className="px-5 py-4 border-b">Trạng thái</th>
               <th className="px-5 py-4 border-b text-center">Thao tác</th>
             </tr>
@@ -51,6 +60,7 @@ export default function BookingTable({ bookings, onDelete }) {
           <tbody className="divide-y divide-gray-100">
             {bookings.map((b) => (
               <tr key={b._id} className="hover:bg-gray-50 transition-colors">
+                {/* Mã / Khách hàng */}
                 <td className="px-5 py-4">
                   <div className="font-semibold text-gray-900 truncate w-32" title={b._id}>
                     #{b._id.slice(-6).toUpperCase()}
@@ -58,6 +68,8 @@ export default function BookingTable({ bookings, onDelete }) {
                   <div className="text-sm mt-1">{b.customer?.user?.full_name || "Khách"}</div>
                   <div className="text-xs text-gray-400">{b.customer?.user?.phone}</div>
                 </td>
+
+                {/* Xe & Loại */}
                 <td className="px-5 py-4">
                   <div className="font-medium text-gray-800">
                     {b.vehicle?.brand} {b.vehicle?.model}
@@ -65,20 +77,53 @@ export default function BookingTable({ bookings, onDelete }) {
                   <div className="text-xs text-gray-500 mt-1 uppercase">
                     {b.vehicle?.license_plate}
                   </div>
-                  <span className="inline-block mt-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
+                  <span
+                    className={`inline-block mt-1 px-2 py-0.5 rounded text-xs font-medium ${
+                      b.rental_type === "with_driver"
+                        ? "bg-indigo-100 text-indigo-700"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
                     {RENTAL_TYPES[b.rental_type] || b.rental_type}
                   </span>
                 </td>
+
+                {/* Thời gian */}
                 <td className="px-5 py-4">
                   <div className="text-sm">Từ: <span className="font-medium">{formatDate(b.start_date)}</span></div>
                   <div className="text-sm mt-1">Đến: <span className="font-medium">{formatDate(b.end_date)}</span></div>
                 </td>
+
+                {/* Tổng tiền */}
                 <td className="px-5 py-4">
                   <div className="font-semibold text-blue-600">{formatCurrency(b.total_amount)}</div>
                   {b.deposit_amount > 0 && (
                     <div className="text-xs text-gray-500 mt-1">Cọc: {formatCurrency(b.deposit_amount)}</div>
                   )}
                 </td>
+
+                {/* Tài xế */}
+                <td className="px-5 py-4">
+                  {b.rental_type === "self_drive" ? (
+                    <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md font-medium">
+                      Tự lái
+                    </span>
+                  ) : b.driver ? (
+                    <div>
+
+                      <span className="inline-block mt-1 px-2 py-0.5 bg-teal-100 text-teal-700 text-xs font-medium rounded-full">
+                        Đã phân công
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      Chưa phân công
+                    </span>
+                  )}
+                </td>
+
+                {/* Trạng thái */}
                 <td className="px-5 py-4">
                   <span
                     className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
@@ -88,23 +133,39 @@ export default function BookingTable({ bookings, onDelete }) {
                     {STATUS_LABELS[b.status] || b.status}
                   </span>
                 </td>
-                <td className="px-5 py-4 flex items-center justify-center space-x-3">
-                  <Link
-                    to={`/staff/bookings/${b._id}`}
-                    className="p-1.5 text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
-                    title="Xem chi tiết & Sửa"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </Link>
-                  {(b.status === "pending" || b.status === "cancelled") && (
-                    <button
-                      onClick={() => onDelete(b._id)}
-                      className="p-1.5 text-red-600 bg-red-50 rounded hover:bg-red-100 transition-colors"
-                      title="Xoá đơn"
+
+                {/* Thao tác */}
+                <td className="px-5 py-4">
+                  <div className="flex items-center justify-center gap-2 flex-wrap">
+                    <Link
+                      to={`/staff/bookings/${b._id}`}
+                      className="p-1.5 text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
+                      title="Xem chi tiết"
                     >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
+                      <Eye className="w-4 h-4" />
+                    </Link>
+
+                    {/* Nút phân công tài xế */}
+                    {needsAssignment(b) && (
+                      <button
+                        onClick={() => navigate(`/staff/bookings/${b._id}/assign-driver`)}
+                        className="p-1.5 text-indigo-600 bg-indigo-50 rounded hover:bg-indigo-100 transition-colors"
+                        title="Phân công tài xế"
+                      >
+                        <UserPlus className="w-4 h-4" />
+                      </button>
+                    )}
+
+                    {(b.status === "pending" || b.status === "cancelled") && (
+                      <button
+                        onClick={() => onDelete(b._id)}
+                        className="p-1.5 text-red-600 bg-red-50 rounded hover:bg-red-100 transition-colors"
+                        title="Xoá đơn"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
