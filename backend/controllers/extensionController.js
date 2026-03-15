@@ -47,8 +47,11 @@ export const requestExtension = async (req, res) => {
     const diffTime = Math.abs(requestedEndDate - currentEndDate);
     const daysExtended = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    // 4. Tính toán tiền phát sinh (additional_amount)
-    let additionalAmount = daysExtended * booking.vehicle.daily_rate;
+    // 4. Tính toán tiền phát sinh (additional_amount) với phí tăng thêm 20%
+    let dailyRate = booking.vehicle.daily_rate;
+    let surchargeRate = dailyRate * 1.2; // Tăng 20% cho việc gia hạn
+    let additionalAmount = daysExtended * surchargeRate;
+
     if (booking.rental_type === "with_driver") {
       const DRIVER_FEE_PER_DAY = 500000; // Có thể lấy từ Config DB
       additionalAmount += daysExtended * DRIVER_FEE_PER_DAY;
@@ -70,14 +73,36 @@ export const requestExtension = async (req, res) => {
 
     const hasConflict = !!conflictingBooking;
 
-    // 6. TẠO RECORD YÊU CẦU GIA HẠN
+    // NẾU CÓ XUNG ĐỘT, TỰ ĐỘNG TỪ CHỐI NGAY LẬP TỨC
+    if (hasConflict) {
+      const extensionRequest = await ExtensionRequest.create({
+        booking: booking._id,
+        customer: customer._id,
+        original_end_date: currentEndDate,
+        new_end_date: requestedEndDate,
+        days_extended: daysExtended,
+        has_conflict: true,
+        additional_amount: additionalAmount,
+        status: "rejected", // Tự động từ chối khi có xung đột
+        reject_reason: "Xe đã có người đặt trong khoảng thời gian gia hạn.",
+      });
+
+      return res.status(200).json({
+        success: false,
+        message:
+          "Yêu cầu gia hạn bị từ chối do xe đã có người đặt trong khoảng thời gian này.",
+        data: extensionRequest,
+      });
+    }
+
+    // 6. TẠO RECORD YÊU CẦU GIA HẠN (Không có xung đột, gửi cho Staff duyệt)
     const extensionRequest = await ExtensionRequest.create({
       booking: booking._id,
       customer: customer._id,
       original_end_date: currentEndDate,
       new_end_date: requestedEndDate,
       days_extended: daysExtended,
-      has_conflict: hasConflict, // Lưu lại cờ này để Staff nhìn vào biết đường xử lý
+      has_conflict: false,
       additional_amount: additionalAmount,
       status: "pending", // Chờ Staff duyệt
     });
@@ -195,6 +220,9 @@ export const rejectExtension = async (req, res) => {
     // 3. Cập nhật trạng thái
     extensionRequest.status = "rejected";
     extensionRequest.processed_by = staff._id;
+    if (reject_reason) {
+      extensionRequest.reject_reason = reject_reason;
+    }
     await extensionRequest.save();
 
     res.status(200).json({

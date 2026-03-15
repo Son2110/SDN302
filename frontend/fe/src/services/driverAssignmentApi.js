@@ -1,6 +1,28 @@
-const API_URL = import.meta.env.VITE_API_URL;
-import { getToken } from './api';
+import apiClient, { getToken } from "./api";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
+// --- Driver Side ---
+export const getMyAssignments = async (status) => {
+    let endpoint = "/driver-assignment/my-assignments";
+    if (status) {
+        endpoint += `?status=${status}`;
+    }
+    return await apiClient(endpoint);
+};
+
+export const respondToAssignment = async (id, responseData) => {
+    return await apiClient(`/driver-assignment/${id}/respond`, {
+        method: "PUT",
+        body: JSON.stringify(responseData),
+    });
+};
+
+export const getAssignmentDetail = async (id) => {
+    return await apiClient(`/driver-assignment/${id}`);
+};
+
+// --- Staff Side ---
 export const getAssignments = async (params = {}) => {
   const cleanParams = Object.fromEntries(
     Object.entries(params).filter(([_, v]) => v != null && v !== "")

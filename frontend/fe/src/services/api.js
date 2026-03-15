@@ -1,5 +1,30 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
+// Authenticated API Client
+const apiClient = async (endpoint, options = {}) => {
+  const token = getToken();
+  const headers = {
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }),
+    ...options.headers,
+  };
+
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Request failed");
+  }
+
+  return data;
+};
+
+export default apiClient;
+
 // Register User
 export const registerUser = async (userData) => {
   try {
@@ -98,4 +123,78 @@ export const removeUser = () => {
 export const logout = () => {
   removeToken();
   removeUser();
+};
+
+// Get My Profile (Customer/Driver)
+export const getMyProfile = async () => {
+  try {
+    const token = getToken();
+    const response = await fetch(`${API_URL}/users/my-profile`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to get profile");
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Update User Basic Info (full_name, phone, avatar_url)
+export const updateUserInfo = async (userData) => {
+  try {
+    const token = getToken();
+    const response = await fetch(`${API_URL}/users/me`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(userData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to update user info");
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Update Customer Profile
+export const updateCustomerProfile = async (customerId, customerData) => {
+  try {
+    const token = getToken();
+    const response = await fetch(`${API_URL}/users/customers/${customerId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(customerData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to update customer profile");
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
 };

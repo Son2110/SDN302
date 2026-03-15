@@ -1,5 +1,11 @@
+import apiClient, { getToken } from "./api";
+
 const API_URL = import.meta.env.VITE_API_URL;
-import { getToken } from './api';
+
+// Get Handover details for a specific booking
+export const getHandoverByBooking = async (bookingId) => {
+    return await apiClient(`/handovers/booking/${bookingId}`);
+};
 
 export const getHandovers = async (params = {}) => {
   const cleanParams = Object.fromEntries(

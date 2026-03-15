@@ -133,6 +133,7 @@ const extensionRequestSchema = new mongoose.Schema(
       default: "pending",
     },
     processed_by: { type: mongoose.Schema.Types.ObjectId, ref: "Staff" },
+    reject_reason: { type: String },
     additional_amount: { type: Number },
   },
   { timestamps: { createdAt: "requested_at", updatedAt: "processed_at" } },

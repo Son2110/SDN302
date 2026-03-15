@@ -20,13 +20,14 @@ const reviewSchema = new mongoose.Schema(
 
     review_type: {
       type: String,
-      enum: ["vehicle", "driver", "overall"],
+      enum: ["driver", "overall"],
       required: true,
     },
     rating: { type: Number, required: true, min: 1, max: 5 },
     comment: { type: String },
+    edit_count: { type: Number, default: 0 }, // Số lần đã sửa (tối đa 1)
   },
-  { timestamps: { createdAt: true, updatedAt: false } },
+  { timestamps: true },
 );
 
 // --- Notification ---
