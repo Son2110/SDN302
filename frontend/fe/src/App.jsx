@@ -17,6 +17,7 @@ import HandoverDeliveryForm from "./pages/staff/HandoverDeliveryForm";
 import HandoverReturnForm from "./pages/staff/HandoverReturnForm";
 import StaffExtensions from "./pages/staff/StaffExtensions";
 import StaffPayments from "./pages/staff/StaffPayments";
+import StaffDrivers from "./pages/staff/StaffDrivers";
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
         <Route path="handovers/return" element={<HandoverReturnForm />} />
         <Route path="extensions" element={<StaffExtensions />} />
         <Route path="payments" element={<StaffPayments />} />
+        <Route path="drivers" element={<StaffDrivers />} />
       </Route>
 
       {/* Main Routes - With Navbar/Footer */}

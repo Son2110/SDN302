@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { Car, Users, Clock, CreditCard, LogOut, FileText } from "lucide-react";
+import { Car, Users, Clock, CreditCard, LogOut, FileText, IdCard } from "lucide-react";
 import { logout } from "../../services/api";
 
 const StaffLayout = () => {
@@ -16,6 +16,7 @@ const StaffLayout = () => {
     { label: "Biên bản bàn giao", icon: <FileText className="w-5 h-5" />, path: "/staff/handovers" },
     { label: "Yêu cầu gia hạn", icon: <Clock className="w-5 h-5" />, path: "/staff/extensions" },
     { label: "Thanh toán", icon: <CreditCard className="w-5 h-5" />, path: "/staff/payments" },
+    { label: "Quản lý tài xế", icon: <IdCard className="w-5 h-5" />, path: "/staff/drivers" },
   ];
 
   return (
