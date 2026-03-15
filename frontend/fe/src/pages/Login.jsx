@@ -34,9 +34,13 @@ const Login = () => {
 
       // AuthContext.login() already saves token & user
       const roles = response?.data?.roles || response?.roles || [];
-      
-      if (roles.includes("staff")) {
+
+      if (roles.includes("admin")) {
+        navigate("/admin");
+      } else if (roles.includes("staff")) {
         navigate("/staff/bookings");
+      } else if (roles.includes("customer")) {
+        navigate("/");
       } else if (roles.includes("driver")) {
         navigate("/driver/assignments");
       } else {

@@ -184,10 +184,15 @@ export const getAllDrivers = async (req, res) => {
     const { page = 1, limit = 10, search = "", status = "" } = req.query;
     const skip = (page - 1) * limit;
 
-    // Build driver query
+    // Build driver query — never show pending here (pending-only tab handles those)
     let driverQuery = {};
-    if (status && ["available", "busy", "offline"].includes(status)) {
+    if (
+      status &&
+      ["available", "busy", "offline", "rejected"].includes(status)
+    ) {
       driverQuery.status = status;
+    } else {
+      driverQuery.status = { $ne: "pending" };
     }
 
     // Build search query for user
@@ -454,6 +459,12 @@ export const registerAsDriver = async (req, res) => {
       status: "pending", // Chờ staff duyệt
     });
 
+    // Auto-update customer's driver_license field
+    await Customer.findOneAndUpdate(
+      { user: req.user._id },
+      { driver_license: license_number },
+    );
+
     // Populate user info
     const driver = await Driver.findById(newDriver._id)
       .populate("user", "-password_hash")
@@ -538,6 +549,12 @@ export const reapplyAsDriver = async (req, res) => {
     existingDriver.license_type = license_type;
     existingDriver.license_expiry = expiryDate;
     existingDriver.experience_years = parseInt(experience_years);
+
+    // Auto-update customer's driver_license field
+    await Customer.findOneAndUpdate(
+      { user: req.user._id },
+      { driver_license: license_number },
+    );
     existingDriver.status = "pending";
     existingDriver.rejection_reason = undefined;
     await existingDriver.save();
@@ -757,6 +774,54 @@ export const rejectDriver = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Lỗi khi từ chối tài xế",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Update driver status (Staff only)
+ * @route   PATCH /api/users/drivers/:id/status
+ * @access  Staff only
+ */
+export const updateDriverStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const allowed = ["available", "offline", "busy"];
+    if (!status || !allowed.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Trạng thái không hợp lệ. Chỉ chấp nhận: available, offline, busy",
+      });
+    }
+
+    const driver = await Driver.findById(id);
+    if (!driver) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy tài xế" });
+    }
+
+    driver.status = status;
+    await driver.save();
+
+    const updated = await Driver.findById(id)
+      .populate("user", "-password_hash")
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      message: `Đã cập nhật trạng thái tài xế thành ${status}`,
+      data: updated,
+    });
+  } catch (error) {
+    console.error("Error in updateDriverStatus:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi cập nhật trạng thái tài xế",
       error: error.message,
     });
   }

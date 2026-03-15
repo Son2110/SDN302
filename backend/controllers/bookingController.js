@@ -342,11 +342,9 @@ export const updateBooking = async (req, res) => {
   try {
     const staff = await Staff.findOne({ user: req.user._id });
     if (!staff) {
-      return res
-        .status(403)
-        .json({
-          message: "Chỉ nhân viên mới có quyền thực hiện thao tác này.",
-        });
+      return res.status(403).json({
+        message: "Chỉ nhân viên mới có quyền thực hiện thao tác này.",
+      });
     }
 
     const booking = await Booking.findById(req.params.id);
@@ -484,11 +482,9 @@ export const deleteBooking = async (req, res) => {
   try {
     const staff = await Staff.findOne({ user: req.user._id });
     if (!staff) {
-      return res
-        .status(403)
-        .json({
-          message: "Chỉ nhân viên mới có quyền thực hiện thao tác này.",
-        });
+      return res.status(403).json({
+        message: "Chỉ nhân viên mới có quyền thực hiện thao tác này.",
+      });
     }
 
     const booking = await Booking.findById(req.params.id);
@@ -518,10 +514,11 @@ export const deleteBooking = async (req, res) => {
 // @access Private (Staff)
 export const getAllBookings = async (req, res) => {
   try {
-    const { status, page = 1, limit = 20 } = req.query;
+    const { status, rental_type, page = 1, limit = 20 } = req.query;
 
     const filter = {};
     if (status) filter.status = status;
+    if (rental_type) filter.rental_type = rental_type;
 
     const bookings = await Booking.find(filter)
       .populate("vehicle")

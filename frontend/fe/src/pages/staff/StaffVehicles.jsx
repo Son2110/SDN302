@@ -9,6 +9,10 @@ import {
   CheckCircle,
   Wrench,
   X,
+  Tag,
+  Zap,
+  Users,
+  Settings,
 } from "lucide-react";
 import * as vehicleApi from "../../services/vehicleApi";
 
@@ -20,7 +24,20 @@ const StaffVehicles = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [showTypeModal, setShowTypeModal] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
+  const [typeFormData, setTypeFormData] = useState({
+    type_name: "",
+    category: "sedan",
+    seat_capacity: "",
+    transmission: "auto",
+    fuel_type: "electric",
+    battery_capacity_kwh: "",
+    base_price_per_day: "",
+    charging_cost_per_kwh: "3500",
+    image_url: "",
+  });
+  const [typeSubmitting, setTypeSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     vehicle_type: "",
     license_plate: "",
@@ -29,7 +46,7 @@ const StaffVehicles = () => {
     year: new Date().getFullYear(),
     color: "",
     daily_rate: "",
-    is_electric: false,
+    is_electric: true,
     current_mileage: 0,
     image_urls: [],
   });
@@ -82,7 +99,7 @@ const StaffVehicles = () => {
       year: vehicle.year,
       color: vehicle.color || "",
       daily_rate: vehicle.daily_rate,
-      is_electric: vehicle.is_electric,
+      is_electric: true,
       current_mileage: vehicle.current_mileage,
       image_urls: vehicle.image_urls || [],
     });
@@ -108,6 +125,48 @@ const StaffVehicles = () => {
     }
   };
 
+  const handleTypeSubmit = async (e) => {
+    e.preventDefault();
+    setTypeSubmitting(true);
+    try {
+      const payload = {
+        type_name: typeFormData.type_name,
+        category: typeFormData.category,
+        seat_capacity: parseInt(typeFormData.seat_capacity),
+        transmission: typeFormData.transmission,
+        fuel_type: typeFormData.fuel_type,
+        base_price_per_day: parseInt(typeFormData.base_price_per_day),
+      };
+      if (typeFormData.battery_capacity_kwh)
+        payload.battery_capacity_kwh = parseFloat(
+          typeFormData.battery_capacity_kwh,
+        );
+      if (typeFormData.charging_cost_per_kwh)
+        payload.charging_cost_per_kwh = parseFloat(
+          typeFormData.charging_cost_per_kwh,
+        );
+      if (typeFormData.image_url) payload.image_url = typeFormData.image_url;
+      await vehicleApi.createVehicleType(payload);
+      setShowTypeModal(false);
+      setTypeFormData({
+        type_name: "",
+        category: "sedan",
+        seat_capacity: "",
+        transmission: "auto",
+        fuel_type: "gasoline",
+        battery_capacity_kwh: "",
+        base_price_per_day: "",
+        charging_cost_per_kwh: "3500",
+        image_url: "",
+      });
+      loadData();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setTypeSubmitting(false);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       vehicle_type: "",
@@ -117,7 +176,7 @@ const StaffVehicles = () => {
       year: new Date().getFullYear(),
       color: "",
       daily_rate: "",
-      is_electric: false,
+      is_electric: true,
       current_mileage: 0,
       image_urls: [],
     });
@@ -176,17 +235,26 @@ const StaffVehicles = () => {
             Quản lý danh sách xe trong hệ thống
           </p>
         </div>
-        <button
-          onClick={() => {
-            setEditingVehicle(null);
-            resetForm();
-            setShowModal(true);
-          }}
-          className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 hover:bg-blue-700 transition shadow-lg"
-        >
-          <Plus size={20} />
-          Thêm Xe Mới
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowTypeModal(true)}
+            className="bg-white border border-gray-300 text-gray-700 px-5 py-3 rounded-xl font-semibold flex items-center gap-2 hover:bg-gray-50 transition shadow-sm"
+          >
+            <Tag size={18} />
+            Thêm Loại Xe
+          </button>
+          <button
+            onClick={() => {
+              setEditingVehicle(null);
+              resetForm();
+              setShowModal(true);
+            }}
+            className="bg-gray-900 text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 hover:bg-gray-700 transition shadow-sm"
+          >
+            <Plus size={20} />
+            Thêm Xe Mới
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -322,181 +390,210 @@ const StaffVehicles = () => {
         </div>
       )}
 
-      {/* Add/Edit Modal */}
+      {/* ── Add / Edit Vehicle Modal ── */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-10 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">
-                {editingVehicle ? "Chỉnh Sửa Xe" : "Thêm Xe Mới"}
-              </h2>
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowModal(false);
+              setEditingVehicle(null);
+              resetForm();
+            }
+          }}
+        >
+          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            {/* Modal header */}
+            <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center rounded-t-2xl">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-gray-900 flex items-center justify-center">
+                  <Car size={18} className="text-white" />
+                </div>
+                <h2 className="text-lg font-bold text-gray-900">
+                  {editingVehicle ? "Chỉnh Sửa Xe" : "Thêm Xe Mới"}
+                </h2>
+              </div>
               <button
                 onClick={() => {
                   setShowModal(false);
                   setEditingVehicle(null);
                   resetForm();
                 }}
-                className="text-gray-500 hover:text-gray-700"
+                className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-500 transition"
               >
-                <X size={24} />
+                <X size={18} />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Loại xe *
-                  </label>
-                  <select
-                    required
-                    value={formData.vehicle_type}
-                    onChange={(e) =>
-                      setFormData({ ...formData, vehicle_type: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Chọn loại xe</option>
-                    {vehicleTypes.map((type) => (
-                      <option key={type._id} value={type._id}>
-                        {type.type_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Biển số *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.license_plate}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        license_plate: e.target.value,
-                      })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="51A-12345"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Hãng xe *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.brand}
-                    onChange={(e) =>
-                      setFormData({ ...formData, brand: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="VinFast"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Model *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.model}
-                    onChange={(e) =>
-                      setFormData({ ...formData, model: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="VF 8"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Năm sản xuất *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    value={formData.year}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        year: parseInt(e.target.value),
-                      })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Màu sắc
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.color}
-                    onChange={(e) =>
-                      setFormData({ ...formData, color: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="Đen"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Giá thuê/ngày (VNĐ) *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    value={formData.daily_rate}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        daily_rate: parseInt(e.target.value),
-                      })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Số km đã chạy
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.current_mileage}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        current_mileage: parseInt(e.target.value),
-                      })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
+
+            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+              {/* Section: Loại & biển số */}
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                  Thông tin cơ bản
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Loại xe *
+                    </label>
+                    <select
+                      required
+                      value={formData.vehicle_type}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          vehicle_type: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-300 focus:outline-none bg-gray-50"
+                    >
+                      <option value="">Chọn loại xe</option>
+                      {vehicleTypes.map((type) => (
+                        <option key={type._id} value={type._id}>
+                          {type.type_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Hãng xe *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.brand}
+                      onChange={(e) =>
+                        setFormData({ ...formData, brand: e.target.value })
+                      }
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-300 focus:outline-none bg-gray-50"
+                      placeholder="VinFast"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Model *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.model}
+                      onChange={(e) =>
+                        setFormData({ ...formData, model: e.target.value })
+                      }
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-300 focus:outline-none bg-gray-50"
+                      placeholder="VF 8"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Biển số *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.license_plate}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          license_plate: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-300 focus:outline-none bg-gray-50"
+                      placeholder="51A-12345"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Năm SX *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      value={formData.year}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          year: parseInt(e.target.value),
+                        })
+                      }
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-300 focus:outline-none bg-gray-50"
+                    />
+                  </div>
                 </div>
               </div>
+
+              {/* Section: Giá & km */}
               <div>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.is_electric}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        is_electric: e.target.checked,
-                      })
-                    }
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                  />
-                  <span className="text-sm font-semibold text-gray-700">
-                    Xe điện
-                  </span>
-                </label>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                  Giá & tình trạng
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Màu sắc
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.color}
+                      onChange={(e) =>
+                        setFormData({ ...formData, color: e.target.value })
+                      }
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-300 focus:outline-none bg-gray-50"
+                      placeholder="Đen"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Giá thuê/ngày (VNĐ) *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      value={formData.daily_rate}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          daily_rate: parseInt(e.target.value),
+                        })
+                      }
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-300 focus:outline-none bg-gray-50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Số km đã chạy
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.current_mileage}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          current_mileage: parseInt(e.target.value),
+                        })
+                      }
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-300 focus:outline-none bg-gray-50"
+                    />
+                  </div>
+                  <div className="flex items-end pb-1">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+                      <Zap size={14} className="text-green-600" />
+                      <span className="text-sm font-medium text-green-700">
+                        Xe điện
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
+
+              {/* Section: Ảnh */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  URL hình ảnh (nhập nhiều, mỗi dòng 1 URL)
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                  Hình ảnh
+                </p>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  URL ảnh (mỗi dòng 1 URL)
                 </label>
                 <textarea
                   value={formData.image_urls.join("\n")}
@@ -505,21 +602,17 @@ const StaffVehicles = () => {
                       ...formData,
                       image_urls: e.target.value
                         .split("\n")
-                        .filter((url) => url.trim()),
+                        .filter((u) => u.trim()),
                     })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  rows={4}
-                  placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-300 focus:outline-none bg-gray-50 resize-none"
+                  rows={3}
+                  placeholder="https://example.com/image1.jpg"
                 />
               </div>
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition"
-                >
-                  {editingVehicle ? "Cập Nhật" : "Thêm Xe"}
-                </button>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -527,9 +620,198 @@ const StaffVehicles = () => {
                     setEditingVehicle(null);
                     resetForm();
                   }}
-                  className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-400 transition"
+                  className="flex-1 py-2.5 border border-gray-200 text-gray-600 rounded-xl font-semibold hover:bg-gray-50 transition text-sm"
                 >
                   Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-gray-900 text-white rounded-xl font-semibold hover:bg-gray-700 transition text-sm"
+                >
+                  {editingVehicle ? "Lưu thay đổi" : "Thêm xe"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Add Vehicle Type Modal ── */}
+      {showTypeModal && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowTypeModal(false);
+          }}
+        >
+          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center rounded-t-2xl">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center">
+                  <Tag size={16} className="text-white" />
+                </div>
+                <h2 className="text-lg font-bold text-gray-900">
+                  Thêm Loại Xe Mới
+                </h2>
+              </div>
+              <button
+                onClick={() => setShowTypeModal(false)}
+                className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-500 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleTypeSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Tên loại xe *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={typeFormData.type_name}
+                  onChange={(e) =>
+                    setTypeFormData({
+                      ...typeFormData,
+                      type_name: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none bg-gray-50"
+                  placeholder="VD: SUV điện 5 chỗ"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="inline-flex items-center gap-1 text-sm font-medium text-gray-700 mb-1.5">
+                    <Settings size={13} /> Phân loại
+                  </label>
+                  <select
+                    value={typeFormData.category}
+                    onChange={(e) =>
+                      setTypeFormData({
+                        ...typeFormData,
+                        category: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none bg-gray-50"
+                  >
+                    <option value="sedan">Sedan</option>
+                    <option value="suv">SUV</option>
+                    <option value="van">Van</option>
+                    <option value="luxury">Luxury</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="inline-flex items-center gap-1 text-sm font-medium text-gray-700 mb-1.5">
+                    <Users size={13} /> Số chỗ *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    max={16}
+                    value={typeFormData.seat_capacity}
+                    onChange={(e) =>
+                      setTypeFormData({
+                        ...typeFormData,
+                        seat_capacity: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none bg-gray-50"
+                    placeholder="5"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Hộp số
+                  </label>
+                  <select
+                    value={typeFormData.transmission}
+                    onChange={(e) =>
+                      setTypeFormData({
+                        ...typeFormData,
+                        transmission: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none bg-gray-50"
+                  >
+                    <option value="auto">Tự động</option>
+                    <option value="manual">Số sàn</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Giá cơ bản/ngày (VNĐ) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={0}
+                    value={typeFormData.base_price_per_day}
+                    onChange={(e) =>
+                      setTypeFormData({
+                        ...typeFormData,
+                        base_price_per_day: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none bg-gray-50"
+                    placeholder="500000"
+                  />
+                </div>
+                <div>
+                  <label className="inline-flex items-center gap-1 text-sm font-medium text-gray-700 mb-1.5">
+                    <Zap size={13} /> Dung lượng pin (kWh)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={typeFormData.battery_capacity_kwh}
+                    onChange={(e) =>
+                      setTypeFormData({
+                        ...typeFormData,
+                        battery_capacity_kwh: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none bg-gray-50"
+                    placeholder="82"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  URL ảnh đại diện
+                </label>
+                <input
+                  type="url"
+                  value={typeFormData.image_url}
+                  onChange={(e) =>
+                    setTypeFormData({
+                      ...typeFormData,
+                      image_url: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none bg-gray-50"
+                  placeholder="https://example.com/type.jpg"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowTypeModal(false)}
+                  className="flex-1 py-2.5 border border-gray-200 text-gray-600 rounded-xl font-semibold hover:bg-gray-50 transition text-sm"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={typeSubmitting}
+                  className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition text-sm disabled:opacity-50"
+                >
+                  {typeSubmitting ? "Đang lưu..." : "Thêm loại xe"}
                 </button>
               </div>
             </form>

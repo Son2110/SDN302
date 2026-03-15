@@ -13,6 +13,7 @@ import {
   getDriverStats,
   approveDriver,
   rejectDriver,
+  updateDriverStatus,
   getMyProfile,
   updateUserInfo,
 } from "../controllers/userController.js";
@@ -66,6 +67,14 @@ router.patch(
 
 // Reject driver registration (staff only)
 router.patch("/drivers/:id/reject", protect, authorize("staff"), rejectDriver);
+
+// Update driver status: available / offline / busy (staff only)
+router.patch(
+  "/drivers/:id/status",
+  protect,
+  authorize("staff"),
+  updateDriverStatus,
+);
 
 // ==================== DRIVER REGISTRATION ====================
 
