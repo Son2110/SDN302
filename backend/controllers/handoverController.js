@@ -68,7 +68,7 @@ export const createDeliveryHandover = async (req, res) => {
 
     // 6. 🟢 CẬP NHẬT TRẠNG THÁI BOOKING & VEHICLE
     // Booking chuyển sang đang trong chuyến đi
-    booking.status = "in_progress";
+    booking.updateStatus("in_progress");
     await booking.save();
 
     // Xe chuyển sang trạng thái đang cho thuê (Để hệ thống khác không lấy được xe này)
@@ -209,7 +209,7 @@ export const createReturnHandover = async (req, res) => {
     // 6. CẬP NHẬT TRẠNG THÁI BOOKING & VEHICLE
     booking.actual_return_date = new Date(); // Lưu lại thời gian trả xe thực tế
     booking.final_amount = final_amount > 0 ? final_amount : 0; // Số tiền khách còn phải trả thêm
-    booking.status = "vehicle_returned"; // Đổi trạng thái: Đã trả xe (Chờ thanh toán nốt)
+    booking.updateStatus("vehicle_returned"); // Đổi trạng thái: Đã trả xe (Chờ thanh toán nốt)
     await booking.save();
 
     // Xe được thu hồi về bãi -> Rảnh rỗi đón khách mới

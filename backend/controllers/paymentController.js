@@ -58,7 +58,7 @@ export const processDepositPayment = async (req, res) => {
     });
 
     //7. Update booking status
-    booking.status = "confirmed";
+    booking.updateStatus("confirmed");
     await booking.save();
 
     // Notify Customer
@@ -147,7 +147,7 @@ export const processFinalPayment = async (req, res) => {
     // 5. Kiểm tra số tiền cần thanh toán
     if (booking.final_amount <= 0) {
       // Nếu không còn nợ đồng nào (hoặc được thối lại tiền), tự động đóng đơn luôn
-      booking.status = "completed";
+      booking.updateStatus("completed");
       await booking.save();
       return res.status(200).json({
         success: true,
@@ -169,7 +169,7 @@ export const processFinalPayment = async (req, res) => {
     });
 
     // 6. ĐÓNG HỢP ĐỒNG (COMPLETED)
-    booking.status = "completed";
+    booking.updateStatus("completed");
     await booking.save();
 
     await sendNotification({

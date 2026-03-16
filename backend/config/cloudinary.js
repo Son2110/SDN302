@@ -13,7 +13,7 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary,
   params: {
-    folder: "vehicle_images", // The folder in cloudinary
+    folder: "luxedrive_uploads", // Generic folder for all uploads
     allowed_formats: ["jpg", "png", "jpeg", "webp"],
   },
 });
