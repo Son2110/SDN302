@@ -79,6 +79,13 @@ export const createBooking = async (req, res) => {
       return_location,
     } = req.body;
 
+    // Check if user is admin
+    if (req.user.roles && req.user.roles.includes("admin")) {
+      return res.status(403).json({
+        message: "Tài khoản Admin không được phép thực hiện đặt xe.",
+      });
+    }
+
     //1. infor customer
     const customer = await Customer.findOne({ user: req.user._id });
     if (!customer)
@@ -244,7 +251,7 @@ export const cancelBooking = async (req, res) => {
       });
     }
 
-    booking.status = "cancelled";
+    booking.updateStatus("cancelled");
     await booking.save();
 
     res.status(200).json({

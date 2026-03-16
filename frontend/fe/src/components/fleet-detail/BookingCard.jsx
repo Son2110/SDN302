@@ -1,6 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapPin, User, Users, ChevronDown, Calendar } from "lucide-react";
+import {
+  MapPin,
+  User,
+  Users,
+  ChevronDown,
+  Calendar,
+  Database,
+} from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 import { createBooking } from "../../services/bookingApi";
 import { getVehicleBookedDates } from "../../services/vehicleApi";
 import { getToken } from "../../services/api";
@@ -63,6 +71,7 @@ const POPULAR_LOCATIONS = [
 
 const BookingCard = ({ car }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     pickupLocation: "",
     returnLocation: "",
@@ -605,13 +614,19 @@ const BookingCard = ({ car }) => {
         </div>
 
         {/* Submit Button */}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed shadow-lg shadow-blue-600/30"
-        >
-          {loading ? "ĐANG XỬ LÝ..." : "ĐẶT XE NGAY →"}
-        </button>
+        {user?.roles?.includes("admin") ? (
+          <div className="w-full bg-gray-100 text-gray-500 py-4 rounded-xl font-bold text-sm text-center border border-gray-200 cursor-not-allowed uppercase">
+            Admin không thể đặt xe
+          </div>
+        ) : (
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed shadow-lg shadow-blue-600/30"
+          >
+            {loading ? "ĐANG XỬ LÝ..." : "ĐẶT XE NGAY →"}
+          </button>
+        )}
       </form>
 
       {/* Help Section */}
