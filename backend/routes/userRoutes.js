@@ -18,6 +18,7 @@ import {
   updateUserInfo,
 } from "../controllers/userController.js";
 import { protect, authorize } from "../middlewares/authMiddleware.js";
+import { upload } from "../config/cloudinary.js";
 
 const router = express.Router();
 
@@ -27,7 +28,7 @@ const router = express.Router();
 router.get("/my-profile", protect, getMyProfile);
 
 // Update my basic info (any authenticated user)
-router.put("/me", protect, updateUserInfo);
+router.put("/me", protect, upload.single("avatar"), updateUserInfo);
 
 // ==================== CUSTOMER ROUTES ====================
 

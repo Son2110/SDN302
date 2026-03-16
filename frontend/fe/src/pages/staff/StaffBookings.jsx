@@ -102,7 +102,7 @@ export default function StaffBookings() {
             value={rentalTypeFilter}
             onChange={(e) => setRentalTypeFilter(e.target.value)}
           >
-            <option value="">Tất cả loại thuê</option>
+            <option value="">Tất cả dịch vụ</option>
             <option value="self_drive">Thuê xe tự lái</option>
             <option value="with_driver">Thuê xe kèm tài xế</option>
           </SelectFilter>
@@ -112,7 +112,7 @@ export default function StaffBookings() {
             value={driverStatusFilter}
             onChange={(e) => setDriverStatusFilter(e.target.value)}
           >
-            <option value="">Tất cả tài xế</option>
+            <option value="">Phân công tài xế</option>
             <option value="unassigned">Chưa phân công</option>
             <option value="assigned">Đã phân công</option>
           </SelectFilter>

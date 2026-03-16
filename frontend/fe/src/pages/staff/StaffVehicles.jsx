@@ -50,6 +50,7 @@ const StaffVehicles = () => {
     current_mileage: 0,
     image_urls: [],
   });
+  const [selectedFile, setSelectedFile] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -72,13 +73,62 @@ const StaffVehicles = () => {
     }
   };
 
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (editingVehicle) {
-        await vehicleApi.updateVehicle(editingVehicle._id, formData);
+      const payload = new FormData();
+      payload.append("vehicle_type", formData.vehicle_type);
+      payload.append("license_plate", formData.license_plate);
+      payload.append("brand", formData.brand);
+      payload.append("model", formData.model);
+      payload.append("year", formData.year);
+      payload.append("color", formData.color);
+      payload.append("daily_rate", formData.daily_rate);
+      payload.append("is_electric", formData.is_electric);
+      payload.append("current_mileage", formData.current_mileage);
+
+      // --- Handle Single Image Upload ---
+      if (selectedFile) {
+        // If uploading new file, ignore old URL
+        payload.append("images", selectedFile);
+        // We can explicitly clear image_urls on backend if needed, or rely on our controller logic
+        // Current controller logic appends if we send both.
+        // We should send empty "image_urls" to clear old ones if we are uploading new one?
+        // Or if we don't send "image_urls", controller keeps old ones?
+        // Controller logic:
+        // if (req.files > 0 || req.body.image_urls) updates = finalImageUrls
+        // if req.body.image_urls is undefined, it might not update.
+        // Let's send empty string to clear if we have new file?
+        // Actually, if we want to REPLACE, we should ensure only the new one is there.
+        // The backend logic: if (req.files) newImages. if (req.body.image_urls) oldImages. final = [...old, ...new].
+        // So if we have selectedFile, we strictly DO NOT send image_urls.
+        // Backend will see no image_urls in body, but has files.
+        // But Controller has:
+        // if (req.body.image_urls) { bodyImages = ... }
+        // if (req.files || req.body.image_urls) { final = [...body, ...uploaded] }
+        // If we don't send image_urls, bodyImages is empty.
+        // So final = [newFile]. That's correct for replacement!
       } else {
-        await vehicleApi.createVehicle(formData);
+        // If NO new file, we must send the existing URL to keep it
+        if (formData.image_urls && formData.image_urls.length > 0) {
+          payload.append("image_urls", formData.image_urls[0]);
+        } else {
+          // Case: No file, No URL (User deleted image?)
+          // Send empty string to clear?
+          payload.append("image_urls", "");
+        }
+      }
+
+      if (editingVehicle) {
+        await vehicleApi.updateVehicle(editingVehicle._id, payload);
+      } else {
+        await vehicleApi.createVehicle(payload);
       }
       setShowModal(false);
       setEditingVehicle(null);
@@ -103,17 +153,8 @@ const StaffVehicles = () => {
       current_mileage: vehicle.current_mileage,
       image_urls: vehicle.image_urls || [],
     });
+    setSelectedFile(null);
     setShowModal(true);
-  };
-
-  const handleDelete = async (id) => {
-    if (!confirm("Bạn có chắc muốn xóa xe này?")) return;
-    try {
-      await vehicleApi.deleteVehicle(id);
-      loadData();
-    } catch (err) {
-      alert(err.message);
-    }
   };
 
   const handleStatusChange = async (id, status) => {
@@ -180,6 +221,7 @@ const StaffVehicles = () => {
       current_mileage: 0,
       image_urls: [],
     });
+    setSelectedFile(null);
   };
 
   const filteredVehicles = vehicles.filter((v) =>
@@ -590,25 +632,66 @@ const StaffVehicles = () => {
               {/* Section: Ảnh */}
               <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                  Hình ảnh
+                  Hình ảnh (Chỉ 1 ảnh)
                 </p>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  URL ảnh (mỗi dòng 1 URL)
-                </label>
-                <textarea
-                  value={formData.image_urls.join("\n")}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      image_urls: e.target.value
-                        .split("\n")
-                        .filter((u) => u.trim()),
-                    })
-                  }
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-300 focus:outline-none bg-gray-50 resize-none"
-                  rows={3}
-                  placeholder="https://example.com/image1.jpg"
-                />
+
+                {/* --- DISPLAY EXISTING OR SELECTED IMAGE --- */}
+                {(formData.image_urls.length > 0 || selectedFile) && (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Ảnh xe
+                    </label>
+                    <div className="relative w-40 h-40 border rounded-lg overflow-hidden group">
+                      <img
+                        src={
+                          selectedFile
+                            ? URL.createObjectURL(selectedFile)
+                            : formData.image_urls[0]
+                        }
+                        alt="xe"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedFile(null);
+                          setFormData({ ...formData, image_urls: [] });
+                        }}
+                        className="absolute top-1 right-1 bg-white/80 hover:bg-red-500 hover:text-white text-gray-700 rounded-full p-1 transition shadow-sm opacity-0 group-hover:opacity-100"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* --- UPLOAD AREA (Only show if NO image) --- */}
+                {!selectedFile && formData.image_urls.length === 0 && (
+                  <>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Tải ảnh lên
+                    </label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 bg-gray-50 text-center hover:bg-gray-100 transition relative">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <div className="space-y-2 pointer-events-none">
+                        <div className="mx-auto w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                          <Plus size={24} />
+                        </div>
+                        <p className="text-sm text-gray-600 font-medium">
+                          Click để chọn ảnh hoặc kéo thả vào đây
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          PNG, JPG, WEBP (Max 5MB)
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Actions */}

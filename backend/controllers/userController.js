@@ -883,7 +883,12 @@ export const getMyProfile = async (req, res) => {
  */
 export const updateUserInfo = async (req, res) => {
   try {
-    const { full_name, phone, avatar_url } = req.body;
+    const { full_name, phone } = req.body;
+    let avatar_url = req.body.avatar_url;
+
+    if (req.file) {
+      avatar_url = req.file.path;
+    }
 
     const user = await User.findById(req.user._id);
 
@@ -897,7 +902,7 @@ export const updateUserInfo = async (req, res) => {
     // Update only User fields
     if (full_name) user.full_name = full_name;
     if (phone) user.phone = phone;
-    if (avatar_url !== undefined) user.avatar_url = avatar_url;
+    if (avatar_url) user.avatar_url = avatar_url;
 
     await user.save();
 

@@ -139,6 +139,38 @@ const extensionRequestSchema = new mongoose.Schema(
   { timestamps: { createdAt: "requested_at", updatedAt: "processed_at" } },
 );
 
+// --- Valid Transitions Logic (Định nghĩa rõ ràng luồng trạng thái) ---
+const VALID_TRANSITIONS = {
+  pending: ["confirmed", "cancelled"], // Đang chờ -> Cọc xong hoặc Huỷ
+  confirmed: ["in_progress", "vehicle_delivered", "cancelled", "deposit_lost"], // Đã cọc -> Giao xe (in_progress) / Huỷ / Mất cọc
+  vehicle_delivered: ["in_progress", "vehicle_returned"], // Đã nhận xe -> Đang đi hoặc trả ngay (ít gặp)
+  in_progress: ["vehicle_returned"], // Đang đi -> Trả xe
+  vehicle_returned: ["completed"], // Trả xe -> Kiểm tra & trả nốt tiền -> Xong
+  completed: [], // Trạng thái cuối cùng
+  cancelled: [], // Trạng thái cuối cùng
+  deposit_lost: [], // Trạng thái cuối cùng
+};
+
+// Instance method: Kiểm tra và cập nhật Status an toàn
+bookingSchema.methods.updateStatus = function (newStatus) {
+  const currentStatus = this.status;
+
+  // Nếu status không đổi -> OK
+  if (currentStatus === newStatus) return true;
+
+  const allowedTransitions = VALID_TRANSITIONS[currentStatus];
+
+  // Nếu trạng thái hiện tại không có transition nào (completed, cancelled...), hoặc status mới không nằm trong list cho phép
+  if (!allowedTransitions || !allowedTransitions.includes(newStatus)) {
+    throw new Error(
+      `Không thể chuyển trạng thái từ '${currentStatus}' sang '${newStatus}'.`,
+    );
+  }
+
+  this.status = newStatus;
+  return true;
+};
+
 export const Booking = mongoose.model("Booking", bookingSchema);
 export const VehicleHandover = mongoose.model(
   "VehicleHandover",

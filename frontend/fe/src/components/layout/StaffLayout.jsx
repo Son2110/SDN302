@@ -9,6 +9,7 @@ import {
   Home as HomeIcon,
   Truck,
   UserCheck,
+  AlertTriangle,
 } from "lucide-react";
 import { logout } from "../../services/api";
 
@@ -25,6 +26,11 @@ const StaffLayout = () => {
       label: "Đơn đặt xe",
       icon: <Car className="w-5 h-5" />,
       path: "/staff/bookings",
+    },
+    {
+      label: "Đơn quá hạn",
+      icon: <AlertTriangle className="w-5 h-5" />,
+      path: "/staff/overdue-bookings",
     },
     {
       label: "Quản lý xe",

@@ -105,13 +105,16 @@ export const getVehicleByIdForStaff = async (id) => {
  * @returns {Promise}
  */
 export const createVehicle = async (vehicleData) => {
+  const isFormData = vehicleData instanceof FormData;
+  const headers = { Authorization: `Bearer ${getToken()}` };
+  if (!isFormData) {
+    headers["Content-Type"] = "application/json";
+  }
+
   const res = await fetch(`${API_URL}/vehicles`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${getToken()}`,
-    },
-    body: JSON.stringify(vehicleData),
+    headers,
+    body: isFormData ? vehicleData : JSON.stringify(vehicleData),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "Failed to create vehicle");
@@ -121,17 +124,20 @@ export const createVehicle = async (vehicleData) => {
 /**
  * Update vehicle (Staff only)
  * @param {string} id - Vehicle ID
- * @param {Object} vehicleData
+ * @param {Object|FormData} vehicleData
  * @returns {Promise}
  */
 export const updateVehicle = async (id, vehicleData) => {
+  const isFormData = vehicleData instanceof FormData;
+  const headers = { Authorization: `Bearer ${getToken()}` };
+  if (!isFormData) {
+    headers["Content-Type"] = "application/json";
+  }
+
   const res = await fetch(`${API_URL}/vehicles/${id}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${getToken()}`,
-    },
-    body: JSON.stringify(vehicleData),
+    headers,
+    body: isFormData ? vehicleData : JSON.stringify(vehicleData),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "Failed to update vehicle");
