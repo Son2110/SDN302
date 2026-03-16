@@ -17,18 +17,18 @@ import { getPaymentsList } from "../../services/paymentApiStaff";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 
 const TYPE_LABELS = {
-  deposit: "Đặt cọc",
-  rental_fee: "Phí thuê xe",
-  extension_fee: "Phí gia hạn",
-  penalty: "Tiền phạt",
-  refund: "Hoàn tiền",
+  deposit: "Deposit",
+  rental_fee: "Rental Fee",
+  extension_fee: "Extension Fee",
+  penalty: "Penalty",
+  refund: "Refund",
 };
 
 const STATUS_LABELS = {
-  pending: "Đang chờ",
-  completed: "Thành công",
-  failed: "Thất bại",
-  refunded: "Đã hoàn tiền",
+  pending: "Pending",
+  completed: "Completed",
+  failed: "Failed",
+  refunded: "Refunded",
 };
 
 const STATUS_BADGES = {
@@ -40,37 +40,37 @@ const STATUS_BADGES = {
 
 const quickLinks = [
   {
-    label: "Đơn đặt xe",
+    label: "Bookings",
     to: "/staff/bookings",
     icon: Car,
     color: "bg-blue-50 text-blue-600 hover:bg-blue-100",
   },
   {
-    label: "Quản lý xe",
+    label: "Vehicles",
     to: "/staff/vehicles",
     icon: Truck,
     color: "bg-teal-50 text-teal-600 hover:bg-teal-100",
   },
   {
-    label: "Quản lý tài xế",
+    label: "Drivers",
     to: "/staff/drivers",
     icon: UserCheck,
     color: "bg-cyan-50 text-cyan-600 hover:bg-cyan-100",
   },
   {
-    label: "Phân công tài xế",
+    label: "Driver Assignments",
     to: "/staff/assignments",
     icon: Users,
     color: "bg-purple-50 text-purple-600 hover:bg-purple-100",
   },
   {
-    label: "Biên bản bàn giao",
+    label: "Handovers",
     to: "/staff/handovers",
     icon: FileText,
     color: "bg-orange-50 text-orange-600 hover:bg-orange-100",
   },
   {
-    label: "Yêu cầu gia hạn",
+    label: "Extension Requests",
     to: "/staff/extensions",
     icon: Clock,
     color: "bg-green-50 text-green-600 hover:bg-green-100",
@@ -119,7 +119,7 @@ const StaffDashboard = () => {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-500 text-sm mt-1">
-          Tổng quan hoạt động và giao dịch gần đây
+          Overview of activities and recent transactions
         </p>
       </div>
 
@@ -134,7 +134,7 @@ const StaffDashboard = () => {
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-medium text-gray-500">
-                  Tổng giao dịch
+                  Total Transactions
                 </span>
                 <span className="p-2 bg-blue-50 rounded-xl">
                   <CreditCard className="w-4 h-4 text-blue-600" />
@@ -148,7 +148,7 @@ const StaffDashboard = () => {
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-medium text-gray-500">
-                  Thành công
+                  Completed
                 </span>
                 <span className="p-2 bg-green-50 rounded-xl">
                   <CheckCircle className="w-4 h-4 text-green-600" />
@@ -162,7 +162,7 @@ const StaffDashboard = () => {
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-medium text-gray-500">
-                  Đang chờ xử lý
+                  Pending
                 </span>
                 <span className="p-2 bg-yellow-50 rounded-xl">
                   <AlertCircle className="w-4 h-4 text-yellow-600" />
@@ -176,7 +176,7 @@ const StaffDashboard = () => {
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-medium text-gray-500">
-                  Doanh thu (50 g.nhất)
+                  Revenue (Last 50)
                 </span>
                 <span className="p-2 bg-indigo-50 rounded-xl">
                   <TrendingUp className="w-4 h-4 text-indigo-600" />
@@ -191,7 +191,7 @@ const StaffDashboard = () => {
           {/* Quick Links */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <h2 className="text-base font-bold text-gray-800 mb-4">
-              Truy cập nhanh
+              Quick Access
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               {quickLinks.map(({ label, to, icon: Icon, color }) => (
@@ -211,30 +211,30 @@ const StaffDashboard = () => {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="text-base font-bold text-gray-800">
-                Giao dịch gần đây
+                Recent Payments
               </h2>
               <Link
                 to="/staff/payments"
                 className="text-sm text-blue-600 font-medium flex items-center gap-1 hover:underline"
               >
-                Xem tất cả <ArrowRight className="w-4 h-4" />
+                View All <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
 
             {recentPayments.length === 0 ? (
               <div className="py-12 text-center text-gray-400">
-                Chưa có giao dịch nào
+                No transactions yet
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left text-gray-600">
                   <thead className="bg-gray-50 text-gray-700 text-xs uppercase tracking-wide">
                     <tr>
-                      <th className="px-5 py-3.5">Ngày</th>
-                      <th className="px-5 py-3.5">Khách hàng</th>
-                      <th className="px-5 py-3.5">Loại giao dịch</th>
-                      <th className="px-5 py-3.5">Số tiền</th>
-                      <th className="px-5 py-3.5">Trạng thái</th>
+                      <th>Date</th>
+                      <th>Customer</th>
+                      <th>Transaction Type</th>
+                      <th>Amount</th>
+                      <th>Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
