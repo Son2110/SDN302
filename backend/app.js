@@ -10,6 +10,7 @@ import vehicleRouter from "./routes/vehicleRoutes.js";
 import reviewRouter from "./routes/reviewRoutes.js";
 import userRouter from "./routes/userRoutes.js";
 import adminRouter from "./routes/adminRoutes.js";
+import notificationRouter from "./routes/notificationRoutes.js";
 const app = express();
 
 //middleware
@@ -18,6 +19,7 @@ app.use(express.json());
 
 //api
 app.use("/api/auth", authRouter);
+app.use("/api/notifications", notificationRouter);
 app.use("/api/bookings", bookingRouter);
 app.use("/api/payments", paymentRouter);
 app.use("/api/driver-assignment", driverAssignmentRouter);

@@ -1,13 +1,21 @@
 import { Booking } from "../models/booking.model.js";
 import { Payment } from "../models/finance.model.js";
 import { Customer, Driver, Staff } from "../models/user.model.js";
+import { sendNotification } from "../utils/notificationSender.js";
 
 export const processDepositPayment = async (req, res) => {
   try {
     const { booking_id, payment_method, transaction_id } = req.body;
 
     //1. validate payment
-    const validMethods = ["cash", "card", "momo", "zalopay", "vnpay", "bank_transfer"];
+    const validMethods = [
+      "cash",
+      "card",
+      "momo",
+      "zalopay",
+      "vnpay",
+      "bank_transfer",
+    ];
     if (!validMethods.includes(payment_method))
       return res
         .status(400)
@@ -53,6 +61,16 @@ export const processDepositPayment = async (req, res) => {
     booking.status = "confirmed";
     await booking.save();
 
+    // Notify Customer
+    await sendNotification({
+      recipientId: customer.user,
+      title: "Thanh toán cọc thành công",
+      message: `Đơn đặt xe #${booking._id.toString().slice(-6)} đã được xác nhận.`,
+      type: "payment_success",
+      relatedId: booking._id,
+      relatedModel: "Booking",
+    });
+
     //8 response
     res.status(200).json({
       success: true,
@@ -76,7 +94,14 @@ export const processFinalPayment = async (req, res) => {
     const { booking_id, payment_method, transaction_id } = req.body;
 
     // 0. Validate phương thức thanh toán
-    const validMethods = ["cash", "card", "momo", "zalopay", "vnpay", "bank_transfer"];
+    const validMethods = [
+      "cash",
+      "card",
+      "momo",
+      "zalopay",
+      "vnpay",
+      "bank_transfer",
+    ];
     if (!validMethods.includes(payment_method))
       return res
         .status(400)
@@ -146,6 +171,15 @@ export const processFinalPayment = async (req, res) => {
     // 6. ĐÓNG HỢP ĐỒNG (COMPLETED)
     booking.status = "completed";
     await booking.save();
+
+    await sendNotification({
+      recipientId: customer.user,
+      title: "Thanh toán hoàn tất",
+      message: `Đơn hàng #${booking._id.toString().slice(-6)} đã được thanh toán đầy đủ và hoàn tất.`,
+      type: "payment_success",
+      relatedId: newPayment._id,
+      relatedModel: "Payment",
+    });
 
     // 7. Cộng điểm Loyalty cho khách hàng
     customer.loyalty_points += Math.floor(booking.total_amount / 100000);

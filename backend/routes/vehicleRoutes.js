@@ -10,21 +10,42 @@ import {
   getAllVehicleTypes,
   createVehicleType,
 } from "../controllers/vehicleController.js";
+import { upload } from "../config/cloudinary.js";
 
 const vehicleRouter = express.Router();
 
 // --- Vehicle Types routes (phải đặt TRƯỚC /:id để tránh bắt nhầm) ---
-vehicleRouter
-  .get("/types", protect, authorize("staff"), getAllVehicleTypes)
-  .post("/types", protect, authorize("staff"), createVehicleType);
+vehicleRouter.get("/types", protect, authorize("staff"), getAllVehicleTypes);
+vehicleRouter.post("/types", protect, authorize("staff"), createVehicleType);
 
 // --- Vehicle CRUD routes ---
-vehicleRouter
-  .get("/", protect, authorize("staff"), getAllVehicles)
-  .get("/:id", protect, authorize("staff"), getVehicleById)
-  .post("/", protect, authorize("staff"), createVehicle)
-  .put("/:id", protect, authorize("staff"), updateVehicle)
-  .patch("/:id/status", protect, authorize("staff"), updateVehicleStatus)
-  .delete("/:id", protect, authorize("staff"), deleteVehicle);
+vehicleRouter.get("/", protect, authorize("staff"), getAllVehicles);
+vehicleRouter.get("/:id", protect, authorize("staff"), getVehicleById);
+
+// Thêm middleware upload.array('image_urls') để xử lý upload ảnh
+// 'image_urls' là tên field trong form-data
+vehicleRouter.post(
+  "/",
+  protect,
+  authorize("staff"),
+  upload.array("images", 5),
+  createVehicle,
+);
+
+vehicleRouter.put(
+  "/:id",
+  protect,
+  authorize("staff"),
+  upload.array("images", 5),
+  updateVehicle,
+);
+
+vehicleRouter.patch(
+  "/:id/status",
+  protect,
+  authorize("staff"),
+  updateVehicleStatus,
+);
+vehicleRouter.delete("/:id", protect, authorize("staff"), deleteVehicle);
 
 export default vehicleRouter;
