@@ -204,20 +204,16 @@ export const updateUserRole = async (req, res) => {
     const { role, action } = req.body;
 
     if (!["admin", "staff"].includes(role)) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Chỉ có thể chỉnh role 'admin' hoặc 'staff'",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Chỉ có thể chỉnh role 'admin' hoặc 'staff'",
+      });
     }
     if (!["add", "remove"].includes(action)) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "action phải là 'add' hoặc 'remove'",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "action phải là 'add' hoặc 'remove'",
+      });
     }
 
     // Prevent self-demoting admin
@@ -226,12 +222,10 @@ export const updateUserRole = async (req, res) => {
       action === "remove" &&
       req.user._id.toString() === userId
     ) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Không thể tự xóa quyền admin của chính mình",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Không thể tự xóa quyền admin của chính mình",
+      });
     }
 
     const user = await User.findById(userId);
@@ -239,6 +233,14 @@ export const updateUserRole = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "Không tìm thấy người dùng" });
+
+    // Bảo vệ Super Admin (admin@luxedrive.com)
+    if (user.email === "admin@luxedrive.com") {
+      return res.status(403).json({
+        success: false,
+        message: "Không thể thay đổi quyền của Administrator mặc định.",
+      });
+    }
 
     if (role === "admin") {
       if (action === "add") {
@@ -283,12 +285,10 @@ export const toggleUserStatus = async (req, res) => {
     const { userId } = req.params;
 
     if (req.user._id.toString() === userId) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Không thể vô hiệu hóa tài khoản của chính mình",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Không thể vô hiệu hóa tài khoản của chính mình",
+      });
     }
 
     const user = await User.findById(userId);

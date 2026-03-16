@@ -153,13 +153,20 @@ export const getMyProfile = async () => {
 export const updateUserInfo = async (userData) => {
   try {
     const token = getToken();
+    const isFormData = userData instanceof FormData;
+
+    const headers = {
+      Authorization: `Bearer ${token}`,
+    };
+
+    if (!isFormData) {
+      headers["Content-Type"] = "application/json";
+    }
+
     const response = await fetch(`${API_URL}/users/me`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(userData),
+      headers,
+      body: isFormData ? userData : JSON.stringify(userData),
     });
 
     const data = await response.json();

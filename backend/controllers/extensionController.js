@@ -1,5 +1,6 @@
 import { Booking, ExtensionRequest } from "../models/booking.model.js";
 import { Customer, Staff } from "../models/user.model.js";
+import { sendNotification } from "../utils/notificationSender.js";
 
 // @route POST /api/extensions/request
 // @access Private (Chỉ Customer)
@@ -107,6 +108,16 @@ export const requestExtension = async (req, res) => {
       status: "pending", // Chờ Staff duyệt
     });
 
+    // Notify Customer about pending request
+    await sendNotification({
+      recipientId: customer.user,
+      title: "Yêu cầu gia hạn",
+      message: `Yêu cầu gia hạn đến ${new Date(new_end_date).toLocaleDateString()} đang chờ duyệt.`,
+      type: "extension_status",
+      relatedId: extensionRequest._id,
+      relatedModel: "ExtensionRequest",
+    });
+
     res.status(201).json({
       success: true,
       message: "Đã gửi yêu cầu gia hạn. Vui lòng chờ nhân viên xác nhận.",
@@ -146,7 +157,9 @@ export const approveExtension = async (req, res) => {
     }
 
     // 3. Tìm Booking gốc
-    const booking = await Booking.findById(extensionRequest.booking);
+    const booking = await Booking.findById(extensionRequest.booking)
+      .populate("customer")
+      .populate("vehicle");
     if (!booking) {
       return res
         .status(404)
@@ -173,6 +186,20 @@ export const approveExtension = async (req, res) => {
     extensionRequest.processed_by = staff._id; // Lưu lại vết nhân viên duyệt
     // Note: Trường updatedAt sẽ tự động được Mongoose đổi thành 'processed_at' nhờ cấu hình schema của bạn
     await extensionRequest.save();
+
+    // Notify Customer: Approved
+    if (booking.customer && booking.customer.user) {
+      await sendNotification({
+        recipientId: booking.customer.user,
+        title: "Gia hạn thành công",
+        message: `Yêu cầu gia hạn xe ${
+          booking.vehicle?.license_plate || ""
+        } đến ${new Date(extensionRequest.new_end_date).toLocaleDateString()} đã được chấp thuận.`,
+        type: "extension_status",
+        relatedId: extensionRequest._id,
+        relatedModel: "ExtensionRequest",
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -224,6 +251,24 @@ export const rejectExtension = async (req, res) => {
       extensionRequest.reject_reason = reject_reason;
     }
     await extensionRequest.save();
+
+    // 4. Notify Customer
+    const booking = await Booking.findById(extensionRequest.booking)
+      .populate({ path: "customer", populate: { path: "user" } })
+      .populate("vehicle");
+
+    if (booking?.customer?.user) {
+      await sendNotification({
+        recipientId: booking.customer.user._id || booking.customer.user,
+        title: "Gia hạn bị từ chối",
+        message: `Yêu cầu gia hạn xe ${
+          booking.vehicle?.license_plate || ""
+        } bị từ chối. Lý do: ${reject_reason || "Không có lý do"}`,
+        type: "extension_status",
+        relatedId: extensionRequest._id,
+        relatedModel: "ExtensionRequest",
+      });
+    }
 
     res.status(200).json({
       success: true,

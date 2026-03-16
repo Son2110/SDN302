@@ -2,6 +2,8 @@ import { Booking } from "../models/booking.model.js";
 import { Vehicle } from "../models/vehicle.model.js";
 import { Customer, Staff } from "../models/user.model.js";
 import { Payment } from "../models/finance.model.js";
+import { sendNotification } from "../utils/notificationSender.js";
+
 export const getAvailableVehicles = async (req, res) => {
   try {
     const { start_date, end_date } = req.query;
@@ -76,6 +78,13 @@ export const createBooking = async (req, res) => {
       pickup_location,
       return_location,
     } = req.body;
+
+    // Check if user is admin
+    if (req.user.roles && req.user.roles.includes("admin")) {
+      return res.status(403).json({
+        message: "Tài khoản Admin không được phép thực hiện đặt xe.",
+      });
+    }
 
     //1. infor customer
     const customer = await Customer.findOne({ user: req.user._id });
@@ -166,6 +175,16 @@ export const createBooking = async (req, res) => {
       status: "pending",
     });
 
+    // Notify Customer
+    await sendNotification({
+      recipientId: customer.user,
+      title: "Đặt xe thành công",
+      message: `Đơn đặt xe #${newBooking._id.toString().slice(-6)} đã được tạo. Vui lòng thanh toán cọc để xác nhận.`,
+      type: "booking_created",
+      relatedId: newBooking._id,
+      relatedModel: "Booking",
+    });
+
     res.status(201).json({
       success: true,
       message:
@@ -232,7 +251,7 @@ export const cancelBooking = async (req, res) => {
       });
     }
 
-    booking.status = "cancelled";
+    booking.updateStatus("cancelled");
     await booking.save();
 
     res.status(200).json({

@@ -1,6 +1,7 @@
 import { Booking, VehicleHandover } from "../models/booking.model.js";
 import { Vehicle, VehicleType } from "../models/vehicle.model.js";
 import { Staff, Customer } from "../models/user.model.js";
+import { sendNotification } from "../utils/notificationSender.js";
 
 // @route POST /api/handovers/delivery
 // @access Private (Chỉ Staff)
@@ -67,12 +68,25 @@ export const createDeliveryHandover = async (req, res) => {
 
     // 6. 🟢 CẬP NHẬT TRẠNG THÁI BOOKING & VEHICLE
     // Booking chuyển sang đang trong chuyến đi
-    booking.status = "in_progress";
+    booking.updateStatus("in_progress");
     await booking.save();
 
     // Xe chuyển sang trạng thái đang cho thuê (Để hệ thống khác không lấy được xe này)
     vehicle.status = "rented";
     await vehicle.save();
+
+    // Populate customer to get User ID
+    await booking.populate("customer");
+    if (booking.customer && booking.customer.user) {
+      await sendNotification({
+        recipientId: booking.customer.user,
+        title: "Giao xe thành công",
+        message: `Xe ${vehicle.license_plate} đã được bàn giao. Chúc quý khách thượng lộ bình an!`,
+        type: "vehicle_handover",
+        relatedId: newHandover._id,
+        relatedModel: "VehicleHandover",
+      });
+    }
 
     res.status(201).json({
       success: true,
@@ -195,13 +209,26 @@ export const createReturnHandover = async (req, res) => {
     // 6. CẬP NHẬT TRẠNG THÁI BOOKING & VEHICLE
     booking.actual_return_date = new Date(); // Lưu lại thời gian trả xe thực tế
     booking.final_amount = final_amount > 0 ? final_amount : 0; // Số tiền khách còn phải trả thêm
-    booking.status = "vehicle_returned"; // Đổi trạng thái: Đã trả xe (Chờ thanh toán nốt)
+    booking.updateStatus("vehicle_returned"); // Đổi trạng thái: Đã trả xe (Chờ thanh toán nốt)
     await booking.save();
 
     // Xe được thu hồi về bãi -> Rảnh rỗi đón khách mới
     vehicle.status = "available";
     vehicle.current_mileage = return_mileage; // Cập nhật ODO mới nhất cho xe
     await vehicle.save();
+
+    // Populate customer to get User ID
+    await booking.populate("customer");
+    if (booking.customer && booking.customer.user) {
+      await sendNotification({
+        recipientId: booking.customer.user,
+        title: "Trả xe thành công",
+        message: `Đã nhận xe ${vehicle.license_plate}. Vui lòng thanh toán số dư còn lại (nếu có).`,
+        type: "vehicle_return",
+        relatedId: newHandover._id,
+        relatedModel: "VehicleHandover",
+      });
+    }
 
     res.status(201).json({
       success: true,

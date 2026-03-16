@@ -20,6 +20,13 @@ export const protect = async (req, res, next) => {
         return res.status(401).json({ message: "Người dùng không tồn tại" });
       }
 
+      if (user.is_active === false) {
+        return res.status(403).json({
+          message:
+            "Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ Admin để được hỗ trợ.",
+        });
+      }
+
       // 2. Tìm roles
       const roles = await getUserRoles(user._id);
       // 3. Gắn vào req.user để các controller và middleware sau dùng

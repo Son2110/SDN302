@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { getToken } from "../../services/api";
 import { formatDate } from "../../utils/formatters";
+import toast from "react-hot-toast";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -143,8 +144,9 @@ const AdminUsers = () => {
       setUsers((prev) =>
         prev.map((u) => (u._id === userId ? { ...u, roles: json.roles } : u)),
       );
+      toast.success(json.message || "Cập nhật role thành công");
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     } finally {
       setActionLoading((prev) => ({ ...prev, [key]: false }));
       setConfirm(null);
@@ -166,8 +168,9 @@ const AdminUsers = () => {
           u._id === userId ? { ...u, is_active: json.is_active } : u,
         ),
       );
+      toast.success(json.message || "Cập nhật trạng thái thành công");
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     } finally {
       setActionLoading((prev) => ({ ...prev, [key]: false }));
       setConfirm(null);
