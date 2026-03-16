@@ -138,27 +138,24 @@ export default function AssignDriverModal({ booking, onClose, onSuccess }) {
                   <button
                     key={driver._id}
                     onClick={() => setSelectedDriverId(driver._id)}
-                    className={`w-full flex items-center gap-4 p-3.5 rounded-xl border-2 transition-all text-left ${
-                      isSelected
+                    className={`w-full flex items-center gap-4 p-3.5 rounded-xl border-2 transition-all text-left ${isSelected
                         ? "border-blue-500 bg-blue-50 shadow-sm"
                         : "border-gray-100 hover:border-gray-200 hover:bg-gray-50"
-                    }`}
+                      }`}
                   >
                     {/* Avatar */}
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
-                        isSelected
+                      className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${isSelected
                           ? "bg-blue-600 text-white"
                           : "bg-gray-200 text-gray-600"
-                      }`}
+                        }`}
                     >
                       {(driver.user?.full_name || "?")[0].toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p
-                        className={`font-semibold text-sm ${
-                          isSelected ? "text-blue-800" : "text-gray-800"
-                        }`}
+                        className={`font-semibold text-sm ${isSelected ? "text-blue-800" : "text-gray-800"
+                          }`}
                       >
                         {driver.user?.full_name || "Không rõ tên"}
                       </p>

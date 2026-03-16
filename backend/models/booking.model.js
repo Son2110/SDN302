@@ -96,7 +96,7 @@ const driverAssignmentSchema = new mongoose.Schema({
 
   status: {
     type: String,
-    enum: ["pending", "accepted", "rejected"],
+    enum: ["pending", "accepted", "rejected", "completed"],
     default: "pending",
   },
   assigned_at: { type: Date, default: Date.now },

@@ -49,6 +49,8 @@ import StaffDashboard from "./pages/staff/StaffDashboard";
 // Driver Pages
 import DriverAssignments from "./pages/driver/DriverAssignments";
 import AssignmentDetail from "./pages/driver/AssignmentDetail";
+import DriverReviews from "./pages/driver/DriverReviews";
+import DriverDashboard from "./pages/driver/DriverDashboard";
 
 // Vehicle & Driver Management
 import StaffVehicles from "./pages/staff/StaffVehicles";
@@ -172,9 +174,11 @@ function App() {
         {/* ============================== */}
         <Route element={<ProtectedRoute allowedRoles={["driver"]} />}>
           <Route path="/driver" element={<DriverLayout />}>
-            <Route index element={<Navigate to="assignments" replace />} />
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<DriverDashboard />} />
             <Route path="assignments" element={<DriverAssignments />} />
             <Route path="assignments/:id" element={<AssignmentDetail />} />
+            <Route path="reviews" element={<DriverReviews />} />
           </Route>
         </Route>
 

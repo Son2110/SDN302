@@ -187,16 +187,6 @@ export const processFinalPayment = async (req, res) => {
     customer.total_spent += booking.total_amount;
     await customer.save();
 
-    // 8. Cộng total_trips cho tài xế (nếu có)
-    if (booking.driver) {
-      const driver = await Driver.findById(booking.driver);
-      if (driver) {
-        driver.total_trips += 1;
-        driver.status = "available";
-        await driver.save();
-      }
-    }
-
     res.status(200).json({
       success: true,
       message: "Thanh toán hoàn tất. Cảm ơn quý khách đã sử dụng dịch vụ!",
