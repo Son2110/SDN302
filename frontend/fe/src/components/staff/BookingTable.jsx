@@ -62,11 +62,18 @@ export default function BookingTable({ bookings, onDelete }) {
               <tr key={b._id} className="hover:bg-gray-50 transition-colors">
                 {/* Mã / Khách hàng */}
                 <td className="px-5 py-4">
-                  <div className="font-semibold text-gray-900 truncate w-32" title={b._id}>
+                  <div
+                    className="font-semibold text-gray-900 truncate w-32"
+                    title={b._id}
+                  >
                     #{b._id.slice(-6).toUpperCase()}
                   </div>
-                  <div className="text-sm mt-1">{b.customer?.user?.full_name || "Khách"}</div>
-                  <div className="text-xs text-gray-400">{b.customer?.user?.phone}</div>
+                  <div className="text-sm mt-1">
+                    {b.customer?.user?.full_name || "Khách"}
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {b.customer?.user?.phone}
+                  </div>
                 </td>
 
                 {/* Xe & Loại */}
@@ -90,15 +97,29 @@ export default function BookingTable({ bookings, onDelete }) {
 
                 {/* Thời gian */}
                 <td className="px-5 py-4">
-                  <div className="text-sm">Từ: <span className="font-medium">{formatDate(b.start_date)}</span></div>
-                  <div className="text-sm mt-1">Đến: <span className="font-medium">{formatDate(b.end_date)}</span></div>
+                  <div className="text-sm">
+                    Từ:{" "}
+                    <span className="font-medium">
+                      {formatDate(b.start_date)}
+                    </span>
+                  </div>
+                  <div className="text-sm mt-1">
+                    Đến:{" "}
+                    <span className="font-medium">
+                      {formatDate(b.end_date)}
+                    </span>
+                  </div>
                 </td>
 
                 {/* Tổng tiền */}
                 <td className="px-5 py-4">
-                  <div className="font-semibold text-blue-600">{formatCurrency(b.total_amount)}</div>
+                  <div className="font-semibold text-blue-600">
+                    {formatCurrency(b.total_amount)}
+                  </div>
                   {b.deposit_amount > 0 && (
-                    <div className="text-xs text-gray-500 mt-1">Cọc: {formatCurrency(b.deposit_amount)}</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Cọc: {formatCurrency(b.deposit_amount)}
+                    </div>
                   )}
                 </td>
 
@@ -110,7 +131,6 @@ export default function BookingTable({ bookings, onDelete }) {
                     </span>
                   ) : b.driver ? (
                     <div>
-
                       <span className="inline-block mt-1 px-2 py-0.5 bg-teal-100 text-teal-700 text-xs font-medium rounded-full">
                         Đã phân công
                       </span>
@@ -148,7 +168,9 @@ export default function BookingTable({ bookings, onDelete }) {
                     {/* Nút phân công tài xế */}
                     {needsAssignment(b) && (
                       <button
-                        onClick={() => navigate(`/staff/bookings/${b._id}/assign-driver`)}
+                        onClick={() =>
+                          navigate(`/staff/bookings/${b._id}/assign-driver`)
+                        }
                         className="p-1.5 text-indigo-600 bg-indigo-50 rounded hover:bg-indigo-100 transition-colors"
                         title="Phân công tài xế"
                       >

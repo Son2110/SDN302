@@ -2,10 +2,337 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getBookingDetail, updateBooking, deleteBooking } from "../../services/bookingApi";
 import { getPaymentsByBookingId } from "../../services/paymentApiStaff";
-import { getHandoversByBookingId } from "../../services/handoverApi";
+import {
+  getHandoversByBookingId,
+  createDeliveryHandover,
+  createReturnHandover,
+} from "../../services/handoverApi";
 import { formatDate, formatCurrency } from "../../utils/formatters";
-import { ArrowLeft, Loader2, Edit, Trash2, X, Save, Car } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader2,
+  Edit,
+  Trash2,
+  X,
+  Save,
+  Car,
+  KeyRound,
+  ArrowRightLeft,
+  CheckCircle2,
+} from "lucide-react";
 
+/* ─────────────────────────────────────────────────────────────
+   Reusable Modal Wrapper
+───────────────────────────────────────────────────────────── */
+function Modal({ onClose, children }) {
+  // Close on backdrop click
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg relative animate-fadeIn">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Delivery Handover Modal
+───────────────────────────────────────────────────────────── */
+function DeliveryModal({ bookingId, onClose, onSuccess }) {
+  const [form, setForm] = useState({
+    mileage: "",
+    battery_level_percentage: "",
+    notes: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      setError(null);
+      await createDeliveryHandover({
+        booking_id: bookingId,
+        mileage: form.mileage ? Number(form.mileage) : undefined,
+        battery_level_percentage: form.battery_level_percentage
+          ? Number(form.battery_level_percentage)
+          : undefined,
+        notes: form.notes || undefined,
+      });
+      onSuccess();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal onClose={onClose}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center">
+            <KeyRound className="w-4 h-4" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-gray-900">Biên bản Giao xe</h2>
+            <p className="text-xs text-gray-500">Bàn giao xe cho khách hàng</p>
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          className="p-1.5 hover:bg-gray-100 rounded-lg transition text-gray-400 hover:text-gray-600"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Body */}
+      <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Số Km ODO hiện tại
+            </label>
+            <input
+              type="number"
+              name="mileage"
+              value={form.mileage}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+              placeholder="VD: 35000"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              % Pin (Xe điện)
+            </label>
+            <input
+              type="number"
+              name="battery_level_percentage"
+              min="0"
+              max="100"
+              value={form.battery_level_percentage}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+              placeholder="VD: 95"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Ghi chú tình trạng xe
+          </label>
+          <textarea
+            name="notes"
+            rows={3}
+            value={form.notes}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
+            placeholder="Xe bị trầy xước nhẹ ở cản trước, đủ giấy tờ..."
+          />
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 border border-gray-300 rounded-xl text-sm text-gray-700 hover:bg-gray-50 font-medium transition"
+          >
+            Huỷ
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-5 py-2 bg-indigo-600 text-white rounded-xl text-sm hover:bg-indigo-700 font-medium transition flex items-center gap-2 disabled:opacity-50"
+          >
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <KeyRound className="w-4 h-4" />
+            )}
+            Tạo Biên Bản Giao Xe
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Return Handover Modal
+───────────────────────────────────────────────────────────── */
+function ReturnModal({ bookingId, onClose, onSuccess }) {
+  const [form, setForm] = useState({
+    return_mileage: "",
+    battery_level_percentage: "",
+    penalty_amount: "",
+    notes: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await createReturnHandover({
+        booking_id: bookingId,
+        return_mileage: form.return_mileage ? Number(form.return_mileage) : undefined,
+        battery_level_percentage: form.battery_level_percentage
+          ? Number(form.battery_level_percentage)
+          : undefined,
+        penalty_amount: form.penalty_amount ? Number(form.penalty_amount) : undefined,
+        notes: form.notes || undefined,
+      });
+      onSuccess(res.data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal onClose={onClose}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center">
+            <ArrowRightLeft className="w-4 h-4" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-gray-900">Biên bản Thu xe</h2>
+            <p className="text-xs text-gray-500">Ghi nhận tình trạng xe khi hoàn tất</p>
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          className="p-1.5 hover:bg-gray-100 rounded-lg transition text-gray-400 hover:text-gray-600"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Body */}
+      <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Số Km ODO lúc trả <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              name="return_mileage"
+              required
+              value={form.return_mileage}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+              placeholder="VD: 35500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              % Pin lúc trả (Xe điện)
+            </label>
+            <input
+              type="number"
+              name="battery_level_percentage"
+              min="0"
+              max="100"
+              value={form.battery_level_percentage}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+              placeholder="VD: 60"
+            />
+          </div>
+          <div className="col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tiền phạt (VNĐ – nếu có)
+            </label>
+            <input
+              type="number"
+              name="penalty_amount"
+              min="0"
+              value={form.penalty_amount}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+              placeholder="VD: 500000"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Ghi chú tình trạng xe lúc trả
+          </label>
+          <textarea
+            name="notes"
+            rows={3}
+            value={form.notes}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none resize-none"
+            placeholder="Xước nhẹ cản trước..."
+          />
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 border border-gray-300 rounded-xl text-sm text-gray-700 hover:bg-gray-50 font-medium transition"
+          >
+            Huỷ
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-5 py-2 bg-emerald-600 text-white rounded-xl text-sm hover:bg-emerald-700 font-medium transition flex items-center gap-2 disabled:opacity-50"
+          >
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <ArrowRightLeft className="w-4 h-4" />
+            )}
+            Tạo Biên Bản Thu Xe
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Main Page
+───────────────────────────────────────────────────────────── */
 export default function StaffBookingDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -16,6 +343,7 @@ export default function StaffBookingDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Edit booking
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     vehicle_id: "",
@@ -23,30 +351,35 @@ export default function StaffBookingDetail() {
     end_date: "",
     rental_type: "",
     pickup_location: "",
-    return_location: ""
+    return_location: "",
   });
   const [saving, setSaving] = useState(false);
+
+  // Modals
+  const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+  const [showReturnModal, setShowReturnModal] = useState(false);
+
+  // Notifications
+  const [deliverySuccess, setDeliverySuccess] = useState(false);
+  const [returnSuccessData, setReturnSuccessData] = useState(null);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const bRes = await getBookingDetail(id);
       setBooking(bRes.data);
-      
       try {
         const pRes = await getPaymentsByBookingId(id);
         setPayments(pRes);
       } catch (e) {
         console.error("Failed to fetch payments", e);
       }
-      
       try {
         const hRes = await getHandoversByBookingId(id);
         setHandovers(hRes.data);
       } catch (e) {
         console.error("Failed to fetch handovers", e);
       }
-      
     } catch (err) {
       setError(err.message);
     } finally {
@@ -58,9 +391,9 @@ export default function StaffBookingDetail() {
     fetchData();
   }, [id]);
 
-  const handleEditChange = (e) => {
+  // ── Edit handlers ────────────────────────────────────────────────────────
+  const handleEditChange = (e) =>
     setEditForm({ ...editForm, [e.target.name]: e.target.value });
-  };
 
   const startEditing = () => {
     setEditForm({
@@ -69,7 +402,7 @@ export default function StaffBookingDetail() {
       end_date: booking.end_date ? booking.end_date.split("T")[0] : "",
       rental_type: booking.rental_type || "",
       pickup_location: booking.pickup_location || "",
-      return_location: booking.return_location || ""
+      return_location: booking.return_location || "",
     });
     setIsEditing(true);
   };
@@ -80,9 +413,10 @@ export default function StaffBookingDetail() {
       const payload = Object.fromEntries(
         Object.entries(editForm).filter(([_, v]) => v !== "")
       );
-      if (payload.start_date) payload.start_date = new Date(payload.start_date).toISOString();
-      if (payload.end_date) payload.end_date = new Date(payload.end_date).toISOString();
-      
+      if (payload.start_date)
+        payload.start_date = new Date(payload.start_date).toISOString();
+      if (payload.end_date)
+        payload.end_date = new Date(payload.end_date).toISOString();
       await updateBooking(id, payload);
       setIsEditing(false);
       fetchData();
@@ -103,234 +437,492 @@ export default function StaffBookingDetail() {
     }
   };
 
-  if (loading) return <div className="p-10 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>;
-  if (error) return <div className="p-10 text-red-600 text-center bg-red-50 rounded-lg">{error}</div>;
-  if (!booking) return <div className="p-10 text-gray-500 text-center">Không tìm thấy đơn đặt xe.</div>;
+  // ── Modal callbacks ──────────────────────────────────────────────────────
+  const handleDeliverySuccess = () => {
+    setShowDeliveryModal(false);
+    setDeliverySuccess(true);
+    fetchData();
+  };
 
-  const canEdit = booking.status === "pending" || booking.status === "confirmed";
-  const canDelete = booking.status === "pending" || booking.status === "cancelled";
+  const handleReturnSuccess = (data) => {
+    setShowReturnModal(false);
+    setReturnSuccessData(data);
+    fetchData();
+  };
+
+  // ── Guards ───────────────────────────────────────────────────────────────
+  if (loading)
+    return (
+      <div className="p-10 flex justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  if (error)
+    return (
+      <div className="p-10 text-red-600 text-center bg-red-50 rounded-lg">
+        {error}
+      </div>
+    );
+  if (!booking)
+    return (
+      <div className="p-10 text-gray-500 text-center">
+        Không tìm thấy đơn đặt xe.
+      </div>
+    );
+
+  const canEdit =
+    booking.status === "pending" || booking.status === "confirmed";
+  const canDelete =
+    booking.status === "pending" || booking.status === "cancelled";
+  const canDelivery =
+    booking.status === "confirmed" && !handovers?.delivery;
+  const canReturn =
+    booking.status === "in_progress" &&
+    handovers?.delivery &&
+    !handovers?.return;
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-10">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <button onClick={() => navigate("/staff/bookings")} className="p-2 bg-white rounded-full shadow-sm hover:bg-gray-50 transition border border-gray-100">
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Chi tiết đơn #{booking._id.slice(-6).toUpperCase()}</h1>
-            <p className="text-gray-500 text-sm mt-1">Trạng thái hiện tại: <span className="font-semibold uppercase text-blue-600">{booking.status}</span></p>
-          </div>
-        </div>
-        <div className="flex space-x-3">
-          {canEdit && !isEditing && (
-            <button onClick={startEditing} className="flex items-center space-x-2 px-4 py-2 bg-blue-50 text-blue-600 font-medium rounded-lg hover:bg-blue-100 transition">
-              <Edit className="w-4 h-4" />
-              <span>Sửa đơn</span>
+    <>
+      {/* ── Modals ── */}
+      {showDeliveryModal && (
+        <DeliveryModal
+          bookingId={id}
+          onClose={() => setShowDeliveryModal(false)}
+          onSuccess={handleDeliverySuccess}
+        />
+      )}
+      {showReturnModal && (
+        <ReturnModal
+          bookingId={id}
+          onClose={() => setShowReturnModal(false)}
+          onSuccess={handleReturnSuccess}
+        />
+      )}
+
+      {/* ── Page Content ── */}
+      <div className="space-y-6 max-w-5xl mx-auto pb-10">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => navigate("/staff/bookings")}
+              className="p-2 bg-white rounded-full shadow-sm hover:bg-gray-50 transition border border-gray-100"
+            >
+              <ArrowLeft className="w-5 h-5 text-gray-600" />
             </button>
-          )}
-          {canDelete && !isEditing && (
-            <button onClick={handleDelete} className="flex items-center space-x-2 px-4 py-2 bg-red-50 text-red-600 font-medium rounded-lg hover:bg-red-100 transition">
-              <Trash2 className="w-4 h-4" />
-              <span>Xoá đơn</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Form Edit or Detail */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Thông tin chuyến đi</h2>
-            {isEditing ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Dịch vụ</label>
-                    <select name="rental_type" value={editForm.rental_type} onChange={handleEditChange} className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition">
-                      <option value="">(Bỏ qua nếu không đổi)</option>
-                      <option value="self_drive">Thuê xe tự lái</option>
-                      <option value="with_driver">Thuê xe kèm tài xế</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">ID Xe cần đổi</label>
-                    <input type="text" name="vehicle_id" value={editForm.vehicle_id} onChange={handleEditChange} className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="Nhập ID Xe..." />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Ngày bắt đầu</label>
-                    <input type="date" name="start_date" value={editForm.start_date} onChange={handleEditChange} className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Ngày kết thúc</label>
-                    <input type="date" name="end_date" value={editForm.end_date} onChange={handleEditChange} className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition" />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Điểm nhận xe</label>
-                    <input type="text" name="pickup_location" value={editForm.pickup_location} onChange={handleEditChange} className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition" />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Điểm trả xe</label>
-                    <input type="text" name="return_location" value={editForm.return_location} onChange={handleEditChange} className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition" />
-                  </div>
-                </div>
-                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
-                  <button onClick={() => setIsEditing(false)} className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center transition font-medium">
-                    <X className="w-4 h-4 mr-2" /> Huỷ
-                  </button>
-                  <button onClick={handleUpdate} disabled={saving} className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center transition font-medium disabled:opacity-50">
-                    {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                    Lưu thay đổi
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-6">
-                <div>
-                  <p className="text-sm text-gray-500">Ngày bắt đầu</p>
-                  <p className="font-semibold text-gray-900 mt-1">{formatDate(booking.start_date, true)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Ngày kết thúc</p>
-                  <p className="font-semibold text-gray-900 mt-1">{formatDate(booking.end_date, true)}</p>
-                </div>
-                <div>
-  <p className="text-sm text-gray-500">Dịch vụ</p>
-  <p className="font-medium text-gray-800 mt-1 uppercase text-xs bg-gray-100 inline-block px-2.5 py-1 rounded">
-    {booking.rental_type === "with_driver"
-      ? "Thuê xe kèm tài xế"
-      : booking.rental_type === "self_drive"
-      ? "Thuê xe tự lái"
-      : booking.rental_type}
-  </p>
-</div>
-                {booking.rental_type === "with_driver" && (
-                  <div>
-                    <p className="text-sm text-gray-500">Tài xế</p>
-                    <p className="font-medium text-gray-900 mt-1">{booking.driver?.user?.full_name || "Chưa phân công"}</p>
-                  </div>
-                )}
-                <div className="md:col-span-2">
-                  <p className="text-sm text-gray-500">Điểm nhận xe</p>
-                  <p className="font-medium text-gray-900 mt-1">{booking.pickup_location || "Không có thông tin"}</p>
-                </div>
-                <div className="md:col-span-2">
-                  <p className="text-sm text-gray-500">Điểm trả xe</p>
-                  <p className="font-medium text-gray-900 mt-1">{booking.return_location || "Không có thông tin"}</p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Thông tin xe</h2>
-            {booking.vehicle ? (
-              <div className="flex items-start md:items-center space-x-5 flex-col md:flex-row space-y-4 md:space-y-0">
-                <div className="w-32 h-24 bg-gray-100 rounded-xl flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
-                   {booking.vehicle.image_urls?.[0] ? 
-                    <img src={booking.vehicle.image_urls[0]} alt="Car" className="object-cover w-full h-full" /> 
-                    : <Car className="w-10 h-10 text-gray-400" />}
-                </div>
-                <div>
-                  <h3 className="font-bold text-xl text-gray-900">{booking.vehicle.brand} {booking.vehicle.model}</h3>
-                  <div className="flex items-center space-x-3 mt-2">
-                    <span className="text-sm font-bold text-gray-700 uppercase border-2 border-dashed border-gray-300 px-3 py-1 rounded bg-gray-50">
-                      {booking.vehicle.license_plate}
-                    </span>
-                    {booking.vehicle.vehicle_type?.type_name && (
-                      <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">{booking.vehicle.vehicle_type.type_name}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <p className="text-gray-500">Không có dữ liệu xe</p>
-            )}
-          </div>
-        </div>
-
-        {/* Sidebar Data */}
-        <div className="space-y-6">
-          {/* Customer */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Khách hàng</h2>
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-500">Họ tên</p>
-                <p className="font-semibold text-gray-900 mt-0.5">{booking.customer?.user?.full_name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Số điện thoại</p>
-                <p className="font-semibold text-gray-900 mt-0.5">{booking.customer?.user?.phone}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Email</p>
-                <p className="font-semibold text-gray-900 mt-0.5">{booking.customer?.user?.email}</p>
-              </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Chi tiết đơn #{booking._id.slice(-6).toUpperCase()}
+              </h1>
+              <p className="text-gray-500 text-sm mt-1">
+                Trạng thái:{" "}
+                <span className="font-semibold uppercase text-blue-600">
+                  {booking.status}
+                </span>
+              </p>
             </div>
           </div>
 
-          {/* Payment Summary */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Tài chính</h2>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-500 font-medium">Tổng tiền</span>
-                <span className="font-bold text-gray-900">{formatCurrency(booking.total_amount)}</span>
+          <div className="flex flex-wrap gap-2 justify-end">
+            {canEdit && !isEditing && (
+              <button
+                onClick={startEditing}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 font-medium rounded-lg hover:bg-blue-100 transition text-sm"
+              >
+                <Edit className="w-4 h-4" />
+                Sửa đơn
+              </button>
+            )}
+            {canDelete && !isEditing && (
+              <button
+                onClick={handleDelete}
+                className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 font-medium rounded-lg hover:bg-red-100 transition text-sm"
+              >
+                <Trash2 className="w-4 h-4" />
+                Xoá đơn
+              </button>
+            )}
+            {canDelivery && !isEditing && (
+              <button
+                onClick={() => setShowDeliveryModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 font-medium rounded-lg hover:bg-indigo-100 transition text-sm"
+              >
+                <KeyRound className="w-4 h-4" />
+                Lập BB Giao xe
+              </button>
+            )}
+            {canReturn && !isEditing && (
+              <button
+                onClick={() => setShowReturnModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 font-medium rounded-lg hover:bg-emerald-100 transition text-sm"
+              >
+                <ArrowRightLeft className="w-4 h-4" />
+                Lập BB Thu xe
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* ── Delivery success banner ── */}
+        {deliverySuccess && (
+          <div className="flex items-center gap-3 p-4 bg-indigo-50 border border-indigo-100 rounded-2xl">
+            <CheckCircle2 className="w-5 h-5 text-indigo-600 shrink-0" />
+            <p className="text-indigo-700 font-medium text-sm">
+              Lập biên bản giao xe thành công!
+            </p>
+          </div>
+        )}
+
+        {/* ── Return success card ── */}
+        {returnSuccessData && (
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-green-200">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-green-100 text-green-600 rounded-full flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-5 h-5" />
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-500 font-medium">Tiền cọc</span>
-                <span className="font-bold text-gray-900">{formatCurrency(booking.deposit_amount)}</span>
+              <div>
+                <h2 className="text-base font-bold text-green-800">
+                  Nhận lại xe thành công!
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Biên bản thu hồi xe đã được lưu.
+                </p>
               </div>
-              {payments?.summary && (
-                <>
-                  <div className="border-t border-gray-100 pt-3 mt-3" />
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-500 font-medium">Đã thanh toán</span>
-                    <span className="font-bold text-green-600">{formatCurrency(payments.summary.total_paid)}</span>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Phí sạc pin:</span>
+                <span className="font-semibold text-gray-900">
+                  {formatCurrency(returnSuccessData.charging_fee)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Tiền phạt:</span>
+                <span className="font-semibold text-gray-900">
+                  {formatCurrency(returnSuccessData.penalty_amount)}
+                </span>
+              </div>
+              <div className="border-t border-gray-200 pt-3 flex justify-between">
+                <span className="font-bold text-gray-800 text-sm">
+                  Khách cần thanh toán thêm:
+                </span>
+                <span className="font-bold text-red-600 text-base">
+                  {formatCurrency(returnSuccessData.final_amount_to_pay)}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* ── Main ── */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Trip info */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <h2 className="text-lg font-bold text-gray-800 mb-4">
+                Thông tin chuyến đi
+              </h2>
+              {isEditing ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Dịch vụ
+                      </label>
+                      <select
+                        name="rental_type"
+                        value={editForm.rental_type}
+                        onChange={handleEditChange}
+                        className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition"
+                      >
+                        <option value="">(Bỏ qua nếu không đổi)</option>
+                        <option value="self_drive">Thuê xe tự lái</option>
+                        <option value="with_driver">Thuê xe kèm tài xế</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        ID Xe cần đổi
+                      </label>
+                      <input
+                        type="text"
+                        name="vehicle_id"
+                        value={editForm.vehicle_id}
+                        onChange={handleEditChange}
+                        className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition"
+                        placeholder="Nhập ID Xe..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Ngày bắt đầu
+                      </label>
+                      <input
+                        type="date"
+                        name="start_date"
+                        value={editForm.start_date}
+                        onChange={handleEditChange}
+                        className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Ngày kết thúc
+                      </label>
+                      <input
+                        type="date"
+                        name="end_date"
+                        value={editForm.end_date}
+                        onChange={handleEditChange}
+                        className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Điểm nhận xe
+                      </label>
+                      <input
+                        type="text"
+                        name="pickup_location"
+                        value={editForm.pickup_location}
+                        onChange={handleEditChange}
+                        className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Điểm trả xe
+                      </label>
+                      <input
+                        type="text"
+                        name="return_location"
+                        value={editForm.return_location}
+                        onChange={handleEditChange}
+                        className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition"
+                      />
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg mt-2">
-                    <span className="text-gray-800 font-bold">Còn lại</span>
-                    <span className="font-bold text-red-600 text-lg">{formatCurrency(payments.summary.remaining)}</span>
+                  <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
+                    <button
+                      onClick={() => setIsEditing(false)}
+                      className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center transition font-medium"
+                    >
+                      <X className="w-4 h-4 mr-2" /> Huỷ
+                    </button>
+                    <button
+                      onClick={handleUpdate}
+                      disabled={saving}
+                      className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center transition font-medium disabled:opacity-50"
+                    >
+                      {saving ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Save className="w-4 h-4 mr-2" />
+                      )}
+                      Lưu thay đổi
+                    </button>
                   </div>
-                </>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-6">
+                  <div>
+                    <p className="text-sm text-gray-500">Ngày bắt đầu</p>
+                    <p className="font-semibold text-gray-900 mt-1">
+                      {formatDate(booking.start_date, true)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Ngày kết thúc</p>
+                    <p className="font-semibold text-gray-900 mt-1">
+                      {formatDate(booking.end_date, true)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Dịch vụ</p>
+                    <p className="font-medium text-gray-800 mt-1 uppercase text-xs bg-gray-100 inline-block px-2.5 py-1 rounded">
+                      {booking.rental_type === "with_driver"
+                        ? "Thuê xe kèm tài xế"
+                        : booking.rental_type === "self_drive"
+                        ? "Thuê xe tự lái"
+                        : booking.rental_type}
+                    </p>
+                  </div>
+                  {booking.rental_type === "with_driver" && (
+                    <div>
+                      <p className="text-sm text-gray-500">Tài xế</p>
+                      <p className="font-medium text-gray-900 mt-1">
+                        {booking.driver?.user?.full_name || "Chưa phân công"}
+                      </p>
+                    </div>
+                  )}
+                  <div className="md:col-span-2">
+                    <p className="text-sm text-gray-500">Điểm nhận xe</p>
+                    <p className="font-medium text-gray-900 mt-1">
+                      {booking.pickup_location || "Không có thông tin"}
+                    </p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <p className="text-sm text-gray-500">Điểm trả xe</p>
+                    <p className="font-medium text-gray-900 mt-1">
+                      {booking.return_location || "Không có thông tin"}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Vehicle */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <h2 className="text-lg font-bold text-gray-800 mb-4">
+                Thông tin xe
+              </h2>
+              {booking.vehicle ? (
+                <div className="flex items-start md:items-center space-x-5 flex-col md:flex-row space-y-4 md:space-y-0">
+                  <div className="w-32 h-24 bg-gray-100 rounded-xl flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
+                    {booking.vehicle.image_urls?.[0] ? (
+                      <img
+                        src={booking.vehicle.image_urls[0]}
+                        alt="Car"
+                        className="object-cover w-full h-full"
+                      />
+                    ) : (
+                      <Car className="w-10 h-10 text-gray-400" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-xl text-gray-900">
+                      {booking.vehicle.brand} {booking.vehicle.model}
+                    </h3>
+                    <div className="flex items-center space-x-3 mt-2">
+                      <span className="text-sm font-bold text-gray-700 uppercase border-2 border-dashed border-gray-300 px-3 py-1 rounded bg-gray-50">
+                        {booking.vehicle.license_plate}
+                      </span>
+                      {booking.vehicle.vehicle_type?.type_name && (
+                        <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                          {booking.vehicle.vehicle_type.type_name}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-500">Không có dữ liệu xe</p>
               )}
             </div>
           </div>
 
-          {/* Handovers */}
-          {handovers && handovers.delivery && (
+          {/* ── Sidebar ── */}
+          <div className="space-y-6">
+            {/* Customer */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h2 className="text-lg font-bold text-gray-800 mb-4">Biên bản bàn giao</h2>
+              <h2 className="text-lg font-bold text-gray-800 mb-4">
+                Khách hàng
+              </h2>
               <div className="space-y-4">
-                <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-1 h-full bg-blue-400"></div>
-                  <p className="text-sm font-bold text-blue-900">Giao xe</p>
-                  <p className="text-sm font-medium text-gray-700 mt-1">{formatDate(handovers.delivery.handover_time, true)}</p>
-                  <p className="text-xs text-gray-500 mt-1 flex justify-between">
-                    <span>Nhân viên: {handovers.delivery.staff?.user?.full_name}</span>
-                    <span className="font-medium text-gray-700">{handovers.delivery.mileage} km</span>
+                <div>
+                  <p className="text-sm text-gray-500">Họ tên</p>
+                  <p className="font-semibold text-gray-900 mt-0.5">
+                    {booking.customer?.user?.full_name}
                   </p>
                 </div>
-                {handovers.return && (
-                  <div className="p-4 bg-green-50 border border-green-100 rounded-xl relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-green-400"></div>
-                    <p className="text-sm font-bold text-green-900">Trả xe</p>
-                    <p className="text-sm font-medium text-gray-700 mt-1">{formatDate(handovers.return.handover_time, true)}</p>
-                    <p className="text-xs text-gray-500 mt-1 flex justify-between">
-                      <span>Nhân viên: {handovers.return.staff?.user?.full_name}</span>
-                      <span className="font-medium text-gray-700">Chạy: {handovers.km_driven} km</span>
-                    </p>
-                  </div>
+                <div>
+                  <p className="text-sm text-gray-500">Số điện thoại</p>
+                  <p className="font-semibold text-gray-900 mt-0.5">
+                    {booking.customer?.user?.phone}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Email</p>
+                  <p className="font-semibold text-gray-900 mt-0.5">
+                    {booking.customer?.user?.email}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Finance */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <h2 className="text-lg font-bold text-gray-800 mb-4">Tài chính</h2>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500 font-medium">Tổng tiền</span>
+                  <span className="font-bold text-gray-900">
+                    {formatCurrency(booking.total_amount)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500 font-medium">Tiền cọc</span>
+                  <span className="font-bold text-gray-900">
+                    {formatCurrency(booking.deposit_amount)}
+                  </span>
+                </div>
+                {payments?.summary && (
+                  <>
+                    <div className="border-t border-gray-100 pt-3 mt-3" />
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500 font-medium">
+                        Đã thanh toán
+                      </span>
+                      <span className="font-bold text-green-600">
+                        {formatCurrency(payments.summary.total_paid)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg mt-2">
+                      <span className="text-gray-800 font-bold">Còn lại</span>
+                      <span className="font-bold text-red-600 text-lg">
+                        {formatCurrency(payments.summary.remaining)}
+                      </span>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
-          )}
+
+            {/* Handover summary */}
+            {handovers?.delivery && (
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h2 className="text-lg font-bold text-gray-800 mb-4">
+                  Biên bản bàn giao
+                </h2>
+                <div className="space-y-4">
+                  <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-blue-400" />
+                    <p className="text-sm font-bold text-blue-900">Giao xe</p>
+                    <p className="text-sm font-medium text-gray-700 mt-1">
+                      {formatDate(handovers.delivery.handover_time, true)}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1 flex justify-between">
+                      <span>
+                        Nhân viên: {handovers.delivery.staff?.user?.full_name}
+                      </span>
+                      <span className="font-medium text-gray-700">
+                        {handovers.delivery.mileage} km
+                      </span>
+                    </p>
+                  </div>
+                  {handovers.return && (
+                    <div className="p-4 bg-green-50 border border-green-100 rounded-xl relative overflow-hidden">
+                      <div className="absolute top-0 left-0 w-1 h-full bg-green-400" />
+                      <p className="text-sm font-bold text-green-900">Trả xe</p>
+                      <p className="text-sm font-medium text-gray-700 mt-1">
+                        {formatDate(handovers.return.handover_time, true)}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1 flex justify-between">
+                        <span>
+                          Nhân viên: {handovers.return.staff?.user?.full_name}
+                        </span>
+                        <span className="font-medium text-gray-700">
+                          Chạy: {handovers.km_driven} km
+                        </span>
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -41,11 +41,11 @@ export default function StaffAssignments() {
     }
   };
 
-  const openCreateModal = () => {
-    setEditingId(null);
-    setFormData({ booking_id: "", driver_id: "" });
-    setIsModalOpen(true);
-  };
+  // const openCreateModal = () => {
+  //   setEditingId(null);
+  //   setFormData({ booking_id: "", driver_id: "" });
+  //   setIsModalOpen(true);
+  // };
 
   const openEditModal = (assignment) => {
     setEditingId(assignment._id);
@@ -96,12 +96,12 @@ export default function StaffAssignments() {
             <option value="rejected">Từ chối</option>
           </select>
 
-          <button
+          {/* <button
             onClick={openCreateModal}
             className="flex items-center bg-blue-600 text-white px-4 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition shadow-sm"
           >
             <Plus className="w-5 h-5 mr-1.5" /> Thêm phân công
-          </button>
+          </button> */}
         </div>
       </div>
 
