@@ -14,6 +14,7 @@ import {
   CheckCircle,
   XCircle,
   WifiOff,
+  User,
 } from "lucide-react";
 import dayjs from "dayjs";
 
@@ -47,7 +48,7 @@ const DriverAssignments = () => {
   useEffect(() => {
     getMyDriverStatus()
       .then((d) => setDriverStatus(d?.status || null))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   useEffect(() => {
@@ -135,11 +136,10 @@ const DriverAssignments = () => {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 min-w-max py-2 px-3 text-sm font-medium rounded-md transition-colors ${
-              activeTab === tab.id
+            className={`flex-1 min-w-max py-2 px-3 text-sm font-medium rounded-md transition-colors ${activeTab === tab.id
                 ? "bg-blue-600 text-white shadow-sm"
                 : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-            }`}
+              }`}
           >
             {tab.label}
           </button>
@@ -274,20 +274,6 @@ const DriverAssignments = () => {
   );
 };
 
-// SVG helper
-const UserIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    className="w-5 h-5"
-  >
-    <path
-      fillRule="evenodd"
-      d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z"
-      clipRule="evenodd"
-    />
-  </svg>
-);
+const UserIcon = () => <User className="w-5 h-5" />;
 
 export default DriverAssignments;

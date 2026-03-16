@@ -5,24 +5,24 @@ import FleetGrid from "../components/fleet/FleetGrid";
 import FleetFilters from "../components/fleet/FleetFilters";
 
 const FleetPage = () => {
-  // 1. Khai báo các State để lưu giá trị bộ lọc
+  // 1. Filter state
   const [type, setType] = useState("");
   const [seats, setSeats] = useState("");
   const [price, setPrice] = useState("");
   const [sort, setSort] = useState("recommended");
 
-  // 2. State cho vehicles data từ API
+  // 2. Vehicles state from API
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 3. Fetch vehicles từ API khi component mount
+  // 3. Fetch vehicles when component mounts
   useEffect(() => {
     const fetchVehicles = async () => {
       try {
         setLoading(true);
         const data = await getAllVehicles();
-        // Transform backend data sang format FleetCard expect
+        // Transform backend data to FleetCard format
         const transformed = data.map((vehicle) => ({
           id: vehicle._id,
           name: `${vehicle.brand} ${vehicle.model}`,
@@ -36,24 +36,24 @@ const FleetPage = () => {
           seats: vehicle.vehicle_type?.seat_capacity || 4,
           transmission:
             vehicle.vehicle_type?.transmission === "auto"
-              ? "Tự động"
-              : "Số sàn",
+              ? "Automatic"
+              : "Manual",
           fuel:
             vehicle.vehicle_type?.fuel_type === "electric"
-              ? "Điện"
+              ? "Electric"
               : vehicle.vehicle_type?.fuel_type === "hybrid"
                 ? "Hybrid"
                 : vehicle.vehicle_type?.fuel_type === "diesel"
-                  ? "Dầu"
-                  : "Xăng",
-          rating: 4.5, // Default rating - có thể tính từ reviews sau
+                  ? "Diesel"
+                  : "Gasoline",
+          rating: 4.5,
           status: vehicle.status,
         }));
         setVehicles(transformed);
         setError(null);
       } catch (err) {
         console.error("Failed to fetch vehicles:", err);
-        setError("Không thể tải danh sách xe. Vui lòng thử lại sau.");
+        setError("Unable to load vehicle list. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -61,21 +61,21 @@ const FleetPage = () => {
     fetchVehicles();
   }, []);
 
-  // 4. Hàm xử lý logic lọc (Cực kỳ quan trọng)
+  // 4. Filtering logic
   const filteredVehicles = useMemo(() => {
     let result = [...vehicles];
 
-    // Lọc theo loại xe (category: suv, mini...)
+    // Filter by type
     if (type) {
       result = result.filter((car) => car.category === type);
     }
 
-    // Lọc theo số chỗ ngồi
+    // Filter by seats
     if (seats) {
       result = result.filter((car) => car.seats === parseInt(seats));
     }
 
-    // Lọc theo khoảng giá (Chuyển chuỗi "1.200.000" thành số để so sánh)
+    // Filter by price range
     if (price) {
       result = result.filter((car) => {
         const priceNum = parseInt(car.price.replace(/\./g, ""));
@@ -86,7 +86,7 @@ const FleetPage = () => {
       });
     }
 
-    // Logic Sắp xếp
+    // Sort logic
     if (sort === "price-low") {
       result.sort(
         (a, b) =>
@@ -130,7 +130,7 @@ const FleetPage = () => {
             onClick={() => window.location.reload()}
             className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            Thử lại
+            Retry
           </button>
         </div>
       </main>
@@ -142,7 +142,7 @@ const FleetPage = () => {
       <div className="max-w-7xl mx-auto px-6">
         <FleetHeader />
 
-        {/* Truyền các hàm set vào để Filters có thể thay đổi state của Cha */}
+        {/* Pass setters so filters can update parent state */}
         <FleetFilters
           setType={setType}
           setSeats={setSeats}
@@ -150,7 +150,7 @@ const FleetPage = () => {
           setSort={setSort}
         />
 
-        {/* Truyền danh sách xe đã được lọc xuống Grid */}
+        {/* Pass filtered vehicles to grid */}
         <FleetGrid data={filteredVehicles} />
       </div>
     </main>

@@ -28,39 +28,39 @@ const PaymentPage = ({ type = "deposit" }) => {
   const paymentMethods = [
     {
       id: "bank_transfer",
-      label: "Chuyển khoản QR",
+      label: "QR bank transfer",
       icon: Building2,
-      description: "Quét mã QR để thanh toán nhanh",
+      description: "Scan QR code for quick payment",
     },
     {
       id: "cash",
-      label: "Tiền mặt",
+      label: "Cash",
       icon: Wallet,
-      description: "Thanh toán trực tiếp tại cửa hàng",
+      description: "Payment directly at the store",
     },
     {
       id: "card",
-      label: "Thẻ tín dụng",
+      label: "Credit card",
       icon: CreditCard,
       description: "Visa, MasterCard, JCB",
     },
     {
       id: "momo",
-      label: "Ví MoMo",
+      label: "MoMo wallet",
       icon: Wallet,
-      description: "Thanh toán qua ứng dụng MoMo",
+      description: "Payment via MoMo application",
     },
     {
       id: "zalopay",
       label: "ZaloPay",
       icon: Wallet,
-      description: "Thanh toán qua ứng dụng ZaloPay",
+      description: "Payment via ZaloPay application",
     },
     {
       id: "vnpay",
       label: "VNPay",
       icon: Building2,
-      description: "Cổng thanh toán VNPay",
+      description: "VNPay gateway",
     },
   ];
 
@@ -82,13 +82,13 @@ const PaymentPage = ({ type = "deposit" }) => {
 
       // Validate booking status
       if (type === "deposit" && response.data.status !== "pending") {
-        setError("Đơn này không cần thanh toán cọc");
+        setError("This application does not require a deposit payment");
       }
       if (type === "final" && response.data.status !== "vehicle_returned") {
-        setError("Chưa thể thanh toán đơn này");
+        setError("This order cannot be paid");
       }
     } catch (err) {
-      setError(err.message || "Không thể tải thông tin đơn đặt xe");
+      setError(err.message || "Unable to load booking details");
     } finally {
       setLoading(false);
     }
@@ -97,8 +97,8 @@ const PaymentPage = ({ type = "deposit" }) => {
   const handlePayment = async () => {
     setError("");
 
-    // TẤT CẢ phương thức đều mở QR modal (đơn giản hóa cho demo)
-    // Trong production, có thể tích hợp thật với VNPay, MoMo, etc.
+    // For demo: all methods open the QR payment modal.
+    // In production, each method can be integrated directly.
     setShowQRModal(true);
   };
 
@@ -142,7 +142,7 @@ const PaymentPage = ({ type = "deposit" }) => {
             className="inline-flex items-center gap-2 mt-6 text-blue-600 font-semibold hover:gap-3 transition-all"
           >
             <ChevronLeft size={20} />
-            Quay lại danh sách
+            Back to list
           </button>
         </div>
       </div>
@@ -171,48 +171,48 @@ const PaymentPage = ({ type = "deposit" }) => {
           <div className="p-2 bg-white rounded-full shadow-sm group-hover:bg-blue-50 transition-colors">
             <ChevronLeft size={20} />
           </div>
-          Quay lại chi tiết đơn
+          Back to booking details
         </button>
 
         {/* Header */}
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {type === "deposit" ? "Thanh toán tiền cọc" : "Thanh toán còn lại"}
+            {type === "deposit" ? "Payment deposit" : "Payment remaining"}
           </h1>
           <p className="text-gray-500">
-            Mã đơn: <span className="font-mono font-bold">{booking._id}</span>
+            Booking ID: <span className="font-mono font-bold">{booking._id}</span>
           </p>
         </div>
 
         {/* Booking Summary */}
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mb-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">
-            Thông tin đơn
+            Booking information
           </h2>
           <div className="space-y-3">
             <div className="flex justify-between">
-              <span className="text-gray-500">Xe</span>
+              <span className="text-gray-500">Vehicle</span>
               <span className="font-bold text-gray-900">
                 {booking.vehicle?.brand} {booking.vehicle?.model}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Tổng tiền</span>
+              <span className="text-gray-500">Total amount</span>
               <span className="font-bold text-gray-900">
                 {formatCurrency(booking.total_amount)}
               </span>
             </div>
             {type === "final" && (
               <div className="flex justify-between">
-                <span className="text-gray-500">Đã cọc</span>
-                <span className="font-bold text-green-600">
+                <span className="text-gray-500">Deposit paid</span>
+                <span className="font-bold text-blue-600">
                   -{formatCurrency(booking.deposit_amount)}
                 </span>
               </div>
             )}
             <div className="flex justify-between items-center pt-4 border-t border-gray-200">
               <span className="text-lg font-bold text-gray-900">
-                {type === "deposit" ? "Tiền cọc (30%)" : "Còn lại"}
+                {type === "deposit" ? "Deposit (30%)" : "Remaining"}
               </span>
               <span className="text-2xl font-black text-blue-600">
                 {formatCurrency(getPaymentAmount())}
@@ -224,7 +224,7 @@ const PaymentPage = ({ type = "deposit" }) => {
         {/* Payment Methods */}
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mb-6">
           <h2 className="text-xl font-bold text-gray-900 mb-6">
-            Chọn phương thức thanh toán
+            Select payment method
           </h2>
           <div className="space-y-3">
             {paymentMethods.map((method) => {
@@ -233,18 +233,16 @@ const PaymentPage = ({ type = "deposit" }) => {
                 <button
                   key={method.id}
                   onClick={() => setSelectedMethod(method.id)}
-                  className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${
-                    selectedMethod === method.id
-                      ? "border-blue-600 bg-blue-50"
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
+                  className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${selectedMethod === method.id
+                    ? "border-blue-600 bg-blue-50"
+                    : "border-gray-200 hover:border-gray-300"
+                    }`}
                 >
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      selectedMethod === method.id
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-100 text-gray-600"
-                    }`}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${selectedMethod === method.id
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 text-gray-600"
+                      }`}
                   >
                     <Icon size={24} />
                   </div>
@@ -281,16 +279,16 @@ const PaymentPage = ({ type = "deposit" }) => {
           className="w-full bg-blue-600 text-white py-5 rounded-2xl font-bold text-lg shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {selectedMethod === "bank_transfer"
-            ? "HIỂN THỊ MÃ QR THANH TOÁN"
-            : `Thanh toán ${formatCurrency(getPaymentAmount())}`}
+            ? "SHOW PAYMENT QR CODE"
+            : `Payment ${formatCurrency(getPaymentAmount())}`}
         </button>
 
         {/* Note */}
-        <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-          <p className="text-sm text-yellow-800">
-            <strong>Lưu ý:</strong> Sau khi thanh toán thành công, bạn sẽ nhận
-            được email xác nhận và có thể xem chi tiết giao dịch trong lịch sử
-            thanh toán.
+        <div className="mt-6 bg-red-50 border border-red-200 rounded-xl p-4">
+          <p className="text-sm text-red-800">
+            <strong>Note:</strong> After successful payment, you will receive
+            a confirmation email and can view transaction details in payment
+            history.
           </p>
         </div>
       </div>

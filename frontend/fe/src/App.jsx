@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
@@ -14,101 +15,71 @@ import FleetPage from "./pages/Fleet";
 import VehicleDetail from "./pages/FleetDetail";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
 
 // Shared Pages (Any authenticated user)
-import CustomerProfile from "./pages/customer/Profile";
-import Unauthorized from "./pages/shared/Unauthorized";
+const CustomerProfile = lazy(() => import("./pages/customer/Profile"));
+const Unauthorized = lazy(() => import("./pages/shared/Unauthorized"));
 
 // Customer Pages
-import MyBookings from "./pages/customer/MyBookings";
-import BookingDetail from "./pages/customer/BookingDetail";
-import MyPayments from "./pages/customer/MyPayments";
-import DepositPayment from "./pages/customer/DepositPayment";
-import PaymentPage from "./pages/customer/PaymentPage";
-import ExtendBooking from "./pages/customer/ExtendBooking";
-import MyExtensions from "./pages/customer/MyExtensions";
-import ExtensionDetail from "./pages/customer/ExtensionDetail";
+const MyBookings = lazy(() => import("./pages/customer/MyBookings"));
+const BookingDetail = lazy(() => import("./pages/customer/BookingDetail"));
+const MyPayments = lazy(() => import("./pages/customer/MyPayments"));
+const DepositPayment = lazy(() => import("./pages/customer/DepositPayment"));
+const PaymentPage = lazy(() => import("./pages/customer/PaymentPage"));
+const ExtendBooking = lazy(() => import("./pages/customer/ExtendBooking"));
+const HandoverReceipt = lazy(() => import("./pages/customer/HandoverReceipt"));
 
 // Payment Pages (General)
-import PaymentSuccess from "./pages/PaymentSuccess";
+const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 
 // Staff Pages
-import StaffBookings from "./pages/staff/StaffBookings";
-import StaffBookingDetail from "./pages/staff/StaffBookingDetail";
-import StaffAssignments from "./pages/staff/StaffAssignments";
-import StaffHandovers from "./pages/staff/StaffHandovers";
-import HandoverDeliveryForm from "./pages/staff/HandoverDeliveryForm";
-import HandoverReturnForm from "./pages/staff/HandoverReturnForm";
-import StaffExtensions from "./pages/staff/StaffExtensions";
-import StaffPayments from "./pages/staff/StaffPayments";
-import StaffDashboard from "./pages/staff/StaffDashboard";
+const StaffBookings = lazy(() => import("./pages/staff/StaffBookings"));
+const StaffBookingDetail = lazy(() => import("./pages/staff/StaffBookingDetail"));
+const StaffAssignments = lazy(() => import("./pages/staff/StaffAssignments"));
+const StaffHandovers = lazy(() => import("./pages/staff/StaffHandovers"));
+const HandoverDeliveryForm = lazy(() => import("./pages/staff/HandoverDeliveryForm"));
+const HandoverReturnForm = lazy(() => import("./pages/staff/HandoverReturnForm"));
+const StaffExtensions = lazy(() => import("./pages/staff/StaffExtensions"));
+const StaffPayments = lazy(() => import("./pages/staff/StaffPayments"));
+const StaffDashboard = lazy(() => import("./pages/staff/StaffDashboard"));
 
 // Driver Pages
-import DriverAssignments from "./pages/driver/DriverAssignments";
-import AssignmentDetail from "./pages/driver/AssignmentDetail";
+const DriverAssignments = lazy(() => import("./pages/driver/DriverAssignments"));
+const AssignmentDetail = lazy(() => import("./pages/driver/AssignmentDetail"));
 
 // Vehicle & Driver Management
-import StaffVehicles from "./pages/staff/StaffVehicles";
-import StaffDrivers from "./pages/staff/StaffDrivers";
-import StaffAssignDriver from "./pages/staff/StaffAssignDriver";
-import DriverRegistration from "./pages/customer/DriverRegistration";
+const StaffVehicles = lazy(() => import("./pages/staff/StaffVehicles"));
+const StaffDrivers = lazy(() => import("./pages/staff/StaffDrivers"));
+const StaffAssignDriver = lazy(() => import("./pages/staff/StaffAssignDriver"));
+const DriverRegistration = lazy(() => import("./pages/customer/DriverRegistration"));
 
 // Admin Pages
 import AdminLayout from "./components/layout/AdminLayout";
-import AdminRevenue from "./pages/admin/AdminRevenue";
-import AdminUsers from "./pages/admin/AdminUsers";
+const AdminRevenue = lazy(() => import("./pages/admin/AdminRevenue"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+
+const RouteFallback = () => (
+  <div className="min-h-screen bg-gray-50 pt-32 pb-20 flex items-center justify-center">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  </div>
+);
 
 function App() {
   return (
     <>
       <Toaster position="top-right" />
-      <Routes>
-        {/* ============================== */}
-        {/* 1. PUBLIC ROUTES (No Login Required) */}
-        {/* ============================== */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/unauthorized" element={<Unauthorized />} />
+      <Suspense fallback={<RouteFallback />}>
+        <Routes>
+          {/* ============================== */}
+          {/* 1. PUBLIC ROUTES (No Login Required) */}
+          {/* ============================== */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
 
-        {/* Main Public Pages (With Navbar & Footer) */}
-        <Route
-          element={
-            <>
-              <Navbar />
-              <Outlet />
-              <Footer />
-            </>
-          }
-        >
-          <Route path="/" element={<Home />} />
-          <Route path="/fleet" element={<FleetPage />} />
-          <Route path="/fleet/:id" element={<VehicleDetail />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-        </Route>
-
-        {/* ============================== */}
-        {/* 2. SHARED PROTECTED ROUTES (Any Login) */}
-        {/* ============================== */}
-        <Route element={<ProtectedRoute />}>
-          {/* Profile uses standard Navbar but no Footer */}
-          <Route
-            path="/profile"
-            element={
-              <>
-                <Navbar />
-                <CustomerProfile />
-              </>
-            }
-          />
-        </Route>
-
-        {/* ============================== */}
-        {/* 3. CUSTOMER ROUTES (Customer Only) */}
-        {/* ============================== */}
-        <Route element={<ProtectedRoute allowedRoles={["customer"]} />}>
+          {/* Main Public Pages (With Navbar & Footer) */}
           <Route
             element={
               <>
@@ -118,78 +89,114 @@ function App() {
               </>
             }
           >
-            <Route path="/my-bookings" element={<MyBookings />} />
-            <Route path="/my-payments" element={<MyPayments />} />
-            <Route path="/bookings/:id" element={<BookingDetail />} />
-            <Route path="/payment/success" element={<PaymentSuccess />} />
+            <Route path="/" element={<Home />} />
+            <Route path="/fleet" element={<FleetPage />} />
+            <Route path="/fleet/:id" element={<VehicleDetail />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+          </Route>
+
+          {/* ============================== */}
+          {/* 2. SHARED PROTECTED ROUTES (Any Login) */}
+          {/* ============================== */}
+          <Route element={<ProtectedRoute />}>
+            {/* Profile uses standard Navbar but no Footer */}
             <Route
-              path="/payment/deposit/:id"
-              element={<PaymentPage type="deposit" />}
-            />
-            <Route
-              path="/payment/final/:id"
-              element={<PaymentPage type="final" />}
-            />
-            <Route path="/booking/deposit/:id" element={<DepositPayment />} />
-            <Route path="/bookings/:id/extend" element={<ExtendBooking />} />
-            <Route path="/my-extensions" element={<MyExtensions />} />
-            <Route path="/extensions/:id" element={<ExtensionDetail />} />
-            <Route
-              path="/driver-registration"
-              element={<DriverRegistration />}
+              path="/profile"
+              element={
+                <>
+                  <Navbar />
+                  <CustomerProfile />
+                </>
+              }
             />
           </Route>
-        </Route>
 
-        {/* ============================== */}
-        {/* 4. STAFF ROUTES (Staff Only) */}
-        {/* ============================== */}
-        <Route element={<ProtectedRoute allowedRoles={["staff"]} />}>
-          <Route path="/staff" element={<StaffLayout />}>
-            <Route index element={<Navigate to="bookings" replace />} />
-            <Route path="bookings" element={<StaffBookings />} />
-            <Route path="bookings/:id" element={<StaffBookingDetail />} />
-            <Route path="bookings/:id/assign-driver" element={<StaffAssignDriver />} />
-            <Route path="assignments" element={<StaffAssignments />} />
-            <Route path="handovers" element={<StaffHandovers />} />
+          {/* ============================== */}
+          {/* 3. CUSTOMER ROUTES (Customer Only) */}
+          {/* ============================== */}
+          <Route element={<ProtectedRoute allowedRoles={["customer"]} />}>
             <Route
-              path="handovers/delivery"
-              element={<HandoverDeliveryForm />}
-            />
-            <Route path="handovers/return" element={<HandoverReturnForm />} />
-            <Route path="extensions" element={<StaffExtensions />} />
-            <Route path="payments" element={<StaffPayments />} />
-            <Route path="dashboard" element={<StaffDashboard />} />
-            <Route path="vehicles" element={<StaffVehicles />} />
-            <Route path="drivers" element={<StaffDrivers />} />
+              element={
+                <>
+                  <Navbar />
+                  <Outlet />
+                  <Footer />
+                </>
+              }
+            >
+              <Route path="/my-bookings" element={<MyBookings />} />
+              <Route path="/my-payments" element={<MyPayments />} />
+              <Route path="/bookings/:id" element={<BookingDetail />} />
+              <Route path="/payment/success" element={<PaymentSuccess />} />
+              <Route
+                path="/payment/deposit/:id"
+                element={<PaymentPage type="deposit" />}
+              />
+              <Route
+                path="/payment/final/:id"
+                element={<PaymentPage type="final" />}
+              />
+              <Route path="/booking/deposit/:id" element={<DepositPayment />} />
+              <Route path="/bookings/:id/extend" element={<ExtendBooking />} />
+              <Route path="/bookings/:id/handover-receipt" element={<HandoverReceipt />} />
+              <Route
+                path="/driver-registration"
+                element={<DriverRegistration />}
+              />
+            </Route>
           </Route>
-        </Route>
 
-        {/* ============================== */}
-        {/* 5. DRIVER ROUTES (Driver Only) */}
-        {/* ============================== */}
-        <Route element={<ProtectedRoute allowedRoles={["driver"]} />}>
-          <Route path="/driver" element={<DriverLayout />}>
-            <Route index element={<Navigate to="assignments" replace />} />
-            <Route path="assignments" element={<DriverAssignments />} />
-            <Route path="assignments/:id" element={<AssignmentDetail />} />
+          {/* ============================== */}
+          {/* 4. STAFF ROUTES (Staff Only) */}
+          {/* ============================== */}
+          <Route element={<ProtectedRoute allowedRoles={["staff"]} />}>
+            <Route path="/staff" element={<StaffLayout />}>
+              <Route index element={<Navigate to="bookings" replace />} />
+              <Route path="bookings" element={<StaffBookings />} />
+              <Route path="bookings/:id" element={<StaffBookingDetail />} />
+              <Route path="bookings/:id/assign-driver" element={<StaffAssignDriver />} />
+              <Route path="assignments" element={<StaffAssignments />} />
+              <Route path="handovers" element={<StaffHandovers />} />
+              <Route
+                path="handovers/delivery"
+                element={<HandoverDeliveryForm />}
+              />
+              <Route path="handovers/return" element={<HandoverReturnForm />} />
+              <Route path="extensions" element={<StaffExtensions />} />
+              <Route path="payments" element={<StaffPayments />} />
+              <Route path="dashboard" element={<StaffDashboard />} />
+              <Route path="vehicles" element={<StaffVehicles />} />
+              <Route path="drivers" element={<StaffDrivers />} />
+            </Route>
           </Route>
-        </Route>
 
-        {/* ============================== */}
-        {/* 6. ADMIN ROUTES (Admin Only)   */}
-        {/* ============================== */}
-        <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<Navigate to="revenue" replace />} />
-            <Route path="revenue" element={<AdminRevenue />} />
-            <Route path="users" element={<AdminUsers />} />
+          {/* ============================== */}
+          {/* 5. DRIVER ROUTES (Driver Only) */}
+          {/* ============================== */}
+          <Route element={<ProtectedRoute allowedRoles={["driver"]} />}>
+            <Route path="/driver" element={<DriverLayout />}>
+              <Route index element={<Navigate to="assignments" replace />} />
+              <Route path="assignments" element={<DriverAssignments />} />
+              <Route path="assignments/:id" element={<AssignmentDetail />} />
+            </Route>
           </Route>
-        </Route>
 
-        {/* Catch All - Redirect to home */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          {/* ============================== */}
+          {/* 6. ADMIN ROUTES (Admin Only)   */}
+          {/* ============================== */}
+          <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<Navigate to="revenue" replace />} />
+              <Route path="revenue" element={<AdminRevenue />} />
+              <Route path="users" element={<AdminUsers />} />
+            </Route>
+          </Route>
+
+          {/* Catch All - Redirect to home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </>
   );
 }

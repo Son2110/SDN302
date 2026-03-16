@@ -1,1 +1,23 @@
 @import "tailwindcss";
+
+:root {
+    --brand-primary: #1556F5;
+    --brand-primary-700: #0F3FCC;
+    --brand-primary-100: #DCE8FF;
+    --brand-primary-50: #EEF4FF;
+    --brand-black: #101828;
+    --brand-white: #FFFFFF;
+    --brand-gray: #F8FAFB;
+    --brand-muted: #667085;
+    --brand-border: #D0D5DD;
+
+    --brand-danger-700: #B91C1C;
+    --brand-danger-600: #DC2626;
+    --brand-danger-100: #FEE2E2;
+    --brand-danger-50: #FEF2F2;
+}
+
+body {
+    background: var(--brand-gray);
+    color: var(--brand-black);
+}

@@ -64,9 +64,9 @@ export const processDepositPayment = async (req, res) => {
     // Notify Customer
     await sendNotification({
       recipientId: customer.user,
-      title: "Thanh toán cọc thành công",
-      message: `Đơn đặt xe #${booking._id.toString().slice(-6)} đã được xác nhận.`,
-      type: "payment_success",
+      title: "Đơn đã được duyệt",
+      message: `Đơn đặt xe #${booking._id.toString().slice(-6)} đã được duyệt sau khi thanh toán cọc thành công.`,
+      type: "booking_approved",
       relatedId: booking._id,
       relatedModel: "Booking",
     });
