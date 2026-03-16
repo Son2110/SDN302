@@ -39,7 +39,7 @@ export const getAllVehicles = async (req, res) => {
 export const getVehicleById = async (req, res) => {
   try {
     const vehicle = await Vehicle.findById(req.params.id).populate(
-      "vehicle_type"
+      "vehicle_type",
     );
 
     if (!vehicle)
@@ -68,8 +68,21 @@ export const createVehicle = async (req, res) => {
       daily_rate,
       is_electric,
       current_mileage,
-      image_urls,
     } = req.body;
+
+    // Handle Images (Multer + Cloudinary)
+    let image_urls = [];
+    // 1. Get from uploaded files
+    if (req.files && req.files.length > 0) {
+      image_urls = req.files.map((file) => file.path);
+    }
+    // 2. Get from body (if mixing URLs provided manually)
+    if (req.body.image_urls) {
+      const bodyImages = Array.isArray(req.body.image_urls)
+        ? req.body.image_urls
+        : [req.body.image_urls];
+      image_urls = [...image_urls, ...bodyImages];
+    }
 
     // Validate vehicle_type tồn tại
     const typeExists = await VehicleType.findById(vehicle_type);
@@ -88,7 +101,7 @@ export const createVehicle = async (req, res) => {
       daily_rate,
       is_electric: is_electric ?? false,
       current_mileage: current_mileage ?? 0,
-      image_urls: image_urls ?? [],
+      image_urls: image_urls,
       status: "available",
     });
 
@@ -141,8 +154,30 @@ export const updateVehicle = async (req, res) => {
       daily_rate,
       is_electric,
       current_mileage,
-      image_urls,
     } = req.body;
+
+    // Handle Images
+    let finalImageUrls = undefined; // Undefined means no update to this field
+    // 1. New images from upload
+    const uploadedImages =
+      req.files && req.files.length > 0
+        ? req.files.map((file) => file.path)
+        : [];
+    // 2. Existing/Manual images from body
+    let bodyImages = [];
+    if (req.body.image_urls) {
+      bodyImages = Array.isArray(req.body.image_urls)
+        ? req.body.image_urls
+        : [req.body.image_urls];
+    }
+    // Only update if there's any change requested (upload or body urls provided)
+    if ((req.files && req.files.length > 0) || req.body.image_urls) {
+      finalImageUrls = [...bodyImages, ...uploadedImages];
+    } else if (req.body.image_urls === "") {
+      // Case: user wants to clear all images? Or just didn't send anything?
+      // If image_urls explicitly empty string/array -> clear?
+      // Let's assume sending empty array clears it. Empty string -> ignore.
+    }
 
     // Validate vehicle_type nếu có đổi
     if (vehicle_type && vehicle_type !== vehicle.vehicle_type.toString()) {
@@ -163,13 +198,13 @@ export const updateVehicle = async (req, res) => {
       ...(daily_rate && { daily_rate }),
       ...(is_electric !== undefined && { is_electric }),
       ...(current_mileage !== undefined && { current_mileage }),
-      ...(image_urls && { image_urls }),
+      ...(finalImageUrls !== undefined && { image_urls: finalImageUrls }),
     };
 
     const updated = await Vehicle.findByIdAndUpdate(
       req.params.id,
       { $set: updates },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     ).populate("vehicle_type");
 
     res.status(200).json({

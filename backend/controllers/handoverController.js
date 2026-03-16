@@ -1,6 +1,7 @@
 import { Booking, VehicleHandover } from "../models/booking.model.js";
 import { Vehicle, VehicleType } from "../models/vehicle.model.js";
 import { Staff, Customer } from "../models/user.model.js";
+import { sendNotification } from "../utils/notificationSender.js";
 
 // @route POST /api/handovers/delivery
 // @access Private (Chỉ Staff)
@@ -73,6 +74,19 @@ export const createDeliveryHandover = async (req, res) => {
     // Xe chuyển sang trạng thái đang cho thuê (Để hệ thống khác không lấy được xe này)
     vehicle.status = "rented";
     await vehicle.save();
+
+    // Populate customer to get User ID
+    await booking.populate("customer");
+    if (booking.customer && booking.customer.user) {
+      await sendNotification({
+        recipientId: booking.customer.user,
+        title: "Giao xe thành công",
+        message: `Xe ${vehicle.license_plate} đã được bàn giao. Chúc quý khách thượng lộ bình an!`,
+        type: "vehicle_handover",
+        relatedId: newHandover._id,
+        relatedModel: "VehicleHandover",
+      });
+    }
 
     res.status(201).json({
       success: true,
@@ -202,6 +216,19 @@ export const createReturnHandover = async (req, res) => {
     vehicle.status = "available";
     vehicle.current_mileage = return_mileage; // Cập nhật ODO mới nhất cho xe
     await vehicle.save();
+
+    // Populate customer to get User ID
+    await booking.populate("customer");
+    if (booking.customer && booking.customer.user) {
+      await sendNotification({
+        recipientId: booking.customer.user,
+        title: "Trả xe thành công",
+        message: `Đã nhận xe ${vehicle.license_plate}. Vui lòng thanh toán số dư còn lại (nếu có).`,
+        type: "vehicle_return",
+        relatedId: newHandover._id,
+        relatedModel: "VehicleHandover",
+      });
+    }
 
     res.status(201).json({
       success: true,

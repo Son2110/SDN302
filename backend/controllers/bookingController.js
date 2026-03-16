@@ -2,6 +2,8 @@ import { Booking } from "../models/booking.model.js";
 import { Vehicle } from "../models/vehicle.model.js";
 import { Customer, Staff } from "../models/user.model.js";
 import { Payment } from "../models/finance.model.js";
+import { sendNotification } from "../utils/notificationSender.js";
+
 export const getAvailableVehicles = async (req, res) => {
   try {
     const { start_date, end_date } = req.query;
@@ -164,6 +166,16 @@ export const createBooking = async (req, res) => {
       total_amount,
       deposit_amount,
       status: "pending",
+    });
+
+    // Notify Customer
+    await sendNotification({
+      recipientId: customer.user,
+      title: "Đặt xe thành công",
+      message: `Đơn đặt xe #${newBooking._id.toString().slice(-6)} đã được tạo. Vui lòng thanh toán cọc để xác nhận.`,
+      type: "booking_created",
+      relatedId: newBooking._id,
+      relatedModel: "Booking",
     });
 
     res.status(201).json({
