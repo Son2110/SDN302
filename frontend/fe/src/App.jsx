@@ -36,6 +36,7 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 
 // Staff Pages
 import StaffBookings from "./pages/staff/StaffBookings";
+import StaffOverdueBookings from "./pages/staff/StaffOverdueBookings";
 import StaffBookingDetail from "./pages/staff/StaffBookingDetail";
 import StaffAssignments from "./pages/staff/StaffAssignments";
 import StaffHandovers from "./pages/staff/StaffHandovers";
@@ -148,6 +149,7 @@ function App() {
           <Route path="/staff" element={<StaffLayout />}>
             <Route index element={<Navigate to="bookings" replace />} />
             <Route path="bookings" element={<StaffBookings />} />
+            <Route path="overdue-bookings" element={<StaffOverdueBookings />} />
             <Route path="bookings/:id" element={<StaffBookingDetail />} />
             <Route path="bookings/:id/assign-driver" element={<StaffAssignDriver />} />
             <Route path="assignments" element={<StaffAssignments />} />

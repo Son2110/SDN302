@@ -514,13 +514,28 @@ export const deleteBooking = async (req, res) => {
 // @access Private (Staff)
 export const getAllBookings = async (req, res) => {
   try {
-    const { status, rental_type, page = 1, limit = 20 } = req.query;
+    const { status, rental_type, is_overdue, page = 1, limit = 20 } = req.query;
 
-    const filter = {};
-    if (status) filter.status = status;
-    if (rental_type) filter.rental_type = rental_type;
+    const matchFilter = {};
+    if (status) matchFilter.status = status;
+    if (rental_type) matchFilter.rental_type = rental_type;
 
-    const bookings = await Booking.find(filter)
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    if (is_overdue === "true") {
+      matchFilter.end_date = { $lt: todayStart };
+      // Nếu có status trên query thì nọ overwrite đoạn code này của is_overdue (nhưng is_overdue thường fetch với filter là All trạng thái)
+      if (!status) {
+        matchFilter.status = {
+          $nin: ["completed", "vehicle_returned", "cancelled", "pending"],
+        };
+      }
+    }
+
+    const bookings = await Booking.find(matchFilter)
       .populate("vehicle")
       .populate({
         path: "customer",
@@ -531,7 +546,7 @@ export const getAllBookings = async (req, res) => {
       .skip((page - 1) * limit)
       .limit(Number(limit));
 
-    const total = await Booking.countDocuments(filter);
+    const total = await Booking.countDocuments(matchFilter);
 
     res.status(200).json({
       success: true,
