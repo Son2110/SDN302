@@ -183,23 +183,4 @@ export const rejectDriver = async (id, rejection_reason) => {
   return data;
 };
 
-/**
- * Update driver status (Staff only)
- * @param {string} id - Driver ID
- * @param {string} status - "available" | "offline" | "busy"
- * @returns {Promise}
- */
-export const updateDriverStatus = async (id, status) => {
-  const res = await fetch(`${API_URL}/users/drivers/${id}/status`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${getToken()}`,
-    },
-    body: JSON.stringify({ status }),
-  });
-  const data = await res.json();
-  if (!res.ok)
-    throw new Error(data.message || "Failed to update driver status");
-  return data;
-};
+

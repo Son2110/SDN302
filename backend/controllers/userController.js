@@ -314,7 +314,6 @@ export const updateDriver = async (req, res) => {
       license_type,
       license_expiry,
       experience_years,
-      status,
     } = req.body;
 
     const driver = await Driver.findById(id).populate("user");
@@ -363,16 +362,7 @@ export const updateDriver = async (req, res) => {
     if (experience_years !== undefined)
       driver.experience_years = experience_years;
 
-    // Only staff can update status
-    if (status && isStaff) {
-      if (!["available", "busy", "offline"].includes(status)) {
-        return res.status(400).json({
-          success: false,
-          message: "Trạng thái không hợp lệ",
-        });
-      }
-      driver.status = status;
-    }
+
 
     await driver.user.save();
     await driver.save();
@@ -780,52 +770,57 @@ export const rejectDriver = async (req, res) => {
 };
 
 /**
- * @desc    Update driver status (Staff only)
- * @route   PATCH /api/users/drivers/:id/status
- * @access  Staff only
+ * @desc    Driver toggles own duty status (available <-> offline)
+ * @route   PATCH /api/users/drivers/toggle-duty
+ * @access  Driver only
  */
-export const updateDriverStatus = async (req, res) => {
+export const toggleDriverDuty = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { status } = req.body;
+    const driver = await Driver.findOne({ user: req.user._id });
 
-    const allowed = ["available", "offline", "busy"];
-    if (!status || !allowed.includes(status)) {
-      return res.status(400).json({
+    if (!driver) {
+      return res.status(404).json({
         success: false,
-        message:
-          "Trạng thái không hợp lệ. Chỉ chấp nhận: available, offline, busy",
+        message: "Không tìm thấy thông tin tài xế",
       });
     }
 
-    const driver = await Driver.findById(id);
-    if (!driver) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Không tìm thấy tài xế" });
+    // Only allow toggling if driver is approved (available or offline)
+    if (!["available", "offline"].includes(driver.status)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Không thể chuyển đổi ca làm việc. Trạng thái hiện tại: " +
+          driver.status,
+      });
     }
 
-    driver.status = status;
+    // Toggle between available and offline
+    driver.status = driver.status === "available" ? "offline" : "available";
     await driver.save();
 
-    const updated = await Driver.findById(id)
+    const updatedDriver = await Driver.findById(driver._id)
       .populate("user", "-password_hash")
       .lean();
 
     res.status(200).json({
       success: true,
-      message: `Đã cập nhật trạng thái tài xế thành ${status}`,
-      data: updated,
+      message:
+        driver.status === "available"
+          ? "Đã bắt đầu ca làm việc (On Duty)"
+          : "Đã kết thúc ca làm việc (Off Duty)",
+      data: updatedDriver,
     });
   } catch (error) {
-    console.error("Error in updateDriverStatus:", error);
+    console.error("Error in toggleDriverDuty:", error);
     res.status(500).json({
       success: false,
-      message: "Lỗi khi cập nhật trạng thái tài xế",
+      message: "Lỗi khi chuyển đổi ca làm việc",
       error: error.message,
     });
   }
 };
+
 
 /**
  * @desc    Get my profile (customer or driver)

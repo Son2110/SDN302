@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { ClipboardList, LogOut, Home as HomeIcon } from "lucide-react";
+import { ClipboardList, LogOut, Home as HomeIcon, Star, LayoutDashboard, Truck, MessageSquare } from "lucide-react";
 import { logout } from "../../services/api";
 
 const DriverLayout = () => {
@@ -11,7 +11,9 @@ const DriverLayout = () => {
   };
 
   const navItems = [
-    { label: "Phân công của tôi", icon: <ClipboardList className="w-5 h-5" />, path: "/driver/assignments" },
+    { label: "Bảng điều khiển", icon: <LayoutDashboard className="w-5 h-5" />, path: "/driver/dashboard" },
+    { label: "Phân công của tôi", icon: <Truck className="w-5 h-5" />, path: "/driver/assignments" },
+    { label: "Đánh giá của tôi", icon: <MessageSquare className="w-5 h-5" />, path: "/driver/reviews" },
   ];
 
   return (
@@ -29,10 +31,9 @@ const DriverLayout = () => {
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                  isActive
-                    ? "bg-emerald-50 text-emerald-600 shadow-sm"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                `flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${isActive
+                  ? "bg-emerald-50 text-emerald-600 shadow-sm"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }`
               }
             >
@@ -68,7 +69,7 @@ const DriverLayout = () => {
             <LogOut className="w-5 h-5" />
           </button>
         </header>
-        
+
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 md:p-8">
           <div className="max-w-7xl mx-auto h-full">
             <Outlet />

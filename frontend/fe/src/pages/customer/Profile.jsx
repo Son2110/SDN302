@@ -16,15 +16,27 @@ import {
     DollarSign,
     Star,
     Award,
+    Power,
 } from "lucide-react";
 import {
     getMyProfile,
     updateUserInfo,
     updateCustomerProfile,
+    updateDriverProfile,
+    toggleDriverDuty,
     getToken,
     saveUser,
     getUser,
 } from "../../services/api";
+import {
+    Wifi,
+    WifiOff,
+    IdCard,
+    Clock,
+    Activity,
+    Shield as ShieldIcon,
+} from "lucide-react";
+
 
 const Profile = () => {
     const navigate = useNavigate();
@@ -34,6 +46,7 @@ const Profile = () => {
     const [success, setSuccess] = useState("");
     const [activeTab, setActiveTab] = useState("info");
     const [editMode, setEditMode] = useState(false);
+    const [togglingDuty, setTogglingDuty] = useState(false);
 
     // Profile data
     const [profile, setProfile] = useState(null);
@@ -48,6 +61,15 @@ const Profile = () => {
         date_of_birth: "",
         address: "",
     });
+    const [driverData, setDriverData] = useState({
+        license_number: "",
+        license_type: "",
+        license_expiry: "",
+        experience_years: 0,
+        status: "",
+    });
+    const [statusLoading, setStatusLoading] = useState(false);
+
 
     useEffect(() => {
         const token = getToken();
@@ -85,6 +107,21 @@ const Profile = () => {
                     address: response.data.customer.address || "",
                 });
             }
+
+            // Set driver data if exists
+            if (response.data.driver) {
+                setDriverData({
+                    license_number: response.data.driver.license_number || "",
+                    license_type: response.data.driver.license_type || "",
+                    license_expiry: response.data.driver.license_expiry
+                        ? new Date(response.data.driver.license_expiry)
+                            .toISOString()
+                            .split("T")[0]
+                        : "",
+                    experience_years: response.data.driver.experience_years || 0,
+                    status: response.data.driver.status || "",
+                });
+            }
         } catch (err) {
             setError(err.message || "Không thể tải thông tin cá nhân");
         } finally {
@@ -106,6 +143,14 @@ const Profile = () => {
                 await updateCustomerProfile(profile.customer._id, {
                     ...userData,
                     ...customerData,
+                });
+            }
+
+            // Update driver info if driver exists
+            if (profile?.driver) {
+                await updateDriverProfile(profile.driver._id, {
+                    ...userData,
+                    ...driverData,
                 });
             }
 
@@ -147,6 +192,17 @@ const Profile = () => {
                 address: profile.customer.address || "",
             });
         }
+        if (profile?.driver) {
+            setDriverData({
+                license_number: profile.driver.license_number || "",
+                license_type: profile.driver.license_type || "",
+                license_expiry: profile.driver.license_expiry
+                    ? new Date(profile.driver.license_expiry).toISOString().split("T")[0]
+                    : "",
+                experience_years: profile.driver.experience_years || 0,
+                status: profile.driver.status || "",
+            });
+        }
         setEditMode(false);
         setError("");
         setSuccess("");
@@ -158,6 +214,9 @@ const Profile = () => {
             currency: "VND",
         }).format(amount || 0);
     };
+
+
+
 
     if (loading) {
         return (
@@ -282,8 +341,8 @@ const Profile = () => {
                     <button
                         onClick={() => setActiveTab("info")}
                         className={`pb-4 px-6 font-semibold transition relative ${activeTab === "info"
-                                ? "text-blue-600"
-                                : "text-gray-500 hover:text-gray-700"
+                            ? "text-blue-600"
+                            : "text-gray-500 hover:text-gray-700"
                             }`}
                     >
                         Thông tin cá nhân
@@ -293,14 +352,28 @@ const Profile = () => {
                     </button>
                     {profile.customer && (
                         <button
-                            onClick={() => setActiveTab("stats")}
-                            className={`pb-4 px-6 font-semibold transition relative ${activeTab === "stats"
-                                    ? "text-blue-600"
-                                    : "text-gray-500 hover:text-gray-700"
+                            onClick={() => setActiveTab("customer-stats")}
+                            className={`pb-4 px-6 font-semibold transition relative ${activeTab === "customer-stats"
+                                ? "text-blue-600"
+                                : "text-gray-500 hover:text-gray-700"
                                 }`}
                         >
-                            Thống kê
-                            {activeTab === "stats" && (
+                            Thống kê Thuê xe
+                            {activeTab === "customer-stats" && (
+                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"></div>
+                            )}
+                        </button>
+                    )}
+                    {profile.driver && (
+                        <button
+                            onClick={() => setActiveTab("driver-stats")}
+                            className={`pb-4 px-6 font-semibold transition relative ${activeTab === "driver-stats"
+                                ? "text-blue-600"
+                                : "text-gray-500 hover:text-gray-700"
+                                }`}
+                        >
+                            Thống kê Tài xế
+                            {activeTab === "driver-stats" && (
                                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"></div>
                             )}
                         </button>
@@ -498,11 +571,201 @@ const Profile = () => {
                                 </div>
                             </div>
                         )}
+
+                        {/* Driver Info Card */}
+                        {profile.driver && (
+                            <div className="bg-white rounded-xl shadow-lg p-8">
+                                <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                                    <Car className="w-6 h-6 text-blue-600" />
+                                    Thông tin tài xế
+                                </h2>
+
+                                <div className="space-y-5">
+                                    <div className="flex items-center justify-between py-2 border-b border-gray-50">
+                                        <label className="text-sm font-semibold text-gray-700">
+                                            Trạng thái hoạt động
+                                        </label>
+                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${profile.driver.status === 'available' ? 'bg-green-100 text-green-700' :
+                                            profile.driver.status === 'busy' ? 'bg-yellow-100 text-yellow-700' :
+                                                profile.driver.status === 'pending' ? 'bg-blue-100 text-blue-700' :
+                                                    profile.driver.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                                        'bg-gray-100 text-gray-700'
+                                            }`}>
+                                            {profile.driver.status === 'available' ? 'Sẵn sàng' :
+                                                profile.driver.status === 'busy' ? 'Đang bận' :
+                                                    profile.driver.status === 'pending' ? 'Chờ duyệt' :
+                                                        profile.driver.status === 'rejected' ? 'Bị từ chối' : 'Ngoại tuyến'}
+                                        </span>
+                                    </div>
+
+                                    {/* Toggle Duty Button */}
+                                    {['available', 'offline'].includes(profile.driver.status) && (
+                                        <div className="mt-6 p-5 rounded-xl border-2 border-dashed" style={{
+                                            borderColor: profile.driver.status === 'available' ? '#22c55e' : '#94a3b8',
+                                            background: profile.driver.status === 'available'
+                                                ? 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)'
+                                                : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)'
+                                        }}>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${profile.driver.status === 'available'
+                                                        ? 'bg-green-500 shadow-lg shadow-green-200'
+                                                        : 'bg-gray-400'
+                                                        }`}>
+                                                        <Power className="text-white" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-gray-800 text-base">
+                                                            Ca làm việc
+                                                        </p>
+                                                        <p className={`text-sm font-semibold ${profile.driver.status === 'available'
+                                                            ? 'text-green-600'
+                                                            : 'text-gray-500'
+                                                            }`}>
+                                                            {profile.driver.status === 'available'
+                                                                ? '🟢 Đang hoạt động'
+                                                                : '⚫ Nghỉ ca'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Toggle Switch */}
+                                                <button
+                                                    onClick={async () => {
+                                                        setTogglingDuty(true);
+                                                        setError("");
+                                                        setSuccess("");
+                                                        try {
+                                                            const res = await toggleDriverDuty();
+                                                            setSuccess(res.message);
+                                                            await fetchProfile();
+                                                        } catch (err) {
+                                                            setError(err.message || "Không thể chuyển đổi ca làm việc");
+                                                        } finally {
+                                                            setTogglingDuty(false);
+                                                        }
+                                                    }}
+                                                    disabled={togglingDuty}
+                                                    className="relative inline-flex h-8 w-16 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-60"
+                                                    style={{
+                                                        backgroundColor: profile.driver.status === 'available' ? '#22c55e' : '#cbd5e1',
+                                                    }}
+                                                >
+                                                    <span
+                                                        className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform duration-300 ${profile.driver.status === 'available' ? 'translate-x-9' : 'translate-x-1'
+                                                            }`}
+                                                    >
+                                                        {togglingDuty && (
+                                                            <span className="flex items-center justify-center h-full">
+                                                                <span className="animate-spin h-3 w-3 border-2 border-gray-300 border-t-gray-600 rounded-full"></span>
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                </button>
+                                            </div>
+
+                                            <p className="text-xs text-gray-500 mt-3 leading-relaxed">
+                                                {profile.driver.status === 'available'
+                                                    ? 'Bạn đang trong ca làm việc (Staff có thể phân công cho bạn).'
+                                                    : 'Bạn đang nghỉ ca (Bạn có thể sử dụng dịch vụ đặt xe).'}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                                            <IdCard className="w-4 h-4" />
+                                            Giấy phép lái xe
+                                        </label>
+                                        {editMode ? (
+                                            <input
+                                                type="text"
+                                                value={driverData.license_number}
+                                                onChange={(e) =>
+                                                    setDriverData({ ...driverData, license_number: e.target.value })
+                                                }
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        ) : (
+                                            <p className="text-gray-900 text-lg bg-gray-50 px-4 py-3 rounded-lg">
+                                                {driverData.license_number || "-"}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                                                <Award className="w-4 h-4" />
+                                                Hạng GPLX
+                                            </label>
+                                            {editMode ? (
+                                                <input
+                                                    type="text"
+                                                    value={driverData.license_type}
+                                                    onChange={(e) =>
+                                                        setDriverData({ ...driverData, license_type: e.target.value })
+                                                    }
+                                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                />
+                                            ) : (
+                                                <p className="text-gray-900 text-lg bg-gray-50 px-4 py-3 rounded-lg text-center uppercase font-bold">
+                                                    {driverData.license_type || "-"}
+                                                </p>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                                                <TrendingUp className="w-4 h-4" />
+                                                Kinh nghiệm
+                                            </label>
+                                            {editMode ? (
+                                                <input
+                                                    type="number"
+                                                    value={driverData.experience_years}
+                                                    onChange={(e) =>
+                                                        setDriverData({ ...driverData, experience_years: e.target.value })
+                                                    }
+                                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                />
+                                            ) : (
+                                                <p className="text-gray-900 text-lg bg-gray-50 px-4 py-3 rounded-lg text-center font-bold">
+                                                    {driverData.experience_years} năm
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                                            <Clock className="w-4 h-4" />
+                                            Ngày hết hạn GPLX
+                                        </label>
+                                        {editMode ? (
+                                            <input
+                                                type="date"
+                                                value={driverData.license_expiry}
+                                                onChange={(e) =>
+                                                    setDriverData({ ...driverData, license_expiry: e.target.value })
+                                                }
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        ) : (
+                                            <p className="text-gray-900 text-lg bg-gray-50 px-4 py-3 rounded-lg">
+                                                {driverData.license_expiry
+                                                    ? new Date(driverData.license_expiry).toLocaleDateString("vi-VN")
+                                                    : "Chưa cập nhật"}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
-                {/* Statistics Tab */}
-                {activeTab === "stats" && profile.customer && (
+                {/* Customer Statistics Tab */}
+                {activeTab === "customer-stats" && profile.customer && (
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
                             <div className="flex items-center justify-between mb-4">
@@ -643,6 +906,51 @@ const Profile = () => {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Driver Statistics Tab */}
+                {activeTab === "driver-stats" && profile.driver && (
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg p-6 text-white">
+                            <div className="flex items-center justify-between mb-4">
+                                <Car className="w-10 h-10 opacity-80" />
+                                <TrendingUp className="w-6 h-6 opacity-60" />
+                            </div>
+                            <h3 className="text-3xl font-bold mb-2">
+                                {profile.driver.total_trips || 0}
+                            </h3>
+                            <p className="text-blue-100 text-sm font-medium">
+                                Tổng số chuyến đi
+                            </p>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-yellow-500 to-orange-600 rounded-xl shadow-lg p-6 text-white">
+                            <div className="flex items-center justify-between mb-4">
+                                <Star className="w-10 h-10 opacity-80" />
+                                <TrendingUp className="w-6 h-6 opacity-60" />
+                            </div>
+                            <h3 className="text-3xl font-bold mb-2">
+                                {profile.driver.rating
+                                    ? profile.driver.rating.toFixed(1)
+                                    : "0.0"}
+                                <span className="text-xl ml-1">⭐</span>
+                            </h3>
+                            <p className="text-yellow-100 text-sm font-medium">
+                                Đánh giá trung bình
+                            </p>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl shadow-lg p-6 text-white">
+                            <div className="flex items-center justify-between mb-4">
+                                <Award className="w-10 h-10 opacity-80" />
+                                <TrendingUp className="w-6 h-6 opacity-60" />
+                            </div>
+                            <h3 className="text-3xl font-bold mb-2">
+                                {profile.driver.experience_years || 0}
+                            </h3>
+                            <p className="text-purple-100 text-sm font-medium">Năm kinh nghiệm</p>
                         </div>
                     </div>
                 )}

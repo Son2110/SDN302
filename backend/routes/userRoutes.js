@@ -13,7 +13,7 @@ import {
   getDriverStats,
   approveDriver,
   rejectDriver,
-  updateDriverStatus,
+  toggleDriverDuty,
   getMyProfile,
   updateUserInfo,
 } from "../controllers/userController.js";
@@ -68,13 +68,9 @@ router.patch(
 // Reject driver registration (staff only)
 router.patch("/drivers/:id/reject", protect, authorize("staff"), rejectDriver);
 
-// Update driver status: available / offline / busy (staff only)
-router.patch(
-  "/drivers/:id/status",
-  protect,
-  authorize("staff"),
-  updateDriverStatus,
-);
+
+// Driver toggles own duty status (driver only) - Must be before /:id routes
+router.patch("/drivers/toggle-duty", protect, authorize("driver"), toggleDriverDuty);
 
 // ==================== DRIVER REGISTRATION ====================
 
