@@ -8,12 +8,11 @@ import {
   AlertCircle,
   Wallet,
   Building2,
-  Smartphone,
   X,
 } from "lucide-react";
 import { getToken } from "../../services/api";
 import { getBookingById } from "../../services/bookingApi";
-import { processDepositPayment } from "../../services/paymentService";
+import { processDepositPayment, createVnpayPayment } from "../../services/paymentService";
 import QRPaymentModal from "../../components/payment/QRPaymentModal";
 
 const DepositPayment = () => {
@@ -25,39 +24,31 @@ const DepositPayment = () => {
   const [error, setError] = useState(null);
   const [processing, setProcessing] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
-  const [selectedMethod, setSelectedMethod] = useState("bank_transfer");
+  const [selectedMethod, setSelectedMethod] = useState("vnpay");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
 
-  // Payment methods - QR Code first
   const paymentMethods = [
-    {
-      id: "bank_transfer",
-      name: "QR bank transfer",
-      icon: Building2,
-      description: "Scan QR code for quick payment",
-      color: "blue",
-    },
     {
       id: "vnpay",
       name: "VNPay",
       icon: Building2,
-      description: "Payment via VNPay portal",
+      description: "Cổng thanh toán VNPay (thẻ, QR, ví...)",
       color: "blue",
     },
     {
-      id: "momo",
-      name: "MoMo",
-      icon: Wallet,
-      description: "MoMo e-wallet",
-      color: "pink",
+      id: "bank_transfer",
+      name: "Chuyển khoản QR",
+      icon: Building2,
+      description: "Quét mã QR chuyển khoản ngân hàng",
+      color: "blue",
     },
     {
-      id: "zalopay",
-      name: "ZaloPay",
-      icon: Smartphone,
-      description: "ZaloPay e-wallet",
-      color: "sky",
+      id: "cash",
+      name: "Tiền mặt",
+      icon: Wallet,
+      description: "Thanh toán trực tiếp tại cửa hàng",
+      color: "blue",
     },
   ];
 
@@ -113,8 +104,20 @@ const DepositPayment = () => {
 
     setError(null);
 
-    // For demo: all methods open the QR payment modal.
-    // In production, each method can be integrated directly.
+    if (selectedMethod === "vnpay") {
+      try {
+        const base = window.location.origin;
+        const res = await createVnpayPayment(bookingId, "deposit", `${base}/payment/success`);
+        if (res.paymentUrl) {
+          window.location.href = res.paymentUrl;
+          return;
+        }
+      } catch (err) {
+        setError(err.message || "Không thể tạo link thanh toán VNPay");
+        return;
+      }
+    }
+
     setShowQRModal(true);
   };
 

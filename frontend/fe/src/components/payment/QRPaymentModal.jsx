@@ -6,6 +6,7 @@ const QRPaymentModal = ({ isOpen, onClose, bookingId, amount, type = "deposit", 
     const [error, setError] = useState(null);
     const [copied, setCopied] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [payerAccountNo, setPayerAccountNo] = useState("");
 
     // Receiving bank details
     const bankInfo = {
@@ -37,6 +38,7 @@ const QRPaymentModal = ({ isOpen, onClose, bookingId, amount, type = "deposit", 
             setError(null);
             setSuccess(false);
             setConfirming(false);
+            setPayerAccountNo("");
         }
     }, [isOpen]);
 
@@ -57,7 +59,9 @@ const QRPaymentModal = ({ isOpen, onClose, bookingId, amount, type = "deposit", 
                 body: JSON.stringify({
                     booking_id: bookingId,
                     payment_method: paymentMethod,
-                    transaction_id: `QR_${paymentDescription}`,
+                    transaction_id: payerAccountNo.trim()
+                        ? `QR_${paymentDescription}_FROM_${payerAccountNo.trim()}`
+                        : `QR_${paymentDescription}`,
                 }),
             });
 
@@ -207,6 +211,22 @@ const QRPaymentModal = ({ isOpen, onClose, bookingId, amount, type = "deposit", 
                             >
                                 <Copy className="w-5 h-5 text-[#1556F5]" />
                             </button>
+                        </div>
+
+                        {/* Số tài khoản của bạn (người chuyển) */}
+                        <div className="p-3 bg-white border-2 border-gray-200 rounded-xl">
+                            <label className="block text-xs text-gray-500 font-bold mb-2">
+                                Số tài khoản của bạn (người chuyển)
+                            </label>
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                placeholder="Nhập số tài khoản ngân hàng bạn dùng để chuyển"
+                                value={payerAccountNo}
+                                onChange={(e) => setPayerAccountNo(e.target.value.replace(/\D/g, "").slice(0, 20))}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg font-mono text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#1556F5] focus:border-[#1556F5] outline-none"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Tùy chọn — giúp đối soát nhanh hơn</p>
                         </div>
                     </div>
 

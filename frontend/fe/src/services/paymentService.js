@@ -242,7 +242,7 @@ export const processPayment = async (id, transactionId) => {
 };
 
 /**
- * Verify payment
+ * Verify payment (legacy / other gateways)
  * @param {string} id - Payment ID
  * @param {Object} vnpayParams - VNPay callback params (optional)
  * @returns {Promise} Payment status
@@ -269,6 +269,69 @@ export const verifyPayment = async (id, vnpayParams = null) => {
   } catch (error) {
     throw error;
   }
+};
+
+/**
+ * Tạo thanh toán VNPay (sandbox) – trả về URL để redirect
+ * @param {string} bookingId - Booking ID
+ * @param {string} paymentType - 'deposit' | 'rental_fee'
+ * @param {string} [returnUrl] - Optional frontend return URL (backend sẽ redirect về đây sau xử lý)
+ * @returns {Promise<{ paymentUrl, payment_id, txn_ref }>}
+ */
+export const createVnpayPayment = async (bookingId, paymentType, returnUrl) => {
+  const token = getToken();
+  const response = await fetch(`${API_URL}/payments/vnpay/create`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      booking_id: bookingId,
+      payment_type: paymentType,
+      ...(returnUrl && { return_url: returnUrl }),
+    }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Tạo URL VNPay thất bại');
+  return data;
+};
+
+/**
+ * Lấy payment theo mã giao dịch VNPay (vnp_TxnRef)
+ * @param {string} txnRef - vnp_TxnRef (payment._id)
+ * @returns {Promise<{ payment }>}
+ */
+export const getPaymentByTxnRef = async (txnRef) => {
+  const token = getToken();
+  const response = await fetch(`${API_URL}/payments/by-txn/${encodeURIComponent(txnRef)}`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Không tìm thấy giao dịch');
+  return data;
+};
+
+/**
+ * Xác thực callback VNPay từ frontend (sau khi redirect về /payment/success)
+ * @param {string} txnRef - vnp_TxnRef
+ * @param {Object} vnpayParams - Toàn bộ query params từ VNPay (object key-value)
+ * @returns {Promise<{ payment }>}
+ */
+export const verifyVnpayPayment = async (txnRef, vnpayParams) => {
+  const token = getToken();
+  const response = await fetch(`${API_URL}/payments/vnpay/verify`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ txnRef, vnpayParams }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Xác thực thất bại');
+  return data;
 };
 
 /**

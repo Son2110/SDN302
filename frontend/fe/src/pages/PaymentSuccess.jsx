@@ -89,28 +89,52 @@ const PaymentSuccess = () => {
 
   const verifyVNPayPayment = async () => {
     try {
-      // Collect ALL VNPay params from URL (needed for signature verification)
       const allVnpayParams = {};
       searchParams.forEach((value, key) => {
-        // Only include VNPay params (start with vnp_)
-        if (key.startsWith("vnp_")) {
-          allVnpayParams[key] = value;
-        }
+        if (key.startsWith("vnp_")) allVnpayParams[key] = value;
       });
+      const data = await paymentService.verifyVnpayPayment(vnpTxnRef, allVnpayParams);
+      if (data?.payment) {
+        setPayment(data.payment);
+        if (data.payment.booking) {
+          const bid =
+            typeof data.payment.booking === "string"
+              ? data.payment.booking
+              : data.payment.booking._id;
+          if (bid) {
+            const res = await getBookingById(bid);
+            setBooking(res.data);
+          }
+        }
+        setLoading(false);
+        return;
+      }
+      await loadPaymentByTxnRef(vnpTxnRef);
+    } catch (err) {
+      console.error("[PaymentSuccess] Error verifying VNPay:", err);
+      if (vnpTxnRef) await loadPaymentByTxnRef(vnpTxnRef);
+    }
+  };
 
-      // Call backend to verify and update payment with ALL params
-      await paymentService.verifyPayment(vnpTxnRef, allVnpayParams);
-
-      // Reload payment after verification
-      if (vnpTxnRef) {
-        await loadPaymentById(vnpTxnRef);
+  const loadPaymentByTxnRef = async (txnRef) => {
+    try {
+      const paymentData = await paymentService.getPaymentByTxnRef(txnRef);
+      setPayment(paymentData.payment);
+      if (paymentData.payment?.booking) {
+        const bookingId =
+          typeof paymentData.payment.booking === "string"
+            ? paymentData.payment.booking
+            : paymentData.payment.booking._id || paymentData.payment.booking.toString();
+        const response = await getBookingById(bookingId);
+        setBooking(response.data);
+      }
+      setLoading(false);
+      if (paymentData.payment?.status === "pending" && !error) {
+        pollPaymentStatus(txnRef);
       }
     } catch (err) {
-      console.error("[PaymentSuccess] Error verifying payment:", err);
-      // Still try to load payment
-      if (vnpTxnRef) {
-        await loadPaymentById(vnpTxnRef);
-      }
+      console.error("[PaymentSuccess] Error loading payment by txn:", err);
+      setLoading(false);
     }
   };
 
@@ -119,7 +143,6 @@ const PaymentSuccess = () => {
       const paymentData = await paymentService.getPaymentById(id);
       setPayment(paymentData.payment);
 
-      // Load booking info
       if (paymentData.payment.booking) {
         const bookingId =
           typeof paymentData.payment.booking === "string"
@@ -132,7 +155,6 @@ const PaymentSuccess = () => {
 
       setLoading(false);
 
-      // If payment is still pending, poll briefly for webhook/handler updates.
       if (paymentData.payment.status === "pending" && !error) {
         pollPaymentStatus(id);
       }
@@ -287,6 +309,18 @@ const PaymentSuccess = () => {
       style: "currency",
       currency: "VND",
     }).format(price);
+  };
+
+  const getPaymentMethodLabel = (method) => {
+    const labels = {
+      vnpay: "VNPay",
+      bank_transfer: "Chuyển khoản",
+      cash: "Tiền mặt",
+      card: "Thẻ",
+      momo: "MoMo",
+      zalopay: "ZaloPay",
+    };
+    return labels[method] || method;
   };
 
   // Helper: Get booking ID as string (handle both object and string)
@@ -615,8 +649,8 @@ const PaymentSuccess = () => {
                     </div>
                     <div>
                       <p className="text-gray-600 mb-1">Method</p>
-                      <p className="font-semibold text-gray-900 capitalize">
-                        {payment.payment_method}
+                      <p className="font-semibold text-gray-900">
+                        {getPaymentMethodLabel(payment.payment_method)}
                       </p>
                     </div>
                     <div>
@@ -653,15 +687,18 @@ const PaymentSuccess = () => {
                       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                         <p className="text-sm font-semibold text-red-900 mb-2 flex items-center gap-2">
                           <Lightbulb size={16} />
-                          Remaining amount to pay at return:
+                          Số tiền còn lại khi trả xe:
                         </p>
                         <p className="text-2xl font-bold text-red-700">
                           {formatPrice(
                             booking.total_amount - booking.deposit_amount,
                           )}
                         </p>
-                        <p className="text-xs text-red-700 mt-2">
-                          * Additional charging, penalty, or extension fees may apply.
+                        <p className="text-xs text-gray-700 mt-2">
+                          Tổng đơn: {formatPrice(booking.total_amount)} (đã cọc 30%: {formatPrice(booking.deposit_amount)} → còn lại: {formatPrice(booking.total_amount - booking.deposit_amount)}).
+                        </p>
+                        <p className="text-xs text-red-700 mt-1">
+                          * Có thể phát sinh thêm phí sạc, phạt, gia hạn.
                         </p>
                       </div>
                     </div>
@@ -887,8 +924,8 @@ const PaymentSuccess = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Method:</span>
-                      <span className="font-semibold capitalize">
-                        {payment.payment_method}
+                      <span className="font-semibold">
+                        {getPaymentMethodLabel(payment.payment_method)}
                       </span>
                     </div>
                   </div>

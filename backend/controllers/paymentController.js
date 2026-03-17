@@ -2,6 +2,13 @@ import { Booking } from "../models/booking.model.js";
 import { Payment } from "../models/finance.model.js";
 import { Customer, Driver, Staff } from "../models/user.model.js";
 import { sendNotification } from "../utils/notificationSender.js";
+import {
+  createPaymentUrl as buildVnpayUrl,
+  verifyPaymentCallback,
+  getCreateDate,
+  getExpireDate,
+  getConfig,
+} from "../utils/vnpay.js";
 
 export const processDepositPayment = async (req, res) => {
   try {
@@ -444,6 +451,238 @@ export const getPaymentsByBooking = async (req, res) => {
       },
       data: payments,
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ==================== VNPay Sandbox ====================
+
+export const createVnpayPayment = async (req, res) => {
+  try {
+    const { booking_id, payment_type } = req.body;
+    if (!["deposit", "rental_fee"].includes(payment_type)) {
+      return res.status(400).json({ message: "payment_type phải là deposit hoặc rental_fee" });
+    }
+    const customer = await Customer.findOne({ user: req.user._id });
+    if (!customer) return res.status(403).json({ message: "Chỉ khách hàng mới có thể tạo thanh toán VNPay" });
+    const booking = await Booking.findById(booking_id);
+    if (!booking) return res.status(404).json({ message: "Không tìm thấy đơn đặt xe" });
+    if (booking.customer.toString() !== customer._id.toString()) {
+      return res.status(403).json({ message: "Bạn không có quyền thanh toán đơn này" });
+    }
+    const isDeposit = payment_type === "deposit";
+    const amount = isDeposit ? booking.deposit_amount : (booking.final_amount || 0);
+    if (amount <= 0) {
+      return res.status(400).json({ message: isDeposit ? "Đơn không yêu cầu cọc" : "Số tiền còn lại không hợp lệ" });
+    }
+    if (isDeposit && booking.status !== "pending") {
+      return res.status(400).json({ message: "Đơn không ở trạng thái chờ thanh toán cọc" });
+    }
+    if (!isDeposit && booking.status !== "vehicle_returned") {
+      return res.status(400).json({ message: "Chỉ thanh toán chốt sổ khi đã trả xe" });
+    }
+
+    let payment = await Payment.findOne({
+      booking: booking._id,
+      payment_type,
+      status: "pending",
+      payment_method: "vnpay",
+    });
+    if (!payment) {
+      payment = await Payment.create({
+        booking: booking._id,
+        customer: customer._id,
+        payment_type,
+        amount,
+        payment_method: "vnpay",
+        status: "pending",
+        transaction_id: null,
+      });
+      payment.transaction_id = payment._id.toString();
+      await payment.save();
+    }
+
+    const baseUrl = process.env.BACKEND_URL || `${req.protocol || "http"}://${req.get("host") || "localhost:5000"}`;
+    const returnUrl = `${baseUrl}/api/payments/vnpay/return`;
+    const vnpParams = {
+      vnp_Version: "2.1.0",
+      vnp_Command: "pay",
+      vnp_TmnCode: getConfig().tmnCode,
+      vnp_Amount: Math.round(amount) * 100,
+      vnp_CurrCode: "VND",
+      vnp_CreateDate: getCreateDate(),
+      vnp_ExpireDate: getExpireDate(),
+      vnp_IpAddr: req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "127.0.0.1",
+      vnp_Locale: "vn",
+      vnp_OrderInfo: `Thanh toan ${isDeposit ? "coc" : "chot so"} don hang ${booking._id.toString().slice(-8)}`,
+      vnp_OrderType: "other",
+      vnp_ReturnUrl: returnUrl,
+      vnp_TxnRef: payment._id.toString(),
+    };
+    const paymentUrl = buildVnpayUrl(vnpParams);
+    res.status(200).json({
+      success: true,
+      paymentUrl,
+      payment_id: payment._id,
+      txn_ref: payment._id.toString(),
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const vnpayReturn = async (req, res) => {
+  try {
+    const { valid } = verifyPaymentCallback(req.query);
+    const frontendBase = process.env.FRONTEND_URL || "http://localhost:5173";
+    const successPath = "/payment/success";
+    const queryString = new URLSearchParams(req.query).toString();
+    if (!valid) {
+      return res.redirect(`${frontendBase}${successPath}?error=invalid_signature&${queryString}`);
+    }
+    const vnpResponseCode = req.query.vnp_ResponseCode;
+    const vnpTxnRef = req.query.vnp_TxnRef;
+    if (!vnpTxnRef) return res.redirect(`${frontendBase}${successPath}?error=missing_txn&${queryString}`);
+    const payment = await Payment.findById(vnpTxnRef);
+    if (!payment) return res.redirect(`${frontendBase}${successPath}?error=payment_not_found&${queryString}`);
+    if (payment.status === "pending") {
+      if (vnpResponseCode === "00") {
+        payment.status = "completed";
+        payment.transaction_id = payment.transaction_id || req.query.vnp_TransactionNo || vnpTxnRef;
+        await payment.save();
+        const booking = await Booking.findById(payment.booking);
+        if (booking) {
+          if (payment.payment_type === "deposit") {
+            booking.updateStatus("confirmed");
+            await booking.save();
+            const pop = await Payment.findById(payment._id).populate("customer");
+            if (pop?.customer?.user) {
+              await sendNotification({
+                recipientId: pop.customer.user,
+                title: "Đơn đã được duyệt",
+                message: `Đơn đặt xe #${booking._id.toString().slice(-6)} đã được duyệt sau khi thanh toán cọc VNPay thành công.`,
+                type: "booking_approved",
+                relatedId: booking._id,
+                relatedModel: "Booking",
+              });
+            }
+          } else if (payment.payment_type === "rental_fee") {
+            booking.updateStatus("completed");
+            await booking.save();
+          }
+        }
+      } else {
+        payment.status = "failed";
+        await payment.save();
+      }
+    }
+    return res.redirect(`${frontendBase}${successPath}?${queryString}`);
+  } catch (error) {
+    const frontendBase = process.env.FRONTEND_URL || "http://localhost:5173";
+    const queryString = new URLSearchParams(req.query || {}).toString();
+    res.redirect(`${frontendBase}/payment/success?error=server&${queryString}`);
+  }
+};
+
+export const vnpayIpn = async (req, res) => {
+  try {
+    const { valid } = verifyPaymentCallback(req.query);
+    if (!valid) return res.status(200).json({ RspCode: "97", Message: "Invalid Checksum" });
+    const vnpResponseCode = req.query.vnp_ResponseCode;
+    const vnpTxnRef = req.query.vnp_TxnRef;
+    const payment = await Payment.findById(vnpTxnRef);
+    if (!payment) return res.status(200).json({ RspCode: "01", Message: "Order not found" });
+    if (payment.status !== "pending") return res.status(200).json({ RspCode: "02", Message: "Order already confirmed" });
+    if (vnpResponseCode === "00") {
+      payment.status = "completed";
+      payment.transaction_id = payment.transaction_id || req.query.vnp_TransactionNo || vnpTxnRef;
+      await payment.save();
+      const booking = await Booking.findById(payment.booking);
+      if (booking) {
+        if (payment.payment_type === "deposit") {
+          booking.updateStatus("confirmed");
+          await booking.save();
+        } else if (payment.payment_type === "rental_fee") {
+          booking.updateStatus("completed");
+          await booking.save();
+        }
+      }
+    } else {
+      payment.status = "failed";
+      await payment.save();
+    }
+    return res.status(200).json({ RspCode: "00", Message: "Success" });
+  } catch (error) {
+    return res.status(200).json({ RspCode: "99", Message: "Unknown error" });
+  }
+};
+
+export const getPaymentByTxnRef = async (req, res) => {
+  try {
+    const { txnRef } = req.params;
+    const customer = await Customer.findOne({ user: req.user._id });
+    if (!customer) return res.status(403).json({ message: "Chỉ khách hàng mới xem được" });
+    const payment = await Payment.findOne({
+      $or: [{ _id: txnRef }, { transaction_id: txnRef }],
+      customer: customer._id,
+    })
+      .populate({
+        path: "booking",
+        select: "status rental_type start_date end_date total_amount deposit_amount final_amount vehicle",
+        populate: { path: "vehicle", select: "brand model license_plate" },
+      })
+      .populate({ path: "customer", populate: { path: "user", select: "full_name phone email" } });
+    if (!payment) return res.status(404).json({ message: "Không tìm thấy giao dịch" });
+    res.status(200).json({ success: true, payment });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const verifyVnpayPayment = async (req, res) => {
+  try {
+    const { txnRef, vnpayParams } = req.body;
+    if (!txnRef || !vnpayParams || typeof vnpayParams !== "object") {
+      return res.status(400).json({ message: "Thiếu txnRef hoặc vnpayParams" });
+    }
+    const { valid } = verifyPaymentCallback(vnpayParams);
+    if (!valid) return res.status(400).json({ message: "Chữ ký không hợp lệ" });
+    const customer = await Customer.findOne({ user: req.user._id });
+    if (!customer) return res.status(403).json({ message: "Chỉ khách hàng mới xác thực" });
+    const payment = await Payment.findOne({
+      $or: [{ _id: txnRef }, { transaction_id: txnRef }],
+      customer: customer._id,
+    }).populate("booking");
+    if (!payment) return res.status(404).json({ message: "Không tìm thấy giao dịch" });
+    if (payment.status === "pending") {
+      if (vnpayParams.vnp_ResponseCode === "00") {
+        payment.status = "completed";
+        payment.transaction_id = payment.transaction_id || vnpayParams.vnp_TransactionNo || txnRef;
+        await payment.save();
+        const booking = await Booking.findById(payment.booking?._id || payment.booking);
+        if (booking) {
+          if (payment.payment_type === "deposit") {
+            booking.updateStatus("confirmed");
+            await booking.save();
+          } else if (payment.payment_type === "rental_fee") {
+            booking.updateStatus("completed");
+            await booking.save();
+          }
+        }
+      } else {
+        payment.status = "failed";
+        await payment.save();
+      }
+    }
+    const updated = await Payment.findById(payment._id)
+      .populate({
+        path: "booking",
+        select: "status rental_type start_date end_date total_amount deposit_amount final_amount vehicle",
+        populate: { path: "vehicle", select: "brand model license_plate" },
+      })
+      .populate({ path: "customer", populate: { path: "user", select: "full_name phone email" } });
+    res.status(200).json({ success: true, payment: updated });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
