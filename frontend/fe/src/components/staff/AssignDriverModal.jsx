@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { getAllDrivers } from "../../services/userApi";
-import { assignDriver } from "../../services/driverAssignmentApi";
+import { assignDriver, getAssignments } from "../../services/driverAssignmentApi";
 import { Loader2, X, UserCheck, Phone, AlertCircle, CheckCircle2, Users } from "lucide-react";
 
 export default function AssignDriverModal({ booking, onClose, onSuccess }) {
@@ -15,8 +15,32 @@ export default function AssignDriverModal({ booking, onClose, onSuccess }) {
     const fetchAvailableDrivers = async () => {
       try {
         setLoading(true);
-        const res = await getAllDrivers({ status: "available", limit: 100 });
-        setDrivers(res.data || []);
+        const [res, assignmentsRes] = await Promise.all([
+          getAllDrivers({ status: "available", limit: 100 }),
+          getAssignments({ booking_id: booking._id }).catch(() => ({ data: [] }))
+        ]);
+        
+        const allAssignments = assignmentsRes.data || [];
+        const pendingAssign = allAssignments.find(a => a.status === "pending");
+        
+        if (pendingAssign) {
+          const pDriverId = pendingAssign.driver?._id || pendingAssign.driver;
+          let pDriver = res.data?.find(d => d._id === pDriverId) || pendingAssign.driver;
+          
+          if (pDriver && pDriver.user) {
+            setDrivers([{ ...pDriver, isPendingAssignment: true }]);
+            setSelectedDriverId(pDriverId);
+          } else {
+            setDrivers([]);
+          }
+        } else {
+          const rejectedDriverIds = new Set(
+            allAssignments.filter(a => a.status === "rejected").map(a => a.driver?._id || a.driver)
+          );
+          
+          const availableDrivers = (res.data || []).filter(d => !rejectedDriverIds.has(d._id));
+          setDrivers(availableDrivers);
+        }
       } catch (err) {
         setError("Cannot load driver list: " + err.message);
       } finally {
@@ -165,10 +189,16 @@ export default function AssignDriverModal({ booking, onClose, onSuccess }) {
                       </div>
                     </div>
                     {/* Available badge */}
-                    <span className="shrink-0 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                      Available
-                    </span>
-                    {isSelected && (
+                    {driver.isPendingAssignment ? (
+                      <span className="shrink-0 px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full">
+                        Waiting Response
+                      </span>
+                    ) : (
+                      <span className="shrink-0 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                        Available
+                      </span>
+                    )}
+                    {isSelected && !driver.isPendingAssignment && (
                       <UserCheck className="w-5 h-5 text-blue-600 shrink-0" />
                     )}
                   </button>
@@ -188,10 +218,15 @@ export default function AssignDriverModal({ booking, onClose, onSuccess }) {
           </button>
           <button
             onClick={handleAssign}
-            disabled={!selectedDriverId || assigning || success}
+            disabled={!selectedDriverId || assigning || success || drivers.some(d => d._id === selectedDriverId && d.isPendingAssignment)}
             className="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            {assigning ? (
+            {drivers.some(d => d._id === selectedDriverId && d.isPendingAssignment) ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Waiting Response...
+              </>
+            ) : assigning ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Assigning...

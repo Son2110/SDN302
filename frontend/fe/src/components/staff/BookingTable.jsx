@@ -38,9 +38,19 @@ export default function BookingTable({ bookings, onDelete }) {
     );
   }
 
-  // Booking cần phân công: with_driver + confirmed + chưa có driver
-  const needsAssignment = (b) =>
-    b.rental_type === "with_driver" && b.status === "confirmed" && !b.driver;
+  // Needs assignment: with_driver + confirmed + no driver + 1 day before start date
+  const needsAssignment = (b) => {
+    if (b.rental_type !== "with_driver" || b.status !== "confirmed" || b.driver) {
+      return false;
+    }
+    
+    const now = new Date();
+    const startDate = new Date(b.start_date);
+    const timeDiff = startDate.getTime() - now.getTime();
+    const daysDiff = timeDiff / (1000 * 3600 * 24);
+    
+    return daysDiff <= 1;
+  };
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">

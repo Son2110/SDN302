@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getBookingDetail } from "../../services/bookingApi";
 import { getAllDrivers } from "../../services/userApi";
-import { assignDriver } from "../../services/driverAssignmentApi";
+import { assignDriver, getAssignments } from "../../services/driverAssignmentApi";
 import {
   ArrowLeft,
   Loader2,
@@ -56,8 +56,32 @@ export default function StaffAssignDriver() {
     const fetchDrivers = async () => {
       try {
         setLoadingDrivers(true);
-        const res = await getAllDrivers({ status: "available", limit: 200 });
-        setDrivers(res.data || []);
+        const [res, assignmentsRes] = await Promise.all([
+          getAllDrivers({ status: "available", limit: 200 }),
+          getAssignments({ booking_id: bookingId }).catch(() => ({ data: [] }))
+        ]);
+        
+        const allAssignments = assignmentsRes.data || [];
+        const pendingAssign = allAssignments.find(a => a.status === "pending");
+        
+        if (pendingAssign) {
+          const pDriverId = pendingAssign.driver?._id || pendingAssign.driver;
+          let pDriver = res.data?.find(d => d._id === pDriverId) || pendingAssign.driver;
+          
+          if (pDriver && pDriver.user) {
+            setDrivers([{ ...pDriver, isPendingAssignment: true }]);
+            setSelectedDriverId(pDriverId);
+          } else {
+            setDrivers([]);
+          }
+        } else {
+          const rejectedDriverIds = new Set(
+            allAssignments.filter(a => a.status === "rejected").map(a => a.driver?._id || a.driver)
+          );
+          
+          const availableDrivers = (res.data || []).filter(d => !rejectedDriverIds.has(d._id));
+          setDrivers(availableDrivers);
+        }
       } catch (err) {
         setError("Cannot load driver list: " + err.message);
       } finally {
@@ -220,10 +244,15 @@ export default function StaffAssignDriver() {
             <div className="flex flex-col gap-2 pt-2">
               <button
                 onClick={handleAssign}
-                disabled={!selectedDriverId || assigning || success}
+                disabled={!selectedDriverId || assigning || success || selectedDriver?.isPendingAssignment}
                 className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {assigning ? (
+                {selectedDriver?.isPendingAssignment ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Waiting Response...
+                  </>
+                ) : assigning ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Assigning...
@@ -340,10 +369,16 @@ export default function StaffAssignDriver() {
 
                         {/* Status + check */}
                         <div className="shrink-0 flex flex-col items-end gap-2">
-                          <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                            Available
-                          </span>
-                          {isSelected && (
+                          {driver.isPendingAssignment ? (
+                            <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full">
+                              Waiting Response
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                              Available
+                            </span>
+                          )}
+                          {isSelected && !driver.isPendingAssignment && (
                             <UserCheck className="w-5 h-5 text-blue-600" />
                           )}
                         </div>
