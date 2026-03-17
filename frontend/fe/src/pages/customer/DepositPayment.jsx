@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { getToken } from "../../services/api";
 import { getBookingById } from "../../services/bookingApi";
-import { processDepositPayment } from "../../services/paymentService";
+import { createVnpayPayment } from "../../services/paymentService";
 import QRPaymentModal from "../../components/payment/QRPaymentModal";
 
 const DepositPayment = () => {
@@ -25,7 +25,7 @@ const DepositPayment = () => {
   const [error, setError] = useState(null);
   const [processing, setProcessing] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
-  const [selectedMethod, setSelectedMethod] = useState("bank_transfer");
+  const [selectedMethod, setSelectedMethod] = useState("vnpay");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
 
@@ -113,8 +113,32 @@ const DepositPayment = () => {
 
     setError(null);
 
-    // For demo: all methods open the QR payment modal.
-    // In production, each method can be integrated directly.
+    if (selectedMethod === "vnpay") {
+      try {
+        setProcessing(true);
+        const base = window.location.origin;
+        const response = await createVnpayPayment(
+          bookingId,
+          "deposit",
+          `${base}/payment/success`,
+        );
+
+        if (response?.paymentUrl) {
+          window.location.href = response.paymentUrl;
+          return;
+        }
+
+        setError("Failed to create VNPay payment URL");
+        return;
+      } catch (err) {
+        setError(err.message || "Failed to create VNPay payment URL");
+        return;
+      } finally {
+        setProcessing(false);
+      }
+    }
+
+    // Non-VNPay methods currently use QR modal flow.
     setShowQRModal(true);
   };
 
