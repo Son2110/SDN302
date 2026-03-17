@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { User, LogOut } from "lucide-react";
+import NotificationDropdown from "./NotificationDropdown";
 
 const menuItems = [
   { title: "ĐỘI XE", to: "/fleet", type: "route" },
@@ -100,15 +101,17 @@ const Navbar = () => {
 
             {/* User Menu or Auth Buttons */}
             {user ? (
-              <div className="relative ml-4">
-                <button
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2.5 text-[12px] font-bold uppercase tracking-wider text-white
-                  hover:bg-blue-700 transition-all"
-                >
-                  <User size={16} />
-                  {user.full_name || user.email}
-                </button>
+              <div className="flex items-center gap-4 ml-4">
+                <NotificationDropdown isNavbar={true} />
+                <div className="relative">
+                  <button
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className="flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2.5 text-[12px] font-bold uppercase tracking-wider text-white
+                    hover:bg-blue-700 transition-all"
+                  >
+                    <User size={16} />
+                    {user.full_name || user.email}
+                  </button>
 
                 {showUserMenu && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2">
@@ -190,6 +193,7 @@ const Navbar = () => {
                   </div>
                 )}
               </div>
+            </div>
             ) : (
               <div className="flex items-center gap-3 ml-4">
                 <Link
