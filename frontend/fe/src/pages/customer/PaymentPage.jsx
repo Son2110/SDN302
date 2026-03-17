@@ -12,6 +12,7 @@ import { getBookingById } from "../../services/bookingApi";
 import {
   processDepositPayment,
   processFinalPayment,
+  createVnpayPayment,
 } from "../../services/paymentService";
 import { getToken } from "../../services/api";
 import QRPaymentModal from "../../components/payment/QRPaymentModal";
@@ -23,44 +24,27 @@ const PaymentPage = ({ type = "deposit" }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showQRModal, setShowQRModal] = useState(false);
-  const [selectedMethod, setSelectedMethod] = useState("bank_transfer");
+  const [selectedMethod, setSelectedMethod] = useState("vnpay");
 
+  // Chỉ VNPay (redirect sang cổng VNPay Test) + Chuyển khoản QR + Tiền mặt
   const paymentMethods = [
-    {
-      id: "bank_transfer",
-      label: "QR bank transfer",
-      icon: Building2,
-      description: "Scan QR code for quick payment",
-    },
-    {
-      id: "cash",
-      label: "Cash",
-      icon: Wallet,
-      description: "Payment directly at the store",
-    },
-    {
-      id: "card",
-      label: "Credit card",
-      icon: CreditCard,
-      description: "Visa, MasterCard, JCB",
-    },
-    {
-      id: "momo",
-      label: "MoMo wallet",
-      icon: Wallet,
-      description: "Payment via MoMo application",
-    },
-    {
-      id: "zalopay",
-      label: "ZaloPay",
-      icon: Wallet,
-      description: "Payment via ZaloPay application",
-    },
     {
       id: "vnpay",
       label: "VNPay",
+      icon: CreditCard,
+      description: "Cổng thanh toán VNPay (thẻ, QR, ví...)",
+    },
+    {
+      id: "bank_transfer",
+      label: "Chuyển khoản QR",
       icon: Building2,
-      description: "VNPay gateway",
+      description: "Quét mã QR chuyển khoản ngân hàng",
+    },
+    {
+      id: "cash",
+      label: "Tiền mặt",
+      icon: Wallet,
+      description: "Thanh toán trực tiếp tại cửa hàng",
     },
   ];
 
@@ -97,8 +81,20 @@ const PaymentPage = ({ type = "deposit" }) => {
   const handlePayment = async () => {
     setError("");
 
-    // For demo: all methods open the QR payment modal.
-    // In production, each method can be integrated directly.
+    if (selectedMethod === "vnpay") {
+      try {
+        const base = window.location.origin;
+        const res = await createVnpayPayment(id, type, `${base}/payment/success`);
+        if (res.paymentUrl) {
+          window.location.href = res.paymentUrl;
+          return;
+        }
+      } catch (err) {
+        setError(err.message || "Không thể tạo link thanh toán VNPay");
+        return;
+      }
+    }
+
     setShowQRModal(true);
   };
 
@@ -278,9 +274,11 @@ const PaymentPage = ({ type = "deposit" }) => {
           disabled={!selectedMethod}
           className="w-full bg-blue-600 text-white py-5 rounded-2xl font-bold text-lg shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {selectedMethod === "bank_transfer"
-            ? "SHOW PAYMENT QR CODE"
-            : `Payment ${formatCurrency(getPaymentAmount())}`}
+          {selectedMethod === "vnpay"
+            ? "Thanh toán qua VNPay"
+            : selectedMethod === "bank_transfer"
+              ? "Hiện mã QR chuyển khoản"
+              : `Xác nhận thanh toán ${formatCurrency(getPaymentAmount())}`}
         </button>
 
         {/* Note */}
