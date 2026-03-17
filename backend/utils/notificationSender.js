@@ -17,8 +17,20 @@ export const sendNotification = async ({
   type,
   relatedId = null,
   relatedModel = null,
+  eventKey = null,
 }) => {
   try {
+    if (eventKey) {
+      const exists = await Notification.findOne({
+        recipient: recipientId,
+        event_key: eventKey,
+      }).select("_id");
+
+      if (exists) {
+        return exists;
+      }
+    }
+
     const notification = await Notification.create({
       recipient: recipientId,
       title,
@@ -26,6 +38,7 @@ export const sendNotification = async ({
       type,
       related_id: relatedId,
       related_model: relatedModel,
+      event_key: eventKey,
     });
 
     // TODO: Nếu sau này làm Socket.io (Realtime), sẽ emit sự kiện ở đây

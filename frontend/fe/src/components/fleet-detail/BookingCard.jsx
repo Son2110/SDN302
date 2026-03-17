@@ -16,56 +16,56 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import toast from "react-hot-toast";
 
-// Phí tài xế mỗi ngày
+// Daily chauffeur fee
 const DRIVER_FEE_PER_DAY = 500000;
 
-// Danh sách địa điểm nổi bật tại TP.HCM
+// Popular locations in Ho Chi Minh City
 const POPULAR_LOCATIONS = [
   {
     id: 1,
-    name: "Sân bay Tân Sơn Nhất",
-    address: "Trường Sơn, P.2, Tân Bình, TP.HCM",
+    name: "Tan Son Nhat Airport",
+    address: "Truong Son Street, Ward 2, Tan Binh, HCMC",
   },
   {
     id: 2,
-    name: "Tòa Bitexco Financial Tower",
-    address: "2 Hải Triều, Bến Nghé, Q.1, TP.HCM",
+    name: "Bitexco Financial Tower",
+    address: "2 Hai Trieu, Ben Nghe, District 1, HCMC",
   },
-  { id: 3, name: "Chợ Bến Thành", address: "Lê Lợi, Bến Thành, Q.1, TP.HCM" },
+  { id: 3, name: "Ben Thanh Market", address: "Le Loi, Ben Thanh, District 1, HCMC" },
   {
     id: 4,
-    name: "Phố đi bộ Nguyễn Huệ",
-    address: "Nguyễn Huệ, Bến Nghé, Q.1, TP.HCM",
+    name: "Nguyen Hue Walking Street",
+    address: "Nguyen Hue, Ben Nghe, District 1, HCMC",
   },
   {
     id: 5,
-    name: "Nhà hát Thành phố",
-    address: "7 Công Trường Lam Sơn, Q.1, TP.HCM",
+    name: "City Opera House",
+    address: "7 Cong Truong Lam Son, District 1, HCMC",
   },
   {
     id: 6,
-    name: "Dinh Độc Lập",
-    address: "135 Nam Kỳ Khởi Nghĩa, Q.1, TP.HCM",
+    name: "Independence Palace",
+    address: "135 Nam Ky Khoi Nghia, District 1, HCMC",
   },
   {
     id: 7,
-    name: "Nhà thờ Đức Bà",
-    address: "1 Công xã Paris, Bến Nghé, Q.1, TP.HCM",
+    name: "Notre Dame Cathedral",
+    address: "1 Cong xa Paris, Ben Nghe, District 1, HCMC",
   },
   {
     id: 8,
-    name: "Bưu điện Thành phố",
-    address: "2 Công xã Paris, Bến Nghé, Q.1, TP.HCM",
+    name: "Central Post Office",
+    address: "2 Cong xa Paris, Ben Nghe, District 1, HCMC",
   },
   {
     id: 9,
-    name: "Bảo tàng Chứng tích Chiến tranh",
-    address: "28 Võ Văn Tần, Q.3, TP.HCM",
+    name: "War Remnants Museum",
+    address: "28 Vo Van Tan, District 3, HCMC",
   },
   {
     id: 10,
     name: "Landmark 81",
-    address: "720A Điện Biên Phủ, Bình Thạnh, TP.HCM",
+    address: "720A Dien Bien Phu, Binh Thanh, HCMC",
   },
 ];
 
@@ -149,7 +149,7 @@ const BookingCard = ({ car }) => {
     });
   };
 
-  // Calculate rental days for DISPLAY (inclusive: chọn 13-16 = 4 ngày)
+  // Calculate rental days for display (inclusive).
   const calculateRentalDays = () => {
     if (!formData.startDate || !formData.endDate) return 0;
     const diffTime = Math.abs(formData.endDate - formData.startDate);
@@ -238,17 +238,17 @@ const BookingCard = ({ car }) => {
 
     // Validation
     if (!formData.pickupLocation.trim()) {
-      setError("Vui lòng nhập điểm đón");
+      setError("Please enter a pickup location");
       return;
     }
 
     if (!formData.returnLocation.trim()) {
-      setError("Vui lòng nhập điểm trả");
+      setError("Please enter a return location");
       return;
     }
 
     if (!formData.startDate || !formData.endDate) {
-      setError("Vui lòng chọn thời gian thuê xe");
+      setError("Please select your rental period");
       return;
     }
 
@@ -294,14 +294,14 @@ const BookingCard = ({ car }) => {
 
     if (hasOverlap) {
       setError(
-        "Xe đã được khách khác đặt trong khoảng thời gian này. Vui lòng chọn thời gian khác.",
+        "This vehicle is already booked for the selected period. Please choose different dates.",
       );
       return;
     }
 
     // Check if car has _id from backend
     if (!car._id) {
-      setError("Không tìm thấy thông tin xe. Vui lòng thử lại.");
+      setError("Vehicle information was not found. Please try again.");
       return;
     }
 
@@ -316,7 +316,7 @@ const BookingCard = ({ car }) => {
     // Check if user is logged in
     const token = getToken();
     if (!token) {
-      toast.error("Vui lòng đăng nhập để đặt xe");
+      toast.error("Please sign in to book a vehicle");
       navigate("/login");
       return;
     }
@@ -342,10 +342,10 @@ const BookingCard = ({ car }) => {
         const bookingId = response.data.booking_id || response.data._id;
 
         if (!bookingId) {
-          throw new Error("Không nhận được mã đơn hàng từ server");
+          throw new Error("Could not get booking ID from server");
         }
 
-        toast.success("Đặt xe thành công! Vui lòng thanh toán cọc.");
+        toast.success("Booking created successfully! Please complete deposit payment.");
 
         // Navigate to deposit payment page
         navigate(`/booking/deposit/${bookingId}`);
@@ -354,8 +354,8 @@ const BookingCard = ({ car }) => {
       }
     } catch (err) {
       console.error("Booking error:", err);
-      setError(err.message || "Không thể tạo đơn đặt xe. Vui lòng thử lại.");
-      toast.error(err.message || "Đặt xe thất bại");
+      setError(err.message || "Unable to create booking. Please try again.");
+      toast.error(err.message || "Booking failed");
     } finally {
       setLoading(false);
     }
@@ -367,18 +367,18 @@ const BookingCard = ({ car }) => {
       <div className="flex items-end justify-between mb-8">
         <div>
           <p className="text-gray-400 text-xs font-bold uppercase mb-1">
-            Giá thuê ngày
+            Daily rate
           </p>
           <span className="text-3xl font-black text-gray-900">
             {car?.daily_rate
               ? new Intl.NumberFormat("vi-VN").format(car.daily_rate)
               : "N/A"}
-            đ
+            VND
           </span>
-          <span className="text-sm text-gray-500 ml-2">/ngày</span>
+          <span className="text-sm text-gray-500 ml-2">/day</span>
         </div>
         <span className="px-3 py-1 bg-green-50 text-green-600 text-xs font-bold rounded-full">
-          SẴN SÀNG
+          AVAILABLE
         </span>
       </div>
 
@@ -386,11 +386,11 @@ const BookingCard = ({ car }) => {
       {formData.startDate && formData.endDate && (
         <div className="mb-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
           <div className="space-y-3">
-            {/* Tổng thời gian thuê (billable days only) */}
+            {/* Total rental duration (billable days only) */}
             <div className="flex justify-between items-center">
-              <p className="text-sm text-gray-600">Tổng thời gian thuê</p>
+              <p className="text-sm text-gray-600">Total rental duration</p>
               <p className="text-lg font-bold text-gray-900">
-                {calculateBillableDays()} ngày
+                {calculateBillableDays()} days
               </p>
             </div>
 
@@ -398,33 +398,33 @@ const BookingCard = ({ car }) => {
             <div className="pt-2 border-t border-blue-200 space-y-1">
               <div className="flex justify-between items-center text-sm">
                 <p className="text-gray-600">
-                  Giá thuê xe ({calculateBillableDays()} ngày)
+                  Vehicle rental ({calculateBillableDays()} days)
                 </p>
                 <p className="font-semibold text-gray-900">
                   {new Intl.NumberFormat("vi-VN").format(
                     calculateVehicleCost(),
                   )}
-                  đ
+                  VND
                 </p>
               </div>
               {formData.rentalType === "with_driver" && (
                 <div className="flex justify-between items-center text-sm">
                   <p className="text-gray-600">
-                    Phí tài xế ({calculateBillableDays()} ngày × 500k)
+                    Driver fee ({calculateBillableDays()} days x 500k)
                   </p>
                   <p className="font-semibold text-amber-600">
                     {new Intl.NumberFormat("vi-VN").format(
                       calculateDriverFee(),
                     )}
-                    đ
+                    VND
                   </p>
                 </div>
               )}
               <div className="pt-2 border-t border-blue-300 flex justify-between items-center">
-                <p className="text-sm font-bold text-gray-700">Tổng giá</p>
+                <p className="text-sm font-bold text-gray-700">Total price</p>
                 <p className="text-xl font-black text-blue-600">
                   {new Intl.NumberFormat("vi-VN").format(calculateTotalPrice())}
-                  đ
+                  VND
                 </p>
               </div>
             </div>
@@ -445,7 +445,7 @@ const BookingCard = ({ car }) => {
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               <Calendar className="inline w-4 h-4 mr-1" />
-              Ngày bắt đầu
+              Start date
             </label>
             <DatePicker
               selected={formData.startDate}
@@ -456,7 +456,7 @@ const BookingCard = ({ car }) => {
               minDate={new Date()}
               filterDate={(date) => !isDateBooked(date)}
               dateFormat="dd/MM/yyyy"
-              placeholderText="Chọn ngày"
+              placeholderText="Select date"
               disabled={loadingDates}
               className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
@@ -466,7 +466,7 @@ const BookingCard = ({ car }) => {
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               <Calendar className="inline w-4 h-4 mr-1" />
-              Ngày kết thúc
+              End date
             </label>
             <DatePicker
               selected={formData.endDate}
@@ -477,7 +477,7 @@ const BookingCard = ({ car }) => {
               minDate={formData.startDate || new Date()}
               filterDate={(date) => !isDateBooked(date)}
               dateFormat="dd/MM/yyyy"
-              placeholderText="Chọn ngày"
+              placeholderText="Select date"
               disabled={loadingDates || !formData.startDate}
               className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
@@ -486,28 +486,28 @@ const BookingCard = ({ car }) => {
 
         {loadingDates && (
           <p className="text-xs text-gray-500 italic">
-            Đang tải thông tin ngày đã được đặt...
+            Loading unavailable dates...
           </p>
         )}
 
         {bookedDates.length > 0 && (
           <p className="text-xs text-gray-600">
-            <span className="font-semibold">Lưu ý:</span> Các ngày hiển thị màu
-            xám trên lịch là ngày xe đã được đặt.
+            <span className="font-semibold">Note:</span> Gray dates on the
+            calendar are already booked.
           </p>
         )}
         {/* Pickup Location with Dropdown */}
         <div className="relative" ref={pickupRef}>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             <MapPin className="inline w-4 h-4 mr-1" />
-            Điểm đón
+            Pickup location
           </label>
           <input
             type="text"
             value={formData.pickupLocation}
             onChange={(e) => handlePickupChange(e.target.value)}
             onFocus={() => setShowPickupDropdown(true)}
-            placeholder="Nhập hoặc chọn điểm đón"
+            placeholder="Enter or select pickup location"
             className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           {showPickupDropdown && (
@@ -529,7 +529,7 @@ const BookingCard = ({ car }) => {
                 ))
               ) : (
                 <div className="px-4 py-3 text-sm text-gray-500">
-                  Không tìm thấy địa điểm
+                  No locations found
                 </div>
               )}
             </div>
@@ -540,14 +540,14 @@ const BookingCard = ({ car }) => {
         <div className="relative" ref={returnRef}>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             <MapPin className="inline w-4 h-4 mr-1" />
-            Điểm trả
+            Return location
           </label>
           <input
             type="text"
             value={formData.returnLocation}
             onChange={(e) => handleReturnChange(e.target.value)}
             onFocus={() => setShowReturnDropdown(true)}
-            placeholder="Nhập hoặc chọn điểm trả"
+            placeholder="Enter or select return location"
             className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           {showReturnDropdown && (
@@ -569,7 +569,7 @@ const BookingCard = ({ car }) => {
                 ))
               ) : (
                 <div className="px-4 py-3 text-sm text-gray-500">
-                  Không tìm thấy địa điểm
+                  No locations found
                 </div>
               )}
             </div>
@@ -579,7 +579,7 @@ const BookingCard = ({ car }) => {
         {/* Rental Type */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Hình thức thuê
+            Rental type
           </label>
           <div className="grid grid-cols-2 gap-3">
             <button
@@ -587,28 +587,26 @@ const BookingCard = ({ car }) => {
               onClick={() =>
                 setFormData({ ...formData, rentalType: "self_drive" })
               }
-              className={`flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl font-semibold text-sm transition-all ${
-                formData.rentalType === "self_drive"
+              className={`flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl font-semibold text-sm transition-all ${formData.rentalType === "self_drive"
                   ? "border-blue-500 bg-blue-50 text-blue-700"
                   : "border-gray-200 text-gray-600 hover:border-gray-300"
-              }`}
+                }`}
             >
               <User size={18} />
-              Tự lái
+              Self-drive
             </button>
             <button
               type="button"
               onClick={() =>
                 setFormData({ ...formData, rentalType: "with_driver" })
               }
-              className={`flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl font-semibold text-sm transition-all ${
-                formData.rentalType === "with_driver"
+              className={`flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl font-semibold text-sm transition-all ${formData.rentalType === "with_driver"
                   ? "border-blue-500 bg-blue-50 text-blue-700"
                   : "border-gray-200 text-gray-600 hover:border-gray-300"
-              }`}
+                }`}
             >
               <Users size={18} />
-              Có tài xế
+              With driver
             </button>
           </div>
         </div>
@@ -616,7 +614,7 @@ const BookingCard = ({ car }) => {
         {/* Submit Button */}
         {user?.roles?.includes("admin") ? (
           <div className="w-full bg-gray-100 text-gray-500 py-4 rounded-xl font-bold text-sm text-center border border-gray-200 cursor-not-allowed uppercase">
-            Admin không thể đặt xe
+            Admin cannot create bookings
           </div>
         ) : (
           <button
@@ -624,18 +622,18 @@ const BookingCard = ({ car }) => {
             disabled={loading}
             className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed shadow-lg shadow-blue-600/30"
           >
-            {loading ? "ĐANG XỬ LÝ..." : "ĐẶT XE NGAY →"}
+            {loading ? "PROCESSING..." : "BOOK NOW →"}
           </button>
         )}
       </form>
 
       {/* Help Section */}
       <div className="mt-6 bg-gray-50 p-4 rounded-xl text-xs text-gray-600">
-        <p className="font-semibold mb-1">Cần hỗ trợ?</p>
+        <p className="font-semibold mb-1">Need help?</p>
         <p>
-          Đội ngũ tư vấn của chúng tôi luôn sẵn sàng 24/7.{" "}
+          Our support team is available 24/7.{" "}
           <span className="text-blue-600 cursor-pointer hover:underline font-semibold">
-            Liên hệ ngay →
+            Contact us now →
           </span>
         </p>
       </div>

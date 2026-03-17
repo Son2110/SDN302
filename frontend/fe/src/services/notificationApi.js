@@ -15,7 +15,7 @@ export const markNotificationAsRead = async (id) => {
 };
 
 // Mark all notifications as read
-export const markAllNotificationsAsRead = async () => {
+export const markAllNotificationsAsRead = async () => { 
   return await apiClient("/notifications/read-all", {
     method: "PUT",
   });

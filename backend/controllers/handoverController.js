@@ -429,3 +429,66 @@ export const getHandoversByBooking = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// ==================== CUSTOMER: XÁC NHẬN ĐÃ NHẬN XE ====================
+// @route PUT /api/handovers/:id/confirm-receipt
+// @access Private (Customer chủ đơn)
+export const confirmDeliveryReceipt = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const customer = await Customer.findOne({ user: req.user._id });
+
+    if (!customer) {
+      return res.status(403).json({
+        message: "Chỉ khách hàng mới có thể xác nhận nhận xe.",
+      });
+    }
+
+    const handover = await VehicleHandover.findById(id).populate("booking");
+
+    if (!handover) {
+      return res.status(404).json({ message: "Không tìm thấy biên bản bàn giao." });
+    }
+
+    if (handover.handover_type !== "delivery") {
+      return res.status(400).json({
+        message: "Chỉ biên bản giao xe mới có thể xác nhận nhận xe.",
+      });
+    }
+
+    const booking = handover.booking;
+    if (!booking) {
+      return res.status(404).json({ message: "Không tìm thấy đơn đặt xe liên quan." });
+    }
+
+    if (booking.customer.toString() !== customer._id.toString()) {
+      return res.status(403).json({
+        message: "Bạn không có quyền xác nhận biên bản này.",
+      });
+    }
+
+    if (handover.confirmed_by_customer) {
+      return res.status(200).json({
+        success: true,
+        message: "Biên bản đã được xác nhận trước đó.",
+        data: handover,
+      });
+    }
+
+    handover.confirmed_by_customer = true;
+    handover.customer_signature = {
+      confirmed_at: new Date(),
+      channel: "customer_portal",
+    };
+
+    await handover.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Xác nhận nhận xe thành công.",
+      data: handover,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};

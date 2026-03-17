@@ -13,7 +13,7 @@ const Hero = () => {
         playsInline
       />
 
-      {/* Overlay mềm + vignette */}
+      {/* Soft overlay + vignette */}
       <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent" />
       <div className="absolute inset-0 bg-black/20" />
 
@@ -28,7 +28,7 @@ const Hero = () => {
         >
           <span className="w-10 h-[1px] bg-blue-500" />
           <span className="text-xs tracking-[0.35em] text-blue-400 uppercase">
-            Xe Điện Cao Cấp 2025
+            Premium Electric Vehicles 2025
           </span>
         </motion.div>
 
@@ -37,12 +37,11 @@ const Hero = () => {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.1, ease: "easeOut" }}
-          // Mình đã chỉnh leading-[1.2] cho mobile và md:leading-[1.1] cho desktop
           className="font-display text-[42px] md:text-[80px] font-extrabold uppercase leading-[1.2] md:leading-[1.1] mb-8"
         >
-          Trải Nghiệm <br />
+          Experience <br />
           <span className="text-blue-500 text-[38px] md:text-[72px]">
-            Đẳng Cấp Mới
+            A New Standard
           </span>
         </motion.h1>
 
@@ -53,9 +52,9 @@ const Hero = () => {
           transition={{ duration: 1, delay: 0.25, ease: "easeOut" }}
           className="max-w-lg text-gray-300 text-sm md:text-base leading-relaxed mb-10"
         >
-          Khám phá sức mạnh tĩnh lặng từ những dòng xe điện hàng đầu. Dù bạn
-          chọn dịch vụ đưa đón sang trọng hay tự mình cầm lái — chúng tôi mang
-          đến hành trình thông minh và bền vững hơn.
+          Discover the silent power of world-class electric vehicles. Whether
+          you choose a premium chauffeur service or drive yourself, we deliver
+          a smarter and more sustainable journey.
         </motion.p>
 
         {/* Buttons */}

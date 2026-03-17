@@ -12,7 +12,7 @@ const Fleet = () => {
         setLoading(true);
         const data = await getAllVehicles();
 
-        // Lấy 4 xe đầu tiên có status available
+        // Keep only the first 4 vehicles with available status.
         const topVehicles = data
           .filter((v) => v.status === "available")
           .slice(0, 4);
@@ -34,10 +34,10 @@ const Fleet = () => {
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <p className="text-xs tracking-[0.35em] text-blue-600 font-semibold uppercase mb-3">
-              Bộ Sưu Tập Độc Quyền
+              Exclusive Collection
             </p>
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 uppercase">
-              Đội Xe Nổi Bật
+              Featured Fleet
             </h2>
             <div className="w-20 h-1 bg-blue-600 mx-auto mt-4" />
           </div>
@@ -61,10 +61,10 @@ const Fleet = () => {
         {/* Header */}
         <div className="text-center mb-16">
           <p className="text-xs tracking-[0.35em] text-blue-600 font-semibold uppercase mb-3">
-            Bộ Sưu Tập Độc Quyền
+            Exclusive Collection
           </p>
           <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 uppercase">
-            Đội Xe Nổi Bật
+            Featured Fleet
           </h2>
           <div className="w-20 h-1 bg-blue-600 mx-auto mt-4" />
         </div>
@@ -87,7 +87,7 @@ const Fleet = () => {
 
                 <span className="absolute top-4 left-4 bg-blue-600 text-white text-[10px] font-bold tracking-widest px-3 py-1 rounded-full uppercase">
                   {car.vehicle_type?.category === "luxury"
-                    ? "HẠNG SANG"
+                    ? "LUXURY"
                     : car.vehicle_type?.category === "suv"
                       ? "SUV"
                       : car.vehicle_type?.category === "van"
@@ -105,18 +105,18 @@ const Fleet = () => {
                 <div className="flex items-center justify-between border-t border-gray-100 pt-5">
                   <div className="flex flex-col">
                     <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">
-                      Giá thuê từ
+                      Starting from
                     </span>
                     <span className="text-lg font-black text-blue-600">
                       {car.daily_rate.toLocaleString("vi-VN")}{" "}
                       <span className="text-xs font-normal text-gray-500">
-                        đ/ngày
+                        VND/day
                       </span>
                     </span>
                   </div>
 
                   <button className="bg-gray-900 text-white text-[10px] font-bold uppercase tracking-widest px-4 py-3 rounded-xl hover:bg-blue-600 transition-colors duration-300">
-                    Đặt xe
+                    Book now
                   </button>
                 </div>
               </div>
@@ -130,7 +130,7 @@ const Fleet = () => {
             to="/fleet"
             className="group inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-gray-400 hover:text-blue-600 transition-all"
           >
-            Xem tất cả các dòng xe
+            View all vehicles
             <span className="group-hover:translate-x-2 transition-transform">
               →
             </span>
