@@ -2,7 +2,10 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getBookingDetail } from "../../services/bookingApi";
 import { getAllDrivers } from "../../services/userApi";
-import { assignDriver, getAssignments } from "../../services/driverAssignmentApi";
+import {
+  assignDriver,
+  getAssignments,
+} from "../../services/driverAssignmentApi";
 import {
   ArrowLeft,
   Loader2,
@@ -58,16 +61,19 @@ export default function StaffAssignDriver() {
         setLoadingDrivers(true);
         const [res, assignmentsRes] = await Promise.all([
           getAllDrivers({ status: "available", limit: 200 }),
-          getAssignments({ booking_id: bookingId }).catch(() => ({ data: [] }))
+          getAssignments({ booking_id: bookingId }).catch(() => ({ data: [] })),
         ]);
-        
+
         const allAssignments = assignmentsRes.data || [];
-        const pendingAssign = allAssignments.find(a => a.status === "pending");
-        
+        const pendingAssign = allAssignments.find(
+          (a) => a.status === "pending",
+        );
+
         if (pendingAssign) {
           const pDriverId = pendingAssign.driver?._id || pendingAssign.driver;
-          let pDriver = res.data?.find(d => d._id === pDriverId) || pendingAssign.driver;
-          
+          let pDriver =
+            res.data?.find((d) => d._id === pDriverId) || pendingAssign.driver;
+
           if (pDriver && pDriver.user) {
             setDrivers([{ ...pDriver, isPendingAssignment: true }]);
             setSelectedDriverId(pDriverId);
@@ -76,10 +82,14 @@ export default function StaffAssignDriver() {
           }
         } else {
           const rejectedDriverIds = new Set(
-            allAssignments.filter(a => a.status === "rejected").map(a => a.driver?._id || a.driver)
+            allAssignments
+              .filter((a) => a.status === "rejected")
+              .map((a) => a.driver?._id || a.driver),
           );
-          
-          const availableDrivers = (res.data || []).filter(d => !rejectedDriverIds.has(d._id));
+
+          const availableDrivers = (res.data || []).filter(
+            (d) => !rejectedDriverIds.has(d._id),
+          );
           setDrivers(availableDrivers);
         }
       } catch (err) {
@@ -96,7 +106,10 @@ export default function StaffAssignDriver() {
     try {
       setAssigning(true);
       setError(null);
-      await assignDriver({ booking_id: bookingId, driver_id: selectedDriverId });
+      await assignDriver({
+        booking_id: bookingId,
+        driver_id: selectedDriverId,
+      });
       setSuccess(true);
       setTimeout(() => navigate(`/staff/bookings/${bookingId}`), 1500);
     } catch (err) {
@@ -180,7 +193,9 @@ export default function StaffAssignDriver() {
                     <p className="font-semibold text-gray-800 text-sm">
                       {booking.customer?.user?.full_name}
                     </p>
-                    <p className="text-xs text-gray-500">{booking.customer?.user?.phone}</p>
+                    <p className="text-xs text-gray-500">
+                      {booking.customer?.user?.phone}
+                    </p>
                   </div>
                 </div>
 
@@ -214,11 +229,15 @@ export default function StaffAssignDriver() {
             {/* Selected driver preview */}
             {selectedDriver && (
               <div className="mt-2 p-3 bg-indigo-50 border border-indigo-200 rounded-xl">
-                <p className="text-xs font-bold text-indigo-700 mb-1">Selected Driver</p>
+                <p className="text-xs font-bold text-indigo-700 mb-1">
+                  Selected Driver
+                </p>
                 <p className="font-semibold text-indigo-900 text-sm">
                   {selectedDriver.user?.full_name}
                 </p>
-                <p className="text-xs text-indigo-600">{selectedDriver.user?.phone}</p>
+                <p className="text-xs text-indigo-600">
+                  {selectedDriver.user?.phone}
+                </p>
               </div>
             )}
 
@@ -244,7 +263,12 @@ export default function StaffAssignDriver() {
             <div className="flex flex-col gap-2 pt-2">
               <button
                 onClick={handleAssign}
-                disabled={!selectedDriverId || assigning || success || selectedDriver?.isPendingAssignment}
+                disabled={
+                  !selectedDriverId ||
+                  assigning ||
+                  success ||
+                  selectedDriver?.isPendingAssignment
+                }
                 className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {selectedDriver?.isPendingAssignment ? (
@@ -315,7 +339,9 @@ export default function StaffAssignDriver() {
                 <div className="text-center py-16 text-gray-400">
                   <Users className="w-14 h-14 mx-auto mb-4 text-gray-200" />
                   <p className="font-medium text-gray-500">
-                    {search ? "No matching drivers found" : "No drivers available"}
+                    {search
+                      ? "No matching drivers found"
+                      : "No drivers available"}
                   </p>
                   <p className="text-sm mt-1">
                     {search
@@ -327,23 +353,26 @@ export default function StaffAssignDriver() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {filteredDrivers.map((driver) => {
                     const isSelected = selectedDriverId === driver._id;
-                    const initials = (driver.user?.full_name || "?")[0].toUpperCase();
+                    const initials = (driver.user?.full_name ||
+                      "?")[0].toUpperCase();
 
                     return (
                       <button
                         key={driver._id}
                         onClick={() => setSelectedDriverId(driver._id)}
-                        className={`flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all w-full ${isSelected
+                        className={`flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all w-full ${
+                          isSelected
                             ? "border-blue-500 bg-blue-50 shadow-md shadow-blue-100"
                             : "border-gray-100 hover:border-gray-300 hover:shadow-sm"
-                          }`}
+                        }`}
                       >
                         {/* Avatar */}
                         <div
-                          className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg shrink-0 transition-colors ${isSelected
+                          className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg shrink-0 transition-colors ${
+                            isSelected
                               ? "bg-blue-600 text-white"
                               : "bg-gray-100 text-gray-600"
-                            }`}
+                          }`}
                         >
                           {initials}
                         </div>
@@ -351,8 +380,9 @@ export default function StaffAssignDriver() {
                         {/* Info */}
                         <div className="flex-1 min-w-0">
                           <p
-                            className={`font-semibold text-sm truncate ${isSelected ? "text-blue-900" : "text-gray-800"
-                              }`}
+                            className={`font-semibold text-sm truncate ${
+                              isSelected ? "text-blue-900" : "text-gray-800"
+                            }`}
                           >
                             {driver.user?.full_name || "Unknown name"}
                           </p>

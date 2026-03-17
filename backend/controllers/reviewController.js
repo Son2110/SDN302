@@ -132,6 +132,42 @@ export const createReview = async (req, res) => {
   }
 };
 
+// ==================== XEM CHI TIẾT 1 REVIEW ====================
+// @route GET /api/reviews/:reviewId
+// @access Private (Staff)
+export const getReviewById = async (req, res) => {
+  try {
+    const { reviewId } = req.params;
+
+    const review = await Review.findById(reviewId)
+      .populate({
+        path: "customer",
+        populate: { path: "user", select: "full_name avatar_url phone email" },
+      })
+      .populate({
+        path: "driver",
+        populate: { path: "user", select: "full_name avatar_url phone email" },
+      })
+      .populate({
+        path: "booking",
+        select: "start_date end_date rental_type pickup_location return_location total_amount status",
+      });
+
+    if (!review) {
+      return res.status(404).json({ success: false, message: "Không tìm thấy review" });
+    }
+
+    return res.status(200).json({ success: true, data: review });
+  } catch (error) {
+    console.error("getReviewById error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Lỗi server khi lấy chi tiết review",
+      error: error.message,
+    });
+  }
+};
+
 // ==================== XEM REVIEW THEO BOOKING ====================
 // @route GET /api/reviews/booking/:bookingId
 // @access Private
@@ -278,6 +314,64 @@ export const updateReview = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Lỗi server khi sửa đánh giá",
+      error: error.message,
+    });
+  }
+};
+
+// ==================== STAFF: XEM TẤT CẢ DRIVER REVIEWS ====================
+// @route GET /api/reviews/all-driver-reviews
+// @access Private (Staff)
+export const getAllDriverReviews = async (req, res) => {
+  try {
+    const { page = 1, limit = 12, search = "", min_rating, max_rating, driver_id } = req.query;
+
+    const filter = { review_type: "driver" };
+    if (driver_id) filter.driver = driver_id;
+    if (min_rating || max_rating) {
+      filter.rating = {};
+      if (min_rating) filter.rating.$gte = Number(min_rating);
+      if (max_rating) filter.rating.$lte = Number(max_rating);
+    }
+
+    const reviews = await Review.find(filter)
+      .populate({
+        path: "customer",
+        populate: { path: "user", select: "full_name avatar_url" },
+      })
+      .populate({
+        path: "driver",
+        populate: { path: "user", select: "full_name phone avatar_url" },
+      })
+      .populate({
+        path: "booking",
+        select: "start_date end_date rental_type pickup_location",
+      })
+      .sort({ createdAt: -1 });
+
+    // Filter by driver name search (after populate)
+    const filtered = search
+      ? reviews.filter((r) =>
+          r.driver?.user?.full_name?.toLowerCase().includes(search.toLowerCase())
+        )
+      : reviews;
+
+    const total = filtered.length;
+    const pages = Math.ceil(total / limit);
+    const paginated = filtered.slice((page - 1) * limit, page * limit);
+
+    return res.status(200).json({
+      success: true,
+      data: paginated,
+      page: Number(page),
+      pages,
+      total,
+    });
+  } catch (error) {
+    console.error("getAllDriverReviews error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Lỗi server khi lấy danh sách đánh giá tài xế",
       error: error.message,
     });
   }

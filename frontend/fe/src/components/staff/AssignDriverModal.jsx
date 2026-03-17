@@ -1,7 +1,18 @@
 import { useState, useEffect } from "react";
 import { getAllDrivers } from "../../services/userApi";
-import { assignDriver, getAssignments } from "../../services/driverAssignmentApi";
-import { Loader2, X, UserCheck, Phone, AlertCircle, CheckCircle2, Users } from "lucide-react";
+import {
+  assignDriver,
+  getAssignments,
+} from "../../services/driverAssignmentApi";
+import {
+  Loader2,
+  X,
+  UserCheck,
+  Phone,
+  AlertCircle,
+  CheckCircle2,
+  Users,
+} from "lucide-react";
 
 export default function AssignDriverModal({ booking, onClose, onSuccess }) {
   const [drivers, setDrivers] = useState([]);
@@ -17,16 +28,21 @@ export default function AssignDriverModal({ booking, onClose, onSuccess }) {
         setLoading(true);
         const [res, assignmentsRes] = await Promise.all([
           getAllDrivers({ status: "available", limit: 100 }),
-          getAssignments({ booking_id: booking._id }).catch(() => ({ data: [] }))
+          getAssignments({ booking_id: booking._id }).catch(() => ({
+            data: [],
+          })),
         ]);
-        
+
         const allAssignments = assignmentsRes.data || [];
-        const pendingAssign = allAssignments.find(a => a.status === "pending");
-        
+        const pendingAssign = allAssignments.find(
+          (a) => a.status === "pending",
+        );
+
         if (pendingAssign) {
           const pDriverId = pendingAssign.driver?._id || pendingAssign.driver;
-          let pDriver = res.data?.find(d => d._id === pDriverId) || pendingAssign.driver;
-          
+          let pDriver =
+            res.data?.find((d) => d._id === pDriverId) || pendingAssign.driver;
+
           if (pDriver && pDriver.user) {
             setDrivers([{ ...pDriver, isPendingAssignment: true }]);
             setSelectedDriverId(pDriverId);
@@ -35,10 +51,14 @@ export default function AssignDriverModal({ booking, onClose, onSuccess }) {
           }
         } else {
           const rejectedDriverIds = new Set(
-            allAssignments.filter(a => a.status === "rejected").map(a => a.driver?._id || a.driver)
+            allAssignments
+              .filter((a) => a.status === "rejected")
+              .map((a) => a.driver?._id || a.driver),
           );
-          
-          const availableDrivers = (res.data || []).filter(d => !rejectedDriverIds.has(d._id));
+
+          const availableDrivers = (res.data || []).filter(
+            (d) => !rejectedDriverIds.has(d._id),
+          );
           setDrivers(availableDrivers);
         }
       } catch (err) {
@@ -55,7 +75,10 @@ export default function AssignDriverModal({ booking, onClose, onSuccess }) {
     try {
       setAssigning(true);
       setError(null);
-      await assignDriver({ booking_id: booking._id, driver_id: selectedDriverId });
+      await assignDriver({
+        booking_id: booking._id,
+        driver_id: selectedDriverId,
+      });
       setSuccess(true);
       setTimeout(() => {
         onSuccess();
@@ -133,7 +156,8 @@ export default function AssignDriverModal({ booking, onClose, onSuccess }) {
             <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-100 rounded-xl mb-4">
               <CheckCircle2 className="w-5 h-5 text-green-500" />
               <p className="text-sm text-green-700 font-medium">
-                Assignment request sent successfully! Waiting for driver confirmation.
+                Assignment request sent successfully! Waiting for driver
+                confirmation.
               </p>
             </div>
           )}
@@ -162,24 +186,27 @@ export default function AssignDriverModal({ booking, onClose, onSuccess }) {
                   <button
                     key={driver._id}
                     onClick={() => setSelectedDriverId(driver._id)}
-                    className={`w-full flex items-center gap-4 p-3.5 rounded-xl border-2 transition-all text-left ${isSelected
+                    className={`w-full flex items-center gap-4 p-3.5 rounded-xl border-2 transition-all text-left ${
+                      isSelected
                         ? "border-blue-500 bg-blue-50 shadow-sm"
                         : "border-gray-100 hover:border-gray-200 hover:bg-gray-50"
-                      }`}
+                    }`}
                   >
                     {/* Avatar */}
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${isSelected
+                      className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
+                        isSelected
                           ? "bg-blue-600 text-white"
                           : "bg-gray-200 text-gray-600"
-                        }`}
+                      }`}
                     >
                       {(driver.user?.full_name || "?")[0].toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p
-                        className={`font-semibold text-sm ${isSelected ? "text-blue-800" : "text-gray-800"
-                          }`}
+                        className={`font-semibold text-sm ${
+                          isSelected ? "text-blue-800" : "text-gray-800"
+                        }`}
                       >
                         {driver.user?.full_name || "Unknown name"}
                       </p>
@@ -218,10 +245,19 @@ export default function AssignDriverModal({ booking, onClose, onSuccess }) {
           </button>
           <button
             onClick={handleAssign}
-            disabled={!selectedDriverId || assigning || success || drivers.some(d => d._id === selectedDriverId && d.isPendingAssignment)}
+            disabled={
+              !selectedDriverId ||
+              assigning ||
+              success ||
+              drivers.some(
+                (d) => d._id === selectedDriverId && d.isPendingAssignment,
+              )
+            }
             className="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            {drivers.some(d => d._id === selectedDriverId && d.isPendingAssignment) ? (
+            {drivers.some(
+              (d) => d._id === selectedDriverId && d.isPendingAssignment,
+            ) ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Waiting Response...

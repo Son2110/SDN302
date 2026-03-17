@@ -56,6 +56,8 @@ import DriverDashboard from "./pages/driver/DriverDashboard";
 import StaffVehicles from "./pages/staff/StaffVehicles";
 import StaffDrivers from "./pages/staff/StaffDrivers";
 import StaffAssignDriver from "./pages/staff/StaffAssignDriver";
+import StaffDriverReviews from "./pages/staff/StaffDriverReviews";
+import StaffDriverReviewDetail from "./pages/staff/StaffDriverReviewDetail";
 
 // Admin Pages
 import AdminLayout from "./components/layout/AdminLayout";
@@ -167,6 +169,8 @@ function App() {
             <Route path="dashboard" element={<StaffDashboard />} />
             <Route path="vehicles" element={<StaffVehicles />} />
             <Route path="drivers" element={<StaffDrivers />} />
+            <Route path="driver-reviews" element={<StaffDriverReviews />} />
+            <Route path="driver-reviews/:id" element={<StaffDriverReviewDetail />} />
           </Route>
         </Route>
 
