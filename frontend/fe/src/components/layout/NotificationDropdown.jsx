@@ -20,6 +20,7 @@ import {
   markNotificationAsRead,
   markAllNotificationsAsRead,
   deleteNotification,
+  deleteAllNotifications,
 } from "../../services/notificationApi";
 
 dayjs.extend(relativeTime);
@@ -96,6 +97,16 @@ const NotificationDropdown = ({ isNavbar = true }) => {
       fetchNotifications();
     } catch (error) {
       console.error("Failed to delete notification:", error);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    if (!window.confirm("Are you sure you want to delete all notifications?")) return;
+    try {
+      await deleteAllNotifications();
+      fetchNotifications();
+    } catch (error) {
+      console.error("Failed to delete all notifications:", error);
     }
   };
 
@@ -177,15 +188,28 @@ const NotificationDropdown = ({ isNavbar = true }) => {
                 </span>
               )}
             </div>
-            {unreadCount > 0 && (
-              <button
-                onClick={handleMarkAllAsRead}
-                className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors"
-              >
-                <CheckCheck size={14} />
-                Mark all as read
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {unreadCount > 0 && (
+                <button
+                  onClick={handleMarkAllAsRead}
+                  className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors"
+                  title="Mark all as read"
+                >
+                  <CheckCheck size={14} />
+                  Mark all as read
+                </button>
+              )}
+              {notifications.length > 0 && (
+                <button
+                  onClick={handleDeleteAll}
+                  className="text-xs font-bold text-red-500 hover:text-red-700 flex items-center gap-1 transition-colors"
+                  title="Delete all notifications"
+                >
+                  <Trash2 size={14} />
+                  Delete all
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="max-h-[450px] overflow-y-auto custom-scrollbar">
@@ -262,7 +286,7 @@ const NotificationDropdown = ({ isNavbar = true }) => {
                     <button
                       onClick={(e) => handleDelete(e, notification._id)}
                       className="flex-shrink-0 text-gray-300 hover:text-red-500 p-1 rounded-md hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
-                      title="Xóa thông báo"
+                      title="Delete notification"
                     >
                       <Trash2 size={14} />
                     </button>

@@ -52,3 +52,36 @@ export const markAllRead = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Delete notification
+// @route   DELETE /api/notifications/:id
+// @access  Private
+export const deleteNotification = async (req, res) => {
+  try {
+    const notification = await Notification.findOne({
+      _id: req.params.id,
+      recipient: req.user._id,
+    });
+
+    if (!notification) {
+      return res.status(404).json({ message: "Notification not found" });
+    }
+
+    await notification.deleteOne();
+    res.status(200).json({ success: true, message: "Notification deleted" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Delete all notifications
+// @route   DELETE /api/notifications/all
+// @access  Private
+export const deleteAllNotifications = async (req, res) => {
+  try {
+    await Notification.deleteMany({ recipient: req.user._id });
+    res.status(200).json({ success: true, message: "All notifications deleted" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
