@@ -4,41 +4,41 @@ const About = () => {
     const features = [
         {
             icon: Car,
-            title: "Đội xe hiện đại",
-            description: "100% xe điện cao cấp, được bảo dưỡng định kỳ và đảm bảo chất lượng tốt nhất"
+            title: "Modern fleet",
+            description: "100% high-end electric vehicles, periodically maintained and guaranteed the best quality"
         },
         {
             icon: Users,
-            title: "Đội ngũ chuyên nghiệp",
-            description: "Tài xế giàu kinh nghiệm, nhiệt tình và luôn sẵn sàng phục vụ khách hàng 24/7"
+            title: "Professional team",
+            description: "Driver is experienced, enthusiastic and always ready to serve customers 24/7"
         },
         {
             icon: Award,
-            title: "Dịch vụ uy tín",
-            description: "Hơn 5 năm kinh nghiệm trong lĩnh vực cho thuê xe điện tại TP.HCM"
+            title: "Trusted service",
+            description: "More than 5 years of experience in the field of electric car rental in Ho Chi Minh City"
         },
         {
             icon: Shield,
-            title: "Bảo hiểm toàn diện",
-            description: "Mọi xe đều có bảo hiểm đầy đủ, đảm bảo an tâm cho hành trình của bạn"
+            title: "Comprehensive insurance",
+            description: "All vehicles are fully insured, ensuring peace of mind for your journey"
         },
         {
             icon: Zap,
-            title: "Đặt xe nhanh chóng",
-            description: "Hệ thống đặt xe online tiện lợi, xác nhận chỉ trong vài phút"
+            title: "Quick booking",
+            description: "Convenient online booking system, confirmation in just a few minutes"
         },
         {
             icon: Leaf,
-            title: "Thân thiện môi trường",
-            description: "100% xe điện, góp phần giảm ô nhiễm và bảo vệ môi trường xanh"
+            title: "Eco-friendly",
+            description: "100% electric vehicles, contributing to reducing pollution and protecting the green environment"
         }
     ];
 
     const stats = [
-        { label: "Khách hàng hài lòng", value: "10,000+" },
-        { label: "Xe điện cao cấp", value: "200+" },
-        { label: "Tài xế chuyên nghiệp", value: "150+" },
-        { label: "Năm kinh nghiệm", value: "5+" }
+        { label: "Customers are satisfied", value: "10,000+" },
+        { label: "Premium electric vehicles", value: "200+" },
+        { label: "Professional drivers", value: "150+" },
+        { label: "Years of experience", value: "5+" }
     ];
 
     return (
@@ -48,10 +48,10 @@ const About = () => {
                 <div className="absolute inset-0 bg-black/20"></div>
                 <div className="relative max-w-7xl mx-auto px-6 text-center">
                     <h1 className="text-5xl md:text-6xl font-bold mb-6">
-                        Về Chúng Tôi
+                        About Us
                     </h1>
                     <p className="text-xl md:text-2xl text-blue-100 max-w-3xl mx-auto">
-                        Đơn vị cho thuê xe điện hàng đầu tại TP.HCM, mang đến trải nghiệm di chuyển xanh, hiện đại và đẳng cấp
+                        A leading electric car rental provider in Ho Chi Minh City, delivering modern and sustainable mobility.
                     </p>
                 </div>
             </section>
@@ -78,17 +78,17 @@ const About = () => {
                     <div className="grid md:grid-cols-2 gap-12 items-center">
                         <div>
                             <h2 className="text-4xl font-bold text-gray-900 mb-6">
-                                Câu chuyện của chúng tôi
+                                Our story
                             </h2>
                             <div className="space-y-4 text-gray-600 text-lg leading-relaxed">
                                 <p>
-                                    <strong className="text-gray-900">LuxeDrive</strong> được thành lập vào năm 2021 với sứ mệnh mang đến giải pháp di chuyển xanh, thân thiện với môi trường cho cộng đồng TP.HCM.
+                                    <strong className="text-gray-900">LuxeDrive</strong> was founded in 2021 with a mission to deliver eco-friendly transportation solutions for the Ho Chi Minh City community.
                                 </p>
                                 <p>
-                                    Chúng tôi tin rằng tương lai của giao thông là xe điện - sạch, hiệu quả và bền vững. Với đội xe 100% điện hóa, từ những mẫu sedan sang trọng đến SUV đa dụng, chúng tôi đáp ứng mọi nhu cầu di chuyển của bạn.
+                                    We believe the future of mobility is electric: clean, efficient, and sustainable. With a 100% electric fleet, from premium sedans to versatile SUVs, we serve every travel need.
                                 </p>
                                 <p>
-                                    Sau 5 năm phát triển, LuxeDrive tự hào là đối tác tin cậy của hơn 10,000 khách hàng và doanh nghiệp. Chúng tôi không ngừng nâng cao chất lượng dịch vụ, đầu tư công nghệ và đào tạo đội ngũ để mang đến trải nghiệm tốt nhất.
+                                    After 5 years of growth, LuxeDrive is proud to be a trusted partner of over 10,000 customers and businesses. We continuously improve service quality, invest in technology, and train our team.
                                 </p>
                             </div>
                         </div>
@@ -113,10 +113,10 @@ const About = () => {
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="text-center mb-16">
                         <h2 className="text-4xl font-bold text-gray-900 mb-4">
-                            Tại sao chọn LuxeDrive?
+                            Why choose LuxeDrive?
                         </h2>
                         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                            Chúng tôi cam kết mang đến dịch vụ cho thuê xe điện tốt nhất với những giá trị vượt trội
+                            We are committed to delivering top-tier electric car rental services with outstanding value.
                         </p>
                     </div>
 
@@ -144,9 +144,9 @@ const About = () => {
             {/* Mission Section */}
             <section className="py-20 bg-gradient-to-br from-blue-900 to-indigo-900 text-white">
                 <div className="max-w-7xl mx-auto px-6 text-center">
-                    <h2 className="text-4xl font-bold mb-6">Sứ mệnh của chúng tôi</h2>
+                    <h2 className="text-4xl font-bold mb-6">Our mission</h2>
                     <p className="text-xl md:text-2xl text-blue-100 max-w-4xl mx-auto leading-relaxed">
-                        "Xây dựng hệ sinh thái giao thông xanh, góp phần bảo vệ môi trường và nâng cao chất lượng cuộc sống cộng đồng thông qua việc phổ cập xe điện và dịch vụ cho thuê chuyên nghiệp, tiện lợi."
+                        "Building a green transportation ecosystem, contributing to environmental protection and improving the quality of community life through popularizing electric vehicles and professional and convenient rental services."
                     </p>
                 </div>
             </section>
@@ -155,23 +155,23 @@ const About = () => {
             <section className="py-20">
                 <div className="max-w-4xl mx-auto px-6 text-center">
                     <h2 className="text-4xl font-bold text-gray-900 mb-6">
-                        Sẵn sàng trải nghiệm?
+                        Ready to experience it?
                     </h2>
                     <p className="text-xl text-gray-600 mb-8">
-                        Đặt xe điện của chúng tôi ngay hôm nay và khám phá thành phố theo cách thân thiện với môi trường
+                        Book our electric vehicles today and explore the city in a greener way.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <a
                             href="/fleet"
                             className="px-8 py-4 bg-blue-600 text-white rounded-xl font-bold text-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/30"
                         >
-                            Xem đội xe
+                            Browse fleet
                         </a>
                         <a
                             href="/contact"
                             className="px-8 py-4 bg-white text-blue-600 rounded-xl font-bold text-lg hover:bg-gray-50 transition-colors border-2 border-blue-600"
                         >
-                            Liên hệ ngay
+                            Contact us
                         </a>
                     </div>
                 </div>

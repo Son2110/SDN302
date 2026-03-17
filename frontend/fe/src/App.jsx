@@ -28,8 +28,7 @@ import MyPayments from "./pages/customer/MyPayments";
 import DepositPayment from "./pages/customer/DepositPayment";
 import PaymentPage from "./pages/customer/PaymentPage";
 import ExtendBooking from "./pages/customer/ExtendBooking";
-import MyExtensions from "./pages/customer/MyExtensions";
-import ExtensionDetail from "./pages/customer/ExtensionDetail";
+import DriverRegistration from "./pages/customer/DriverRegistration";
 
 // Payment Pages (General)
 import PaymentSuccess from "./pages/PaymentSuccess";
@@ -56,7 +55,6 @@ import DriverDashboard from "./pages/driver/DriverDashboard";
 import StaffVehicles from "./pages/staff/StaffVehicles";
 import StaffDrivers from "./pages/staff/StaffDrivers";
 import StaffAssignDriver from "./pages/staff/StaffAssignDriver";
-import DriverRegistration from "./pages/customer/DriverRegistration";
 
 // Admin Pages
 import AdminLayout from "./components/layout/AdminLayout";
@@ -64,110 +62,111 @@ import AdminRevenue from "./pages/admin/AdminRevenue";
 import AdminUsers from "./pages/admin/AdminUsers";
 
 function App() {
-  return (
-    <>
-      <Toaster position="top-right" />
-      <Routes>
-        {/* ============================== */}
-        {/* 1. PUBLIC ROUTES (No Login Required) */}
-        {/* ============================== */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/unauthorized" element={<Unauthorized />} />
+    return (
+        <>
+            <Toaster position="top-right" />
+            <Routes>
+                {/* ============================== */}
+                {/* 1. PUBLIC ROUTES (No Login Required) */}
+                {/* ============================== */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/unauthorized" element={<Unauthorized />} />
 
-        {/* Main Public Pages (With Navbar & Footer) */}
-        <Route
-          element={
-            <>
-              <Navbar />
-              <Outlet />
-              <Footer />
-            </>
-          }
-        >
-          <Route path="/" element={<Home />} />
-          <Route path="/fleet" element={<FleetPage />} />
-          <Route path="/fleet/:id" element={<VehicleDetail />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-        </Route>
+                {/* Main Public Pages (With Navbar & Footer) */}
+                <Route
+                    element={
+                        <>
+                            <Navbar />
+                            <Outlet />
+                            <Footer />
+                        </>
+                    }
+                >
+                    <Route path="/" element={<Home />} />
+                    <Route path="/fleet" element={<FleetPage />} />
+                    <Route path="/fleet/:id" element={<VehicleDetail />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/contact" element={<Contact />} />
+                </Route>
 
-        {/* ============================== */}
-        {/* 2. SHARED PROTECTED ROUTES (Any Login) */}
-        {/* ============================== */}
-        <Route element={<ProtectedRoute />}>
-          {/* Profile uses standard Navbar but no Footer */}
-          <Route
-            path="/profile"
-            element={
-              <>
-                <Navbar />
-                <CustomerProfile />
-              </>
-            }
-          />
-        </Route>
+                {/* ============================== */}
+                {/* 2. SHARED PROTECTED ROUTES (Any Login) */}
+                {/* ============================== */}
+                <Route element={<ProtectedRoute />}>
+                    {/* Profile uses standard Navbar but no Footer */}
+                    <Route
+                        path="/profile"
+                        element={
+                            <>
+                                <Navbar />
+                                <CustomerProfile />
+                            </>
+                        }
+                    />
+                </Route>
 
-        {/* ============================== */}
-        {/* 3. CUSTOMER ROUTES (Customer Only) */}
-        {/* ============================== */}
-        <Route element={<ProtectedRoute allowedRoles={["customer"]} />}>
-          <Route
-            element={
-              <>
-                <Navbar />
-                <Outlet />
-                <Footer />
-              </>
-            }
-          >
-            <Route path="/my-bookings" element={<MyBookings />} />
-            <Route path="/my-payments" element={<MyPayments />} />
-            <Route path="/bookings/:id" element={<BookingDetail />} />
-            <Route path="/payment/success" element={<PaymentSuccess />} />
-            <Route
-              path="/payment/deposit/:id"
-              element={<PaymentPage type="deposit" />}
-            />
-            <Route
-              path="/payment/final/:id"
-              element={<PaymentPage type="final" />}
-            />
-            <Route path="/booking/deposit/:id" element={<DepositPayment />} />
-            <Route path="/bookings/:id/extend" element={<ExtendBooking />} />
-            <Route path="/my-extensions" element={<MyExtensions />} />
-            <Route path="/extensions/:id" element={<ExtensionDetail />} />
-            <Route
-              path="/driver-registration"
-              element={<DriverRegistration />}
-            />
-          </Route>
-        </Route>
+                {/* ============================== */}
+                {/* 3. CUSTOMER ROUTES (Customer Only) */}
+                {/* ============================== */}
+                <Route element={<ProtectedRoute allowedRoles={["customer"]} />}>
+                    <Route
+                        element={
+                            <>
+                                <Navbar />
+                                <Outlet />
+                                <Footer />
+                            </>
+                        }
+                    >
+                        <Route path="/my-bookings" element={<MyBookings />} />
+                        <Route path="/my-payments" element={<MyPayments />} />
+                        <Route path="/bookings/:id" element={<BookingDetail />} />
+                        <Route path="/payment/success" element={<PaymentSuccess />} />
+                        <Route
+                            path="/payment/deposit/:id"
+                            element={<PaymentPage type="deposit" />}
+                        />
+                        <Route
+                            path="/payment/final/:id"
+                            element={<PaymentPage type="final" />}
+                        />
+                        <Route path="/booking/deposit/:id" element={<DepositPayment />} />
+                        <Route path="/bookings/:id/extend" element={<ExtendBooking />} />
+                        <Route
+                            path="/driver-registration"
+                            element={<DriverRegistration />}
+                        />
+                    </Route>
+                </Route>
 
-        {/* ============================== */}
-        {/* 4. STAFF ROUTES (Staff Only) */}
-        {/* ============================== */}
-        <Route element={<ProtectedRoute allowedRoles={["staff"]} />}>
-          <Route path="/staff" element={<StaffLayout />}>
-            <Route index element={<Navigate to="bookings" replace />} />
-            <Route path="bookings" element={<StaffBookings />} />
-            <Route path="overdue-bookings" element={<StaffOverdueBookings />} />
-            <Route path="bookings/:id" element={<StaffBookingDetail />} />
-            <Route path="bookings/:id/assign-driver" element={<StaffAssignDriver />} />
-            <Route path="assignments" element={<StaffAssignments />} />
-            <Route path="handovers" element={<StaffHandovers />} />
-            <Route
-              path="handovers/delivery"
-              element={<HandoverDeliveryForm />}
-            />
-            <Route path="handovers/return" element={<HandoverReturnForm />} />
-            <Route path="extensions" element={<StaffExtensions />} />
-            <Route path="payments" element={<StaffPayments />} />
-            <Route path="dashboard" element={<StaffDashboard />} />
-            <Route path="vehicles" element={<StaffVehicles />} />
-            <Route path="drivers" element={<StaffDrivers />} />
-          </Route>
-        </Route>
+                {/* ============================== */}
+                {/* 4. STAFF ROUTES (Staff Only) */}
+                {/* ============================== */}
+                <Route element={<ProtectedRoute allowedRoles={["staff"]} />}>
+                    <Route path="/staff" element={<StaffLayout />}>
+                        <Route index element={<Navigate to="bookings" replace />} />
+                        <Route path="bookings" element={<StaffBookings />} />
+                        <Route path="overdue-bookings" element={<StaffOverdueBookings />} />
+                        <Route path="bookings/:id" element={<StaffBookingDetail />} />
+                        <Route
+                            path="bookings/:id/assign-driver"
+                            element={<StaffAssignDriver />}
+                        />
+                        <Route path="assignments" element={<StaffAssignments />} />
+                        <Route path="handovers" element={<StaffHandovers />} />
+                        <Route
+                            path="handovers/delivery"
+                            element={<HandoverDeliveryForm />}
+                        />
+                        <Route path="handovers/return" element={<HandoverReturnForm />} />
+                        <Route path="extensions" element={<StaffExtensions />} />
+                        <Route path="payments" element={<StaffPayments />} />
+                        <Route path="dashboard" element={<StaffDashboard />} />
+                        <Route path="vehicles" element={<StaffVehicles />} />
+                        <Route path="drivers" element={<StaffDrivers />} />
+                    </Route>
+                </Route>
 
         {/* ============================== */}
         {/* 5. DRIVER ROUTES (Driver Only) */}
@@ -182,22 +181,22 @@ function App() {
           </Route>
         </Route>
 
-        {/* ============================== */}
-        {/* 6. ADMIN ROUTES (Admin Only)   */}
-        {/* ============================== */}
-        <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<Navigate to="revenue" replace />} />
-            <Route path="revenue" element={<AdminRevenue />} />
-            <Route path="users" element={<AdminUsers />} />
-          </Route>
-        </Route>
+                {/* ============================== */}
+                {/* 6. ADMIN ROUTES (Admin Only)   */}
+                {/* ============================== */}
+                <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+                    <Route path="/admin" element={<AdminLayout />}>
+                        <Route index element={<Navigate to="revenue" replace />} />
+                        <Route path="revenue" element={<AdminRevenue />} />
+                        <Route path="users" element={<AdminUsers />} />
+                    </Route>
+                </Route>
 
-        {/* Catch All - Redirect to home */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </>
-  );
+                {/* Catch All - Redirect to home */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+        </>
+    );
 }
 
 export default App;

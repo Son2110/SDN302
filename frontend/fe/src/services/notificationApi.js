@@ -1,29 +1,31 @@
 import apiClient from "./api";
 
-// Get user's notifications
+// Get all notifications
 export const getNotifications = async () => {
-  return await apiClient("/notifications", {
-    method: "GET",
-  });
+  const res = await apiClient("/notifications", { method: "GET" });
+  return res.data || [];
 };
 
-// Mark a notification as read
+// Mark one notification as read
 export const markNotificationAsRead = async (id) => {
-  return await apiClient(`/notifications/${id}/read`, {
+  const res = await apiClient(`/notifications/${id}/read`, {
     method: "PUT",
   });
+  return res.data;
 };
 
 // Mark all notifications as read
 export const markAllNotificationsAsRead = async () => {
-  return await apiClient("/notifications/read-all", {
+  await apiClient("/notifications/read-all", {
     method: "PUT",
   });
+  return true;
 };
 
 // Delete a notification
 export const deleteNotification = async (id) => {
-  return await apiClient(`/notifications/${id}`, {
+  await apiClient(`/notifications/${id}`, {
     method: "DELETE",
   });
+  return true;
 };

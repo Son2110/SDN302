@@ -1,4 +1,4 @@
-import { Users, Gauge, Fuel, Star } from "lucide-react";
+import { Users, Gauge, Fuel } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const FleetCard = ({ car }) => {
@@ -18,17 +18,12 @@ const FleetCard = ({ car }) => {
 
       {/* Content */}
       <div className="p-6">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-bold text-lg text-gray-900">{car.name}</h3>
-          <span className="flex items-center gap-1 text-xs text-yellow-500 font-bold">
-            <Star size={14} fill="currentColor" /> {car.rating}
-          </span>
-        </div>
+        <h3 className="font-bold text-lg text-gray-900 mb-3">{car.name}</h3>
 
-        {/* Specs - Việt hóa */}
+        {/* Specs */}
         <div className="grid grid-cols-3 gap-2 text-[11px] text-gray-500 mb-6 border-y border-gray-50 py-3">
           <span className="flex flex-col items-center gap-1">
-            <Users size={16} className="text-blue-500" /> {car.seats} Chỗ
+            <Users size={16} className="text-blue-500" /> {car.seats} Seats
           </span>
           <span className="flex flex-col items-center gap-1 border-x border-gray-100">
             <Gauge size={16} className="text-blue-500" /> {car.transmission}
@@ -41,19 +36,19 @@ const FleetCard = ({ car }) => {
         {/* Price & Action */}
         <div className="flex items-center justify-between mt-4">
           <div>
-            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-tight">Giá thuê ngày</p>
+            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-tight">Daily rate</p>
             <p className="text-lg font-black text-gray-900">
               {car.price}
-              <span className="text-xs font-medium text-gray-500"> đ</span>
+              <span className="text-xs font-medium text-gray-500"> VND</span>
             </p>
           </div>
 
           <Link
-          to={`/fleet/${car.id}`} 
-          className="rounded-xl bg-gray-900 px-5 py-2.5 text-xs font-bold text-white hover:bg-blue-600 transition-colors shadow-lg shadow-gray-200"
-        >
-          Chi tiết →
-        </Link>
+            to={`/fleet/${car.id}`}
+            className="rounded-xl bg-gray-900 px-5 py-2.5 text-xs font-bold text-white hover:bg-blue-600 transition-colors shadow-lg shadow-gray-200"
+          >
+            Details →
+          </Link>
         </div>
       </div>
     </div>

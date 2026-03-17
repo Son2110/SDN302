@@ -7,44 +7,44 @@ import { formatCurrency, formatDate } from "../../utils/formatters";
 const API_URL = import.meta.env.VITE_API_URL;
 
 const TYPE_LABELS = {
-  deposit: "Đặt cọc",
-  rental_fee: "Phí thuê xe",
-  extension_fee: "Phí gia hạn",
-  penalty: "Tiền phạt",
-  refund: "Hoàn tiền",
+  deposit: "Deposit",
+  rental_fee: "Rental fee",
+  extension_fee: "Extension fee",
+  penalty: "Fine",
+  refund: "Refund",
 };
 
 const TYPE_COLORS = {
   deposit: "bg-blue-50 text-blue-700 border-blue-200",
-  rental_fee: "bg-green-50 text-green-700 border-green-200",
-  extension_fee: "bg-orange-50 text-orange-700 border-orange-200",
+  rental_fee: "bg-blue-50 text-blue-700 border-blue-200",
+  extension_fee: "bg-blue-50 text-blue-700 border-blue-200",
   penalty: "bg-red-50 text-red-700 border-red-200",
-  refund: "bg-purple-50 text-purple-700 border-purple-200",
+  refund: "bg-blue-50 text-blue-700 border-blue-200",
 };
 
 const STATUS_CONFIG = {
   pending: {
-    label: "Đang chờ",
-    color: "bg-yellow-50 text-yellow-700 border-yellow-200",
+    label: "Pending",
+    color: "bg-blue-50 text-blue-700 border-blue-200",
   },
   completed: {
-    label: "Thành công",
-    color: "bg-green-50 text-green-700 border-green-200",
+    label: "Success",
+    color: "bg-blue-50 text-blue-700 border-blue-200",
   },
-  failed: { label: "Thất bại", color: "bg-red-50 text-red-700 border-red-200" },
+  failed: { label: "Failed", color: "bg-red-50 text-red-700 border-red-200" },
   refunded: {
-    label: "Đã hoàn tiền",
-    color: "bg-purple-50 text-purple-700 border-purple-200",
+    label: "Refunded",
+    color: "bg-blue-50 text-blue-700 border-blue-200",
   },
 };
 
 const METHOD_LABELS = {
-  cash: "Tiền mặt",
-  card: "Thẻ",
+  cash: "Cash",
+  card: "Card",
   momo: "MoMo",
   zalopay: "ZaloPay",
   vnpay: "VNPay",
-  bank_transfer: "Chuyển khoản",
+  bank_transfer: "Bank transfer",
 };
 
 const MyPayments = () => {
@@ -80,7 +80,7 @@ const MyPayments = () => {
       });
       const data = await res.json();
       if (!res.ok)
-        throw new Error(data.message || "Không thể tải lịch sử thanh toán");
+        throw new Error(data.message || "Unable to load payment history");
       setPayments(data.data || []);
       setTotalPages(data.totalPages || 1);
       setTotal(data.total || 0);
@@ -97,10 +97,10 @@ const MyPayments = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900">
-            Lịch sử thanh toán
+            Payment history
           </h1>
           <p className="text-gray-500 mt-2">
-            Xem lại toàn bộ các giao dịch thanh toán của bạn
+            Review all your payment transactions
           </p>
         </div>
 
@@ -114,12 +114,12 @@ const MyPayments = () => {
             }}
             className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
           >
-            <option value="">Tất cả loại giao dịch</option>
-            <option value="deposit">Đặt cọc</option>
-            <option value="rental_fee">Phí thuê xe</option>
-            <option value="extension_fee">Phí gia hạn</option>
-            <option value="penalty">Tiền phạt</option>
-            <option value="refund">Hoàn tiền</option>
+            <option value="">All transaction types</option>
+            <option value="deposit">Deposit</option>
+            <option value="rental_fee">Rental fee</option>
+            <option value="extension_fee">Extension fee</option>
+            <option value="penalty">Fine</option>
+            <option value="refund">Refund</option>
           </select>
 
           <select
@@ -130,11 +130,11 @@ const MyPayments = () => {
             }}
             className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
           >
-            <option value="">Tất cả trạng thái</option>
-            <option value="pending">Đang chờ</option>
-            <option value="completed">Thành công</option>
-            <option value="failed">Thất bại</option>
-            <option value="refunded">Đã hoàn tiền</option>
+            <option value="">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="completed">Success</option>
+            <option value="failed">Failed</option>
+            <option value="refunded">Refunded</option>
           </select>
 
           {(typeFilter || statusFilter) && (
@@ -146,11 +146,11 @@ const MyPayments = () => {
               }}
               className="text-sm text-blue-600 font-medium hover:underline"
             >
-              Xóa bộ lọc
+              Clear filters
             </button>
           )}
           <span className="ml-auto text-sm text-gray-500 font-medium">
-            {total} giao dịch
+            {total} transactions
           </span>
         </div>
 
@@ -171,18 +171,18 @@ const MyPayments = () => {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-16 text-center">
             <Receipt className="mx-auto mb-4 text-gray-300" size={64} />
             <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Chưa có giao dịch nào
+              No transactions yet
             </h3>
             <p className="text-gray-500 mb-6">
               {typeFilter || statusFilter
-                ? "Không tìm thấy giao dịch phù hợp với bộ lọc"
-                : "Các giao dịch thanh toán sẽ hiển thị ở đây sau khi bạn đặt xe"}
+                ? "No transactions matched your filters"
+                : "Payment transactions will appear here after you book a ride"}
             </p>
             <Link
               to="/my-bookings"
               className="inline-block bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all"
             >
-              Xem đơn đặt xe
+              View bookings
             </Link>
           </div>
         ) : (
@@ -221,7 +221,7 @@ const MyPayments = () => {
                         </span>
                       </div>
                       <div className="text-sm text-gray-600 truncate">
-                        Đơn #{p.booking?._id?.slice(-6).toUpperCase()}
+                        Booking #{p.booking?._id?.slice(-6).toUpperCase()}
                         {p.booking?.vehicle
                           ? ` • ${p.booking.vehicle.brand} ${p.booking.vehicle.model} (${p.booking.vehicle.license_plate})`
                           : ""}
@@ -246,7 +246,7 @@ const MyPayments = () => {
                           to={`/bookings/${p.booking._id}`}
                           className="text-blue-600 hover:text-blue-800 text-sm font-semibold underline underline-offset-2 whitespace-nowrap"
                         >
-                          Xem đơn
+                          View booking
                         </Link>
                       )}
                     </div>
@@ -263,17 +263,17 @@ const MyPayments = () => {
                   onClick={() => setPage((p) => p - 1)}
                   className="px-5 py-2.5 border border-gray-200 rounded-xl text-sm font-medium hover:bg-gray-50 disabled:opacity-40 bg-white"
                 >
-                  Trước
+                  Previous
                 </button>
                 <span className="text-sm text-gray-600 font-medium px-2">
-                  Trang {page} / {totalPages}
+                  Page {page} / {totalPages}
                 </span>
                 <button
                   disabled={page === totalPages}
                   onClick={() => setPage((p) => p + 1)}
                   className="px-5 py-2.5 border border-gray-200 rounded-xl text-sm font-medium hover:bg-gray-50 disabled:opacity-40 bg-white"
                 >
-                  Sau
+                  Next
                 </button>
               </div>
             )}

@@ -2,34 +2,32 @@ import { User, Car, Plane, PartyPopper } from "lucide-react";
 
 const services = [
   {
-    title: "Dịch Vụ Có Tài Xế",
-    desc: "Thả mình thư giãn trên những cung đường, trong khi tài xế chuyên nghiệp của chúng tôi đưa đón bạn với sự tận tâm nhất.",
+    title: "Chauffeur Service",
+    desc: "Relax on every route while our professional drivers provide punctual and attentive transportation.",
     icon: User,
     image:
       "https://www.ecorentacar.com/wp-content/uploads/2019/08/Chauffeur-drive-car-rental.png",
   },
   {
-    title: "Thuê xe tự lái",
-    desc: "Trực tiếp cầm lái những siêu phẩm xe điện hàng đầu thế giới cho những chuyến đi cuối tuần đầy cảm hứng và phấn khích.",
+    title: "Self-Drive Rental",
+    desc: "Take the wheel of premium electric vehicles for inspiring and exciting weekend journeys.",
     icon: Car,
     image:
       "https://media-cdn-v2.laodong.vn/Storage/NewsPortal/2020/11/28/858075/TX1.jpg",
   },
   {
-    title: "Đưa Đón Sân Bay",
-    desc: "Chúng tôi luôn theo dõi lịch trình chuyến bay để đảm bảo đón bạn đúng giờ.",
+    title: "Airport Transfer",
+    desc: "We track your flight schedule to ensure your pickup is always on time.",
     icon: Plane,
     image:
       "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&q=80&w=1000",
-    comingSoon: true,
   },
   {
-    title: "Sự Kiện & Tiệc Cưới",
-    desc: "Tạo nên khoảnh khắc xuất hiện ấn tượng trong những dịp trọng đại.",
+    title: "Events & Weddings",
+    desc: "Create a standout arrival moment for your most important occasions.",
     icon: PartyPopper,
     image:
       "https://imgbizhub.vietnamnews.vn//MediaUpload/Article/2025/5/29/427098-5176876930787135-A3.jpeg",
-    comingSoon: true,
   },
 ];
 
@@ -41,11 +39,11 @@ const Services = () => {
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">
-              Dịch Vụ Của Chúng Tôi
+              Our Services
             </h2>
             <p className="text-gray-500 mt-3 text-lg max-w-2xl">
-              Khám phá giải pháp di chuyển cao cấp, được thiết kế riêng để mang
-              lại sự tiện nghi và bền vững.
+              Explore premium mobility solutions tailored for comfort,
+              convenience, and sustainability.
             </p>
           </div>
         </div>
@@ -59,7 +57,7 @@ const Services = () => {
               <div
                 key={s.title}
                 className={`relative bg-white rounded-2xl overflow-hidden shadow-sm
-                ${!s.comingSoon ? "hover:shadow-2xl hover:-translate-y-2 cursor-pointer" : "opacity-80 cursor-not-allowed"}
+                hover:shadow-2xl hover:-translate-y-2 cursor-pointer
                 transition-all duration-500`}
               >
                 {/* Image */}
@@ -67,27 +65,14 @@ const Services = () => {
                   <img
                     src={s.image}
                     alt={s.title}
-                    className={`w-full h-full object-cover ${
-                      !s.comingSoon
-                        ? "group-hover:scale-110 transition-transform duration-700"
-                        : ""
-                    }`}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   />
-
-                  {/* Coming Soon Overlay */}
-                  {s.comingSoon && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                      <span className="text-white text-3xl font-extrabold tracking-widest">
-                        Coming Soon
-                      </span>
-                    </div>
-                  )}
                 </div>
 
                 {/* Icon */}
                 <div
                   className={`absolute top-44 right-6 z-10 w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg ring-4 ring-white
-                  ${!s.comingSoon ? "hover:rotate-[360deg] transition-transform duration-500" : ""}`}
+                  hover:rotate-[360deg] transition-transform duration-500`}
                 >
                   <Icon className="w-6 h-6 text-white" />
                 </div>

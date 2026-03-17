@@ -3,11 +3,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   CreditCard,
   CheckCircle,
+  Check,
   Shield,
   AlertCircle,
   Wallet,
   Building2,
   Smartphone,
+  X,
 } from "lucide-react";
 import { getToken } from "../../services/api";
 import { getBookingById } from "../../services/bookingApi";
@@ -24,35 +26,37 @@ const DepositPayment = () => {
   const [processing, setProcessing] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState("bank_transfer");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   // Payment methods - QR Code first
   const paymentMethods = [
     {
       id: "bank_transfer",
-      name: "Chuyển khoản QR",
+      name: "QR bank transfer",
       icon: Building2,
-      description: "Quét mã QR để thanh toán nhanh",
+      description: "Scan QR code for quick payment",
       color: "blue",
     },
     {
       id: "vnpay",
       name: "VNPay",
       icon: Building2,
-      description: "Thanh toán qua cổng VNPay",
+      description: "Payment via VNPay portal",
       color: "blue",
     },
     {
       id: "momo",
       name: "MoMo",
       icon: Wallet,
-      description: "Ví điện tử MoMo",
+      description: "MoMo e-wallet",
       color: "pink",
     },
     {
       id: "zalopay",
       name: "ZaloPay",
       icon: Smartphone,
-      description: "Ví điện tử ZaloPay",
+      description: "ZaloPay e-wallet",
       color: "sky",
     },
   ];
@@ -81,7 +85,7 @@ const DepositPayment = () => {
       // Check if booking is in pending status
       if (response.data.status !== "pending") {
         setError(
-          "Đơn hàng này đã được xử lý thanh toán cọc hoặc không hợp lệ.",
+          "This booking has already been processed for deposit payment or is invalid.",
         );
       }
     } catch (err) {
@@ -93,19 +97,24 @@ const DepositPayment = () => {
 
   const handlePayment = async () => {
     if (!selectedMethod) {
-      setError("Vui lòng chọn phương thức thanh toán");
+      setError("Please select a payment method");
+      return;
+    }
+
+    if (!acceptedTerms) {
+      setError("Please agree to the terms and conditions before payment");
       return;
     }
 
     if (!booking) {
-      setError("Không tìm thấy thông tin đơn hàng");
+      setError("Booking information not found");
       return;
     }
 
     setError(null);
 
-    // TẤT CẢ phương thức đều mở QR modal (đơn giản hóa cho demo)
-    // Trong production, có thể tích hợp thật với VNPay, MoMo, etc.
+    // For demo: all methods open the QR payment modal.
+    // In production, each method can be integrated directly.
     setShowQRModal(true);
   };
 
@@ -121,7 +130,7 @@ const DepositPayment = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 pt-32 pb-20 flex items-center justify-center">
-        <div className="text-gray-500 text-lg">Đang tải...</div>
+        <div className="text-gray-500 text-lg">Loading...</div>
       </div>
     );
   }
@@ -136,7 +145,7 @@ const DepositPayment = () => {
             onClick={() => navigate("/my-bookings")}
             className="text-blue-600 hover:text-blue-700 underline"
           >
-            Quay lại danh sách đơn hàng
+            Back to booking list
           </button>
         </div>
       </div>
@@ -150,7 +159,7 @@ const DepositPayment = () => {
     : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-32 pb-20">
+    <div className="min-h-screen bg-[#F8FAFB] pt-32 pb-20">
       {/* QR Payment Modal */}
       <QRPaymentModal
         isOpen={showQRModal}
@@ -162,34 +171,80 @@ const DepositPayment = () => {
         onSuccess={handlePaymentSuccess}
       />
 
+      {showTermsModal && (
+        <div className="fixed inset-0 z-50 bg-black/45 flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-gray-100">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-bold text-gray-900">Terms & services</h3>
+              <button
+                onClick={() => setShowTermsModal(false)}
+                className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                aria-label="Close terms"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="px-6 py-5 text-sm text-gray-700 max-h-[60vh] overflow-y-auto">
+              <ul className="list-disc list-inside space-y-2">
+                <li>
+                  You must pay a <strong>30% deposit</strong> to confirm booking.
+                </li>
+                <li>
+                  If you need to extend rental time, you must submit an extension request and wait for approval.
+                </li>
+                <li>
+                  Approved extension requests are charged with an <strong>additional 10% per day</strong> on top of the normal daily rate.
+                </li>
+                <li>
+                  In case of late return or vehicle scratches/damages, final fees will be discussed and confirmed during return handover.
+                </li>
+                <li>
+                  The booking is confirmed only after successful payment.
+                </li>
+              </ul>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+              <button
+                onClick={() => setShowTermsModal(false)}
+                className="px-4 py-2 rounded-lg bg-[#1556F5] text-white font-semibold hover:bg-[#0F3FCC]"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="container mx-auto px-6 max-w-6xl">
         {/* Progress Steps */}
         <div className="mb-8">
           <div className="flex items-center justify-center gap-4">
             <div className="flex items-center">
-              <div className="w-10 h-10 rounded-full bg-green-500 text-white flex items-center justify-center font-bold">
-                ✓
+              <div className="w-10 h-10 rounded-full bg-[#1556F5] text-white flex items-center justify-center font-bold">
+                <Check className="w-5 h-5" />
               </div>
               <span className="ml-2 text-sm font-semibold text-gray-700">
-                Chọn xe
+                Choose vehicle
               </span>
             </div>
-            <div className="w-12 h-1 bg-green-500"></div>
+            <div className="w-12 h-1 bg-[#1556F5]"></div>
             <div className="flex items-center">
-              <div className="w-10 h-10 rounded-full bg-green-500 text-white flex items-center justify-center font-bold">
-                ✓
+              <div className="w-10 h-10 rounded-full bg-[#1556F5] text-white flex items-center justify-center font-bold">
+                <Check className="w-5 h-5" />
               </div>
               <span className="ml-2 text-sm font-semibold text-gray-700">
-                Thông tin
+                Information
               </span>
             </div>
-            <div className="w-12 h-1 bg-blue-500"></div>
+            <div className="w-12 h-1 bg-[#1556F5]"></div>
             <div className="flex items-center">
-              <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">
+              <div className="w-10 h-10 rounded-full bg-[#1556F5] text-white flex items-center justify-center font-bold">
                 3
               </div>
               <span className="ml-2 text-sm font-semibold text-gray-700">
-                Thanh toán
+                Payment
               </span>
             </div>
           </div>
@@ -200,85 +255,50 @@ const DepositPayment = () => {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl shadow-lg p-8">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                  <CreditCard className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 rounded-full bg-[#EEF4FF] flex items-center justify-center">
+                  <CreditCard className="w-6 h-6 text-[#1556F5]" />
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">
-                    Thanh toán cọc
+                    Deposit payment
                   </h2>
                   <p className="text-sm text-gray-600">
-                    Chọn phương thức thanh toán online
+                    Choose an online payment method
                   </p>
-                </div>
-              </div>
-
-              {/* Important Notice */}
-              <div className="mb-8 p-4 bg-yellow-50 border-2 border-yellow-200 rounded-xl">
-                <div className="flex gap-3">
-                  <Shield className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-yellow-800">
-                    <p className="font-bold mb-1">Lưu ý quan trọng:</p>
-                    <ul className="list-disc list-inside space-y-1">
-                      <li>
-                        Bạn cần thanh toán cọc <strong>30%</strong> để xác nhận
-                        đơn hàng
-                      </li>
-                      <li>
-                        Số tiền còn lại sẽ thanh toán khi nhận xe hoặc khi kết
-                        thúc chuyến đi
-                      </li>
-                      <li>
-                        Tiền cọc chỉ được thanh toán qua phương thức online
-                      </li>
-                      <li>
-                        Đơn hàng sẽ được xác nhận sau khi thanh toán thành công
-                      </li>
-                    </ul>
-                  </div>
                 </div>
               </div>
 
               {/* Payment Methods */}
               <div className="space-y-4 mb-8">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">
-                  Chọn phương thức thanh toán
+                  Select payment method
                 </h3>
 
                 {paymentMethods.map((method) => {
                   const Icon = method.icon;
                   const isSelected = selectedMethod === method.id;
                   const colorClass = {
-                    blue: "border-blue-500 bg-blue-50",
-                    pink: "border-pink-500 bg-pink-50",
-                    sky: "border-sky-500 bg-sky-50",
+                    blue: "border-[#1556F5] bg-[#EEF4FF]",
+                    pink: "border-[#1556F5] bg-[#EEF4FF]",
+                    sky: "border-[#1556F5] bg-[#EEF4FF]",
                   };
+
+                  const iconColorClass = isSelected
+                    ? "bg-[#DCE8FF] text-[#1556F5]"
+                    : "bg-gray-100 text-gray-600";
 
                   return (
                     <button
                       key={method.id}
                       onClick={() => setSelectedMethod(method.id)}
-                      className={`w-full p-4 border-2 rounded-xl transition-all ${
-                        isSelected
-                          ? colorClass[method.color]
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
+                      className={`w-full p-4 border-2 rounded-xl transition-all ${isSelected
+                        ? colorClass[method.color]
+                        : "border-gray-200 hover:border-gray-300"
+                        }`}
                     >
                       <div className="flex items-center gap-4">
-                        <div
-                          className={`w-12 h-12 rounded-lg ${
-                            isSelected
-                              ? `bg-${method.color}-100`
-                              : "bg-gray-100"
-                          } flex items-center justify-center`}
-                        >
-                          <Icon
-                            className={`w-6 h-6 ${
-                              isSelected
-                                ? `text-${method.color}-600`
-                                : "text-gray-600"
-                            }`}
-                          />
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${iconColorClass}`}>
+                          <Icon className="w-6 h-6" />
                         </div>
                         <div className="flex-1 text-left">
                           <p className="font-bold text-gray-900">
@@ -289,14 +309,49 @@ const DepositPayment = () => {
                           </p>
                         </div>
                         {isSelected && (
-                          <CheckCircle
-                            className={`w-6 h-6 text-${method.color}-600`}
-                          />
+                          <CheckCircle className="w-6 h-6 text-[#1556F5]" />
                         )}
                       </div>
                     </button>
                   );
                 })}
+              </div>
+
+              <div className="mb-8">
+                <div className="flex items-start gap-2 text-sm text-gray-700">
+                  <Shield className="w-4 h-4 text-[#1556F5] mt-0.5" />
+                  <p>
+                    Please read our{" "}
+                    <button
+                      type="button"
+                      onClick={() => setShowTermsModal(true)}
+                      className="text-[#1556F5] font-semibold underline hover:text-[#0F3FCC]"
+                    >
+                      Terms & services
+                    </button>
+                    {" "}before payment.
+                  </p>
+                </div>
+
+                <label className="mt-3 flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={acceptedTerms}
+                    onChange={(e) => {
+                      setAcceptedTerms(e.target.checked);
+                      if (
+                        e.target.checked &&
+                        error === "Please agree to the terms and conditions before payment"
+                      ) {
+                        setError(null);
+                      }
+                    }}
+                    className="mt-1 h-4 w-4 rounded border-gray-300 text-[#1556F5] focus:ring-[#1556F5]"
+                  />
+                  <span className="text-sm text-gray-800">
+                    I have read and agree to the terms and services.
+                  </span>
+                </label>
               </div>
 
               {error && (
@@ -309,22 +364,22 @@ const DepositPayment = () => {
               {/* Submit Button */}
               <button
                 onClick={handlePayment}
-                disabled={!selectedMethod || processing}
-                className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors shadow-lg shadow-blue-600/30"
+                disabled={!selectedMethod || processing || !acceptedTerms}
+                className="w-full bg-[#1556F5] text-white py-4 rounded-xl font-bold text-lg hover:bg-[#0F3FCC] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors shadow-lg shadow-blue-600/30"
               >
                 {processing ? (
-                  "ĐANG XỬ LÝ..."
+                  "PROCESSING..."
                 ) : selectedMethod === "bank_transfer" ? (
-                  "HIỂN THỊ MÃ QR THANH TOÁN →"
+                  "SHOW PAYMENT QR CODE ->"
                 ) : (
-                  <>THANH TOÁN {formatPrice(depositAmount)}đ →</>
+                  `PAY ${formatPrice(depositAmount)} VND`
                 )}
               </button>
 
               {/* Security Notice */}
               <div className="mt-6 flex items-center justify-center gap-2 text-sm text-gray-600">
                 <Shield className="w-4 h-4" />
-                <span>Giao dịch được bảo mật và mã hóa</span>
+                <span>Transactions are secure and encrypted</span>
               </div>
             </div>
           </div>
@@ -333,27 +388,27 @@ const DepositPayment = () => {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-32">
               <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Tóm tắt thanh toán
+                Payment summary
               </h3>
 
               {/* Booking Info */}
               <div className="space-y-3 border-b border-gray-200 pb-4 mb-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Mã đơn hàng:</span>
+                  <span className="text-gray-600">Booking ID:</span>
                   <span className="font-mono font-semibold text-gray-900">
                     #{booking?._id.slice(-8).toUpperCase()}
                   </span>
                 </div>
 
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Xe:</span>
+                  <span className="text-gray-600">Vehicle:</span>
                   <span className="font-semibold text-gray-900">
                     {booking?.vehicle?.brand} {booking?.vehicle?.model}
                   </span>
                 </div>
 
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Thời gian:</span>
+                  <span className="text-gray-600">Time:</span>
                   <span className="font-semibold text-gray-900">
                     {booking &&
                       new Date(booking.start_date).toLocaleDateString(
@@ -369,39 +424,39 @@ const DepositPayment = () => {
               {/* Payment Breakdown */}
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Tổng giá trị đơn:</span>
+                  <span className="text-gray-600">Booking total:</span>
                   <span className="font-semibold text-gray-900">
-                    {formatPrice(booking?.total_amount || 0)}đ
+                    {formatPrice(booking?.total_amount || 0)} VND
                   </span>
                 </div>
 
                 <div className="flex justify-between text-base border-t border-gray-200 pt-3">
                   <span className="font-bold text-gray-900">
-                    Tiền cọc (30%):
+                    Deposit (30%):
                   </span>
-                  <span className="font-bold text-2xl text-blue-600">
-                    {formatPrice(depositAmount)}đ
+                  <span className="font-bold text-2xl text-[#1556F5]">
+                    {formatPrice(depositAmount)} VND
                   </span>
                 </div>
 
                 <div className="flex justify-between text-sm text-gray-600 pb-4 border-b border-gray-200">
-                  <span>Còn lại thanh toán sau:</span>
+                  <span>Pay later amount:</span>
                   <span className="font-semibold">
-                    {formatPrice(remainingAmount)}đ
+                    {formatPrice(remainingAmount)} VND
                   </span>
                 </div>
 
-                <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-4">
+                <div className="bg-[#EEF4FF] border border-[#DCE8FF] rounded-lg p-3 mt-4">
                   <div className="flex gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <div className="text-xs text-green-800">
+                    <CheckCircle className="w-5 h-5 text-[#1556F5] flex-shrink-0 mt-0.5" />
+                    <div className="text-xs text-[#101828]">
                       <p className="font-bold mb-1">
-                        Sau khi thanh toán thành công:
+                        After successful payment:
                       </p>
                       <ul className="list-disc list-inside space-y-1">
-                        <li>Đơn hàng được xác nhận ngay lập tức</li>
-                        <li>Nhận email xác nhận chi tiết</li>
-                        <li>Xe được giữ chỗ cho bạn</li>
+                        <li>Booking is confirmed immediately</li>
+                        <li>Receive a detailed confirmation email</li>
+                        <li>Vehicle is reserved for you</li>
                       </ul>
                     </div>
                   </div>

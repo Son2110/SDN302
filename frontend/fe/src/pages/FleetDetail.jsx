@@ -18,7 +18,7 @@ const FleetDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch vehicle detail từ API
+  // Fetch vehicle details from API
   useEffect(() => {
     const fetchVehicle = async () => {
       try {
@@ -28,7 +28,7 @@ const FleetDetail = () => {
         setError(null);
       } catch (err) {
         console.error("Failed to fetch vehicle:", err);
-        setError("Không thể tải thông tin xe. Vui lòng thử lại sau.");
+        setError("Unable to load vehicle details. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -59,37 +59,37 @@ const FleetDetail = () => {
       <div className="bg-[#F8F9FB] pt-32 pb-20 min-h-screen">
         <div className="max-w-7xl mx-auto px-6 text-center">
           <p className="text-red-500 font-medium mb-4">
-            {error || "Xe không tồn tại trong hệ thống."}
+            {error || "Vehicle does not exist in the system."}
           </p>
           <button
             onClick={() => navigate(-1)}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            Quay lại
+            Go back
           </button>
         </div>
       </div>
     );
   }
-  // Car data đã có từ API, không cần transform
+  // Car data comes directly from API.
 
   return (
     <div className="bg-[#F8F9FB] pt-32 pb-20">
       <div className="max-w-7xl mx-auto px-6">
         <button
-          onClick={() => navigate(-1)} // Quay lại trang trước đó
+          onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-gray-500 hover:text-blue-600 font-semibold mb-6 transition-colors group"
         >
           <div className="p-2 bg-white rounded-full shadow-sm group-hover:bg-blue-50 transition-colors">
             <ChevronLeft size={20} />
           </div>
-          Quay lại danh sách
+          Back to list
         </button>
-        {/* ===== GRID CHÍNH ===== */}
+        {/* ===== MAIN GRID ===== */}
         <div className="grid lg:grid-cols-3 gap-12">
-          {/* CỘT TRÁI: ẢNH & THÔNG TIN CHI TIẾT */}
+          {/* LEFT COLUMN: IMAGES & DETAILS */}
           <div className="lg:col-span-2">
-            {/* Ảnh chính */}
+            {/* Main image */}
             <div className="relative rounded-3xl overflow-hidden bg-white shadow-sm border border-gray-100">
               <span className="absolute top-4 right-6 bg-black/10 backdrop-blur-md text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">
                 {car.vehicle_type?.category === "luxury"
@@ -107,7 +107,7 @@ const FleetDetail = () => {
               />
             </div>
 
-            {/* Gallery ảnh nhỏ */}
+            {/* Thumbnail gallery */}
             <div className="flex gap-4 mt-6">
               {(car.image_urls || []).slice(0, 4).map((img, i) => (
                 <div
@@ -123,18 +123,15 @@ const FleetDetail = () => {
               ))}
             </div>
 
-            {/* Tiêu đề xe */}
+            {/* Vehicle title */}
             <div className="mt-10 flex justify-between items-start">
               <div>
                 <h1 className="text-4xl font-bold text-gray-900">
                   {car.brand} {car.model}
                 </h1>
                 <div className="flex items-center gap-3 mt-3">
-                  <span className="text-yellow-500 font-bold">★ 4.5</span>
-                  <span className="text-gray-400 text-sm">(128 Đánh giá)</span>
-                  <span className="text-gray-300">|</span>
                   <span className="text-gray-500 text-sm font-medium">
-                    Đời {car.year || 2024}
+                    Year {car.year || 2024}
                   </span>
                   <span className="text-gray-300">•</span>
                   <span className="text-gray-500 text-sm font-medium">
@@ -146,80 +143,80 @@ const FleetDetail = () => {
               </div>
             </div>
 
-            {/* Thông số kỹ thuật (Grid 4 cột) */}
+            {/* Key specs (4-column grid) */}
             <div className="mt-10">
               <h3 className="text-sm font-bold uppercase tracking-wider text-gray-400 mb-6">
-                Thông số chính
+                Key specifications
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <SpecItem
                   icon={<Gauge size={20} />}
-                  label="Tình trạng"
+                  label="Status"
                   value={
                     car.status === "available"
-                      ? "Sẵn sàng"
+                      ? "Available"
                       : car.status === "rented"
-                        ? "Đang thuê"
-                        : "Bảo trì"
+                        ? "In progress"
+                        : "Maintenance"
                   }
                 />
                 <SpecItem
                   icon={<Users size={20} />}
-                  label="Số chỗ"
-                  value={`${car.vehicle_type?.seat_capacity || 4} người`}
+                  label="Seats"
+                  value={`${car.vehicle_type?.seat_capacity || 4} seats`}
                 />
                 <SpecItem
                   icon={<Fuel size={20} />}
-                  label="Nhiên liệu"
+                  label="Fuel"
                   value={
                     car.vehicle_type?.fuel_type === "electric"
-                      ? "Điện"
+                      ? "Electric"
                       : car.vehicle_type?.fuel_type === "hybrid"
                         ? "Hybrid"
                         : car.vehicle_type?.fuel_type === "diesel"
-                          ? "Dầu"
-                          : "Xăng"
+                          ? "Diesel"
+                          : "Gasoline"
                   }
                 />
                 <SpecItem
                   icon={<Settings2 size={20} />}
-                  label="Hộp số"
+                  label="Gear"
                   value={
                     car.vehicle_type?.transmission === "auto"
-                      ? "Tự động"
-                      : "Số sàn"
+                      ? "Automatic"
+                      : "Manual"
                   }
                 />
               </div>
             </div>
 
-            {/* Mô tả & Features */}
+            {/* Description and features */}
             <div className="grid md:grid-cols-2 gap-12 mt-12 border-t pt-10">
               <div>
-                <h3 className="text-lg font-bold mb-4">Thông tin xe</h3>
+                <h3 className="text-lg font-bold mb-4">Vehicle information</h3>
                 <p className="text-gray-600 leading-relaxed text-sm">
-                  Xe {car.brand} {car.model} đời {car.year || "2024"}, biển số{" "}
-                  {car.license_plate}, màu {car.color || "trắng"}.
+                  {car.brand} {car.model}, model year {car.year || "2024"}, license plate{" "}
+                  {car.license_plate}, color {car.color || "white"}.
                   {car.is_electric &&
-                    " Xe điện 100% thân thiện với môi trường."}
+                    " 100% electric and environmentally friendly."}
                   {car.vehicle_type?.battery_capacity_kwh &&
-                    ` Pin ${car.vehicle_type.battery_capacity_kwh} kWh.`}
+                    ` Battery capacity: ${car.vehicle_type.battery_capacity_kwh} kWh.`}
                   {car.current_mileage > 0 &&
-                    ` Số km đã đi: ${car.current_mileage.toLocaleString("vi-VN")} km.`}
+                    ` Current mileage: ${car.current_mileage.toLocaleString("vi-VN")} km.`}
                 </p>
               </div>
               <div>
-                <h3 className="text-lg font-bold mb-4">Tính năng</h3>
+                <h3 className="text-lg font-bold mb-4">Features</h3>
                 <ul className="grid grid-cols-1 gap-3">
-                  <FeatureItem text="Hệ thống định vị GPS" />
+                  <FeatureItem text="GPS navigation system" />
                   <FeatureItem text="Bluetooth Audio" />
-                  <FeatureItem text="Cảm biến lùi hỗ trợ đỗ xe" />
+                  <FeatureItem text="Reverse sensor to assist with parking" />
                   {car.is_electric && (
-                    <FeatureItem text="Xe điện - Tiết kiệm chi phí" />
+                    <FeatureItem text="Electric vehicle - Save costs" />
                   )}
                   {car.vehicle_type?.charging_cost_per_kwh && (
                     <FeatureItem
-                      text={`Chi phí sạc: ${car.vehicle_type.charging_cost_per_kwh.toLocaleString("vi-VN")}đ/kWh`}
+                      text={`Charging cost: ${car.vehicle_type.charging_cost_per_kwh.toLocaleString("vi-VN")} VND/kWh`}
                     />
                   )}
                 </ul>
@@ -227,30 +224,29 @@ const FleetDetail = () => {
             </div>
           </div>
 
-          {/* CỘT PHẢI: BOX ĐẶT XE (STICKY) */}
+          {/* Right column: sticky booking card */}
           <div className="relative">
             <BookingCard car={car} />
           </div>
         </div>
 
-        {/* ===== XE TƯƠNG TỰ ===== */}
+        {/* ===== Similar Vehicles ===== */}
         {/* TODO: Fetch similar vehicles from API based on category */}
         {/* <div className="mt-24 border-t pt-20">
           <div className="flex justify-between items-end mb-10">
             <div>
               <h3 className="text-3xl font-bold text-gray-900">
-                Có thể bạn sẽ thích
+                You may also like
               </h3>
               <p className="text-gray-500 mt-2">
-                Khám phá thêm những mẫu xe sang trọng khác trong đội xe của
-                chúng tôi.
+                Explore more premium vehicles in our fleet.
               </p>
             </div>
             <Link
               to="/fleet"
               className="text-blue-600 font-bold flex items-center gap-2 hover:gap-3 transition-all"
             >
-              Xem tất cả <span className="text-xl">→</span>
+              View all <span className="text-xl">→</span>
             </Link>
           </div>
         </div> */}
