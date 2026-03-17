@@ -8,7 +8,7 @@ const STATUS_BADGES = {
 };
 
 const STATUS_LABELS = {
-  pending: "Pending",
+  pending: "Waiting for response",
   accepted: "Accepted",
   rejected: "Rejected",
 };
@@ -32,7 +32,7 @@ export default function AssignmentTable({ assignments, onEdit, onDelete }) {
               <th className="px-5 py-4 border-b w-[18%]">Vehicle</th>
               <th className="px-5 py-4 border-b w-[18%]">Driver</th>
               <th className="px-5 py-4 border-b w-[16%]">Status</th>
-              <th className="px-5 py-4 border-b w-[20%]">Assigned At</th>
+              <th className="px-5 py-4 border-b w-[20%]">Assigned Date</th>
               {/* <th className="px-5 py-4 border-b text-center">Actions</th> */}
             </tr>
           </thead>
@@ -66,9 +66,8 @@ export default function AssignmentTable({ assignments, onEdit, onDelete }) {
                 </td>
                 <td className="px-5 py-4">
                   <span
-                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                      STATUS_BADGES[a.status] || "bg-gray-100 text-gray-800"
-                    }`}
+                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_BADGES[a.status] || "bg-gray-100 text-gray-800"
+                      }`}
                   >
                     {STATUS_LABELS[a.status] || a.status}
                   </span>
@@ -89,7 +88,7 @@ export default function AssignmentTable({ assignments, onEdit, onDelete }) {
                     <button
                       onClick={() => onEdit(a)}
                       className="p-1.5 text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
-                      title="Đổi tài xế"
+                      title="Change Driver"
                     >
                       <Edit className="w-4 h-4" />
                     </button>
@@ -97,7 +96,7 @@ export default function AssignmentTable({ assignments, onEdit, onDelete }) {
                   <button
                     onClick={() => onDelete(a._id)}
                     className="p-1.5 text-red-600 bg-red-50 rounded hover:bg-red-100 transition-colors"
-                    title="Huỷ phân công"
+                    title="Cancel Assignment"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

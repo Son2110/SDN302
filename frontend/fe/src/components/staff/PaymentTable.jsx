@@ -9,23 +9,23 @@ const STATUS_BADGES = {
 };
 
 const STATUS_LABELS = {
-  pending: "Đang chờ",
-  completed: "Thành công",
-  failed: "Thất bại",
-  refunded: "Đã hoàn tiền",
+  pending: "Pending",
+  completed: "Completed",
+  failed: "Failed",
+  refunded: "Refunded",
 };
 
 const TYPE_LABELS = {
-  deposit: "Đặt cọc",
-  rental_fee: "Phí thuê xe",
-  extension_fee: "Phí gia hạn",
-  penalty: "Tiền phạt",
-  refund: "Hoàn tiền",
+  deposit: "Deposit",
+  rental_fee: "Rental Fee",
+  extension_fee: "Extension Fee",
+  penalty: "Penalty",
+  refund: "Refund",
 };
 
 const METHOD_LABELS = {
-  cash: "Tiền mặt",
-  card: "Thẻ",
+  cash: "Cash",
+  card: "Card",
   momo: "MoMo",
   zalopay: "ZaloPay",
   vnpay: "VNPay",
@@ -35,7 +35,7 @@ export default function PaymentTable({ payments, onView }) {
   if (!payments || payments.length === 0) {
     return (
       <div className="text-center py-10 text-gray-500 bg-white rounded-xl shadow-sm border border-gray-100">
-        Không tìm thấy giao dịch nào.
+        No transactions found.
       </div>
     );
   }
@@ -46,13 +46,13 @@ export default function PaymentTable({ payments, onView }) {
         <table className="w-full text-left text-sm text-gray-600">
           <thead className="bg-gray-50 text-gray-700 font-medium">
             <tr>
-              <th className="px-5 py-4 border-b">Ngày giao dịch</th>
-              <th className="px-5 py-4 border-b">Loại & Booking</th>
-              <th className="px-5 py-4 border-b">Khách hàng</th>
-              <th className="px-5 py-4 border-b">Số tiền</th>
-              <th className="px-5 py-4 border-b">Hình thức</th>
-              <th className="px-5 py-4 border-b">Trạng thái</th>
-              <th className="px-5 py-4 border-b text-center">Chi tiết</th>
+              <th className="px-5 py-4 border-b">Transaction Date</th>
+              <th className="px-5 py-4 border-b">Type & Booking</th>
+              <th className="px-5 py-4 border-b">Customer</th>
+              <th className="px-5 py-4 border-b">Amount</th>
+              <th className="px-5 py-4 border-b">Method</th>
+              <th className="px-5 py-4 border-b">Status</th>
+              <th className="px-5 py-4 border-b text-center">Details</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -63,7 +63,7 @@ export default function PaymentTable({ payments, onView }) {
                 </td>
                 <td className="px-5 py-4">
                   <div className="font-semibold text-gray-900">{TYPE_LABELS[p.payment_type] || p.payment_type}</div>
-                  <div className="text-xs text-gray-500 mt-1 uppercase">Đơn: #{p.booking?._id?.slice(-6)}</div>
+                  <div className="text-xs text-gray-500 mt-1 uppercase">Booking: #{p.booking?._id?.slice(-6)}</div>
                 </td>
                 <td className="px-5 py-4">
                   <div className="font-medium text-gray-800">{p.customer?.user?.full_name || "N/A"}</div>
@@ -88,7 +88,7 @@ export default function PaymentTable({ payments, onView }) {
                   <button
                     onClick={() => onView(p)}
                     className="p-1.5 text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
-                    title="Xem chi tiết"
+                    title="View Details"
                   >
                     <Eye className="w-4 h-4" />
                   </button>

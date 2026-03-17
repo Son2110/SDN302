@@ -43,7 +43,7 @@ export default function StaffAssignDriver() {
         const res = await getBookingDetail(bookingId);
         setBooking(res.data);
       } catch (err) {
-        setError("Không thể tải thông tin đơn: " + err.message);
+        setError("Cannot load booking info: " + err.message);
       } finally {
         setLoadingBooking(false);
       }
@@ -59,7 +59,7 @@ export default function StaffAssignDriver() {
         const res = await getAllDrivers({ status: "available", limit: 200 });
         setDrivers(res.data || []);
       } catch (err) {
-        setError("Không thể tải danh sách tài xế: " + err.message);
+        setError("Cannot load driver list: " + err.message);
       } finally {
         setLoadingDrivers(false);
       }
@@ -111,9 +111,9 @@ export default function StaffAssignDriver() {
           <ArrowLeft className="w-5 h-5 text-gray-600" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Phân công tài xế</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Assign Driver</h1>
           <p className="text-gray-500 text-sm mt-0.5">
-            Chọn tài xế phù hợp cho đơn đặt xe bên dưới
+            Choose a suitable driver for the booking below
           </p>
         </div>
       </div>
@@ -123,14 +123,14 @@ export default function StaffAssignDriver() {
         <div className="lg:col-span-1">
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4 sticky top-6">
             <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide">
-              Thông tin đơn
+              Booking Information
             </h2>
 
             {booking ? (
               <>
                 {/* Booking ID */}
                 <div>
-                  <p className="text-xs text-gray-500">Mã đơn</p>
+                  <p className="text-xs text-gray-500">Booking ID</p>
                   <p className="font-bold text-gray-900 text-lg">
                     #{booking._id.slice(-6).toUpperCase()}
                   </p>
@@ -164,33 +164,33 @@ export default function StaffAssignDriver() {
                 <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
                   <Calendar className="w-5 h-5 text-gray-400 mt-0.5 shrink-0" />
                   <div className="text-sm">
-                    <p className="text-gray-500 text-xs">Thời gian thuê</p>
+                    <p className="text-gray-500 text-xs">Rental Period</p>
                     <p className="font-medium text-gray-800 mt-1">
-                      {new Date(booking.start_date).toLocaleDateString("vi-VN")}
+                      {new Date(booking.start_date).toLocaleDateString("en-US")}
                     </p>
-                    <p className="text-gray-400 text-xs">đến</p>
+                    <p className="text-gray-400 text-xs">to</p>
                     <p className="font-medium text-gray-800">
-                      {new Date(booking.end_date).toLocaleDateString("vi-VN")}
+                      {new Date(booking.end_date).toLocaleDateString("en-US")}
                     </p>
                   </div>
                 </div>
 
                 {/* Status */}
                 <div className="text-xs text-gray-500">
-                  Trạng thái:{" "}
+                  Status:{" "}
                   <span className="font-semibold text-blue-600 uppercase">
                     {booking.status}
                   </span>
                 </div>
               </>
             ) : (
-              <p className="text-gray-500 text-sm">Không tìm thấy thông tin đơn</p>
+              <p className="text-gray-500 text-sm">Booking info not found</p>
             )}
 
             {/* Selected driver preview */}
             {selectedDriver && (
               <div className="mt-2 p-3 bg-indigo-50 border border-indigo-200 rounded-xl">
-                <p className="text-xs font-bold text-indigo-700 mb-1">Tài xế đã chọn</p>
+                <p className="text-xs font-bold text-indigo-700 mb-1">Selected Driver</p>
                 <p className="font-semibold text-indigo-900 text-sm">
                   {selectedDriver.user?.full_name}
                 </p>
@@ -211,7 +211,7 @@ export default function StaffAssignDriver() {
               <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-100 rounded-xl">
                 <CheckCircle2 className="w-4 h-4 text-green-500" />
                 <p className="text-xs text-green-700 font-medium">
-                  Phân công thành công! Đang chuyển hướng...
+                  Assignment successful! Redirecting...
                 </p>
               </div>
             )}
@@ -226,12 +226,12 @@ export default function StaffAssignDriver() {
                 {assigning ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Đang phân công...
+                    Assigning...
                   </>
                 ) : (
                   <>
                     <UserCheck className="w-4 h-4" />
-                    Xác nhận phân công
+                    Confirm Assignment
                   </>
                 )}
               </button>
@@ -239,7 +239,7 @@ export default function StaffAssignDriver() {
                 onClick={() => navigate(-1)}
                 className="w-full py-2.5 border border-gray-200 text-gray-600 rounded-xl font-medium hover:bg-gray-50 transition-colors text-sm"
               >
-                Huỷ
+                Cancel
               </button>
             </div>
           </div>
@@ -254,7 +254,7 @@ export default function StaffAssignDriver() {
                 <div className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-gray-500" />
                   <h2 className="text-base font-bold text-gray-900">
-                    Tài xế đang rảnh
+                    Available Drivers
                   </h2>
                   {!loadingDrivers && (
                     <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded-full">
@@ -268,7 +268,7 @@ export default function StaffAssignDriver() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Tìm theo tên hoặc số điện thoại..."
+                  placeholder="Search by name or phone number..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
@@ -286,12 +286,12 @@ export default function StaffAssignDriver() {
                 <div className="text-center py-16 text-gray-400">
                   <Users className="w-14 h-14 mx-auto mb-4 text-gray-200" />
                   <p className="font-medium text-gray-500">
-                    {search ? "Không tìm thấy tài xế phù hợp" : "Không có tài xế nào sẵn sàng"}
+                    {search ? "No matching drivers found" : "No drivers available"}
                   </p>
                   <p className="text-sm mt-1">
                     {search
-                      ? "Thử tìm với từ khoá khác"
-                      : "Tất cả tài xế đang bận hoặc chưa được duyệt"}
+                      ? "Try searching with a different keyword"
+                      : "All drivers are busy or not yet approved"}
                   </p>
                 </div>
               ) : (
@@ -325,7 +325,7 @@ export default function StaffAssignDriver() {
                             className={`font-semibold text-sm truncate ${isSelected ? "text-blue-900" : "text-gray-800"
                               }`}
                           >
-                            {driver.user?.full_name || "Không rõ tên"}
+                            {driver.user?.full_name || "Unknown name"}
                           </p>
                           <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
                             <Phone className="w-3 h-3" />
@@ -333,7 +333,7 @@ export default function StaffAssignDriver() {
                           </div>
                           {driver.experience_years != null && (
                             <p className="text-xs text-gray-400 mt-0.5">
-                              {driver.experience_years} năm kinh nghiệm
+                              {driver.experience_years} years of experience
                             </p>
                           )}
                         </div>
@@ -341,7 +341,7 @@ export default function StaffAssignDriver() {
                         {/* Status + check */}
                         <div className="shrink-0 flex flex-col items-end gap-2">
                           <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                            Sẵn sàng
+                            Available
                           </span>
                           {isSelected && (
                             <UserCheck className="w-5 h-5 text-blue-600" />

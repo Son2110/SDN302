@@ -42,12 +42,12 @@ export default function StaffExtensions() {
   };
 
   const handleApprove = async (id) => {
-    if (!window.confirm("Bạn có chắc chắn muốn duyệt gia hạn này? Hệ thống sẽ tự động cộng thêm phí và dời ngày trả xe.")) return;
+    if (!window.confirm("Are you sure you want to approve this extension? The system will automatically add fees and adjust the return date.")) return;
     try {
       await approveExtension(id);
       fetchExtensions();
     } catch (err) {
-      alert("Lỗi khi duyệt: " + err.message);
+      alert("Error approving: " + err.message);
     }
   };
 
@@ -65,7 +65,7 @@ export default function StaffExtensions() {
       setIsRejectModalOpen(false);
       fetchExtensions();
     } catch (err) {
-      alert("Lỗi khi từ chối: " + err.message);
+      alert("Error rejecting: " + err.message);
     } finally {
       setProcessing(false);
     }
@@ -75,8 +75,8 @@ export default function StaffExtensions() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Yêu cầu gia hạn</h1>
-          <p className="text-gray-500 text-sm mt-1">Duyệt hoặc từ chối các yêu cầu gia hạn thuê xe</p>
+          <h1 className="text-2xl font-bold text-gray-900">Extension Requests</h1>
+          <p className="text-gray-500 text-sm mt-1">Approve or reject vehicle extension requests</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -85,10 +85,10 @@ export default function StaffExtensions() {
             onChange={handleFilterChange}
             className="appearance-none bg-white border border-gray-200 text-gray-700 py-2.5 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-shadow font-medium"
           >
-            <option value="">Tất cả trạng thái</option>
-            <option value="pending">Chờ duyệt</option>
-            <option value="approved">Đã duyệt</option>
-            <option value="rejected">Từ chối</option>
+            <option value="">All Statuses</option>
+            <option value="pending">Pending Review</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
           </select>
         </div>
       </div>
@@ -110,15 +110,15 @@ export default function StaffExtensions() {
                 onClick={() => setPage(p => p - 1)}
                 className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed bg-white"
               >
-                Trước
+                Previous
               </button>
-              <span className="text-sm text-gray-600 font-medium px-4">Trang {page} / {totalPages}</span>
+              <span className="text-sm text-gray-600 font-medium px-4">Page {page} / {totalPages}</span>
               <button
                 disabled={page === totalPages}
                 onClick={() => setPage(p => p + 1)}
                 className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed bg-white"
               >
-                Sau
+                Next
               </button>
             </div>
           )}
@@ -130,20 +130,20 @@ export default function StaffExtensions() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-              <h3 className="text-lg font-bold text-gray-900">Từ chối gia hạn</h3>
+              <h3 className="text-lg font-bold text-gray-900">Reject Extension</h3>
               <button onClick={() => setIsRejectModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <form onSubmit={handleRejectSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Lý do từ chối (Tuỳ chọn)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Rejection Reason (Optional)</label>
                 <textarea
                   rows={3}
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
-                  placeholder="Ví dụ: Xe đã có khách đặt lịch sau khoảng thời gian này..."
+                  placeholder="e.g. Vehicle is already booked for this period..."
                 />
               </div>
 
@@ -153,7 +153,7 @@ export default function StaffExtensions() {
                   onClick={() => setIsRejectModalOpen(false)}
                   className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 font-medium transition"
                 >
-                  Huỷ
+                  Cancel
                 </button>
                 <button
                   type="submit"
@@ -161,7 +161,7 @@ export default function StaffExtensions() {
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition flex items-center disabled:opacity-50"
                 >
                   {processing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  Từ chối
+                  Reject
                 </button>
               </div>
             </form>

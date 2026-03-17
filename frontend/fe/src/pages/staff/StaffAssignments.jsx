@@ -7,7 +7,7 @@ export default function StaffAssignments() {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   const [statusFilter, setStatusFilter] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -37,7 +37,7 @@ export default function StaffAssignments() {
       await deleteAssignment(id);
       fetchAssignments();
     } catch (err) {
-      alert("Error while cancelling: " + err.message);
+      alert("Error cancelling: " + err.message);
     }
   };
 
@@ -80,8 +80,8 @@ export default function StaffAssignments() {
       {/* Header & Actions */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Driver Assignments</h1>
-          <p className="text-gray-500 text-sm mt-1">Manage and coordinate drivers for orders</p>
+          <h1 className="text-2xl font-bold text-gray-900">Driver Assignment</h1>
+          <p className="text-gray-500 text-sm mt-1">Manage and coordinate drivers for bookings</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -91,7 +91,7 @@ export default function StaffAssignments() {
             className="appearance-none bg-white border border-gray-200 text-gray-700 py-2.5 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-shadow font-medium"
           >
             <option value="">All Statuses</option>
-            <option value="pending">Pending</option>
+            <option value="pending">Waiting for response</option>
             <option value="accepted">Accepted</option>
             <option value="rejected">Rejected</option>
           </select>
@@ -121,7 +121,7 @@ export default function StaffAssignments() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
               <h3 className="text-lg font-bold text-gray-900">
-                {editingId ? "Change Driver" : "New Driver Assignment"}
+                {editingId ? "Change Driver" : "Assign New Driver"}
               </h3>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
@@ -140,10 +140,10 @@ export default function StaffAssignments() {
                     className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
                     placeholder="Enter booking ID..."
                   />
-                  <p className="text-xs text-gray-500 mt-1">Note: Booking must be "with_driver" and "confirmed".</p>
+                  <p className="text-xs text-gray-500 mt-1">Note: Booking must be 'with_driver' and 'confirmed'.</p>
                 </div>
               )}
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Driver ID</label>
                 <input

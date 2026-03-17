@@ -52,8 +52,8 @@ export default function HandoverReturnForm() {
           <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <ArrowRightLeft className="w-8 h-8" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Nhận lại xe thành công!</h2>
-          <p className="text-gray-600 mb-6">Biên bản thu hồi xe đã được lưu hệ thống.</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Vehicle Return Successful!</h2>
+          <p className="text-gray-600 mb-6">Return record has been saved to the system.</p>
           
           <div className="bg-gray-50 rounded-xl p-4 text-left space-y-3 mb-6">
             <div className="flex justify-between">
@@ -65,7 +65,7 @@ export default function HandoverReturnForm() {
               <span className="font-semibold text-gray-900">{formatCurrency(successData.penalty_amount)}</span>
             </div>
             <div className="border-t border-gray-200 pt-3 flex justify-between">
-              <span className="font-bold text-gray-800">Số tiền khách cần thanh toán thêm:</span>
+              <span className="font-bold text-gray-800">Total amount due from customer:</span>
               <span className="font-bold text-red-600 text-lg">{formatCurrency(successData.final_amount_to_pay)}</span>
             </div>
           </div>
@@ -74,7 +74,7 @@ export default function HandoverReturnForm() {
             onClick={() => navigate("/staff/handovers")}
             className="px-6 py-2.5 bg-gray-900 text-white font-medium rounded-xl hover:bg-gray-800 transition"
           >
-            Quay lại danh sách
+            Back to List
           </button>
         </div>
       </div>
@@ -88,8 +88,8 @@ export default function HandoverReturnForm() {
           <ArrowLeft className="w-5 h-5 text-gray-600" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Biên bản Thu xe (Return)</h1>
-          <p className="text-gray-500 text-sm mt-1">Ghi nhận tình trạng xe khi hoàn tất chuyến đi</p>
+          <h1 className="text-2xl font-bold text-gray-900">Return Handover Record</h1>
+          <p className="text-gray-500 text-sm mt-1">Record vehicle condition upon trip completion</p>
         </div>
       </div>
 
@@ -98,7 +98,7 @@ export default function HandoverReturnForm() {
           {error && <div className="p-4 bg-red-50 text-red-600 rounded-lg">{error}</div>}
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">ID Đơn đặt xe (Booking ID) <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Booking ID <span className="text-red-500">*</span></label>
             <input
               type="text"
               name="booking_id"
@@ -106,14 +106,14 @@ export default function HandoverReturnForm() {
               value={formData.booking_id}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="VD: 665c..."
+              placeholder="e.g. 665c..."
             />
-            <p className="text-xs text-gray-500 mt-1">Đơn phải ở trạng thái "in_progress"</p>
+            <p className="text-xs text-gray-500 mt-1">Booking must be in 'in_progress' status</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Số Km ODO lúc trả <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Return ODO (km) <span className="text-red-500">*</span></label>
               <input
                 type="number"
                 name="return_mileage"
@@ -121,11 +121,11 @@ export default function HandoverReturnForm() {
                 value={formData.return_mileage}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none"
-                placeholder="VD: 35500"
+                placeholder="e.g. 35500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">% Pin lúc trả (Xe điện)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Return Battery % (Electric)</label>
               <input
                 type="number"
                 name="battery_level_percentage"
@@ -134,11 +134,11 @@ export default function HandoverReturnForm() {
                 value={formData.battery_level_percentage}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none"
-                placeholder="VD: 60"
+                placeholder="e.g. 60"
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tiền phạt (VNĐ - nếu có)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Penalty Amount (VND - if applicable)</label>
               <input
                 type="number"
                 name="penalty_amount"
@@ -146,20 +146,20 @@ export default function HandoverReturnForm() {
                 value={formData.penalty_amount}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none"
-                placeholder="VD: 500000"
+                placeholder="e.g. 500000"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú tình trạng xe lúc trả</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Return Condition Notes</label>
             <textarea
               name="notes"
               rows={3}
               value={formData.notes}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="Xước nhẹ cản trước..."
+              placeholder="Minor scratches on front bumper..."
             />
           </div>
 
@@ -170,7 +170,7 @@ export default function HandoverReturnForm() {
               className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 font-medium transition flex items-center disabled:opacity-50 w-full md:w-auto justify-center"
             >
               {loading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <ArrowRightLeft className="w-5 h-5 mr-2" />}
-              Tạo Biên Bản Thu Xe
+              Create Return Record
             </button>
           </div>
         </form>
