@@ -4,7 +4,7 @@ import { Bell, CheckCircle, Trash2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import "dayjs/locale/vi";
+import "dayjs/locale/en";
 import {
   getNotifications,
   markNotificationAsRead,
@@ -13,7 +13,7 @@ import {
 } from "../../services/notificationApi";
 
 dayjs.extend(relativeTime);
-dayjs.locale("vi");
+dayjs.locale("en");
 
 const NotificationDropdown = ({ isNavbar = true }) => {
   const [notifications, setNotifications] = useState([]);
@@ -137,13 +137,13 @@ const NotificationDropdown = ({ isNavbar = true }) => {
       {isOpen && (
         <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-xl bg-white shadow-2xl border border-gray-100 z-50 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
-            <h3 className="font-bold text-gray-800 text-sm">Thông báo</h3>
+            <h3 className="font-bold text-gray-800 text-sm">Notifications</h3>
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllAsRead}
                 className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors"
               >
-                Đánh dấu tất cả đã đọc
+                Mark all as read
               </button>
             )}
           </div>
@@ -152,7 +152,7 @@ const NotificationDropdown = ({ isNavbar = true }) => {
             {notifications.length === 0 ? (
               <div className="p-8 text-center text-gray-500">
                 <Bell className="mx-auto h-8 w-8 mb-2 opacity-20" />
-                <p className="text-sm">Không có thông báo nào</p>
+                <p className="text-sm">No notifications yet</p>
               </div>
             ) : (
               <ul className="divide-y divide-gray-50">
@@ -197,7 +197,7 @@ const NotificationDropdown = ({ isNavbar = true }) => {
                             handleMarkAsRead(notification._id);
                           }}
                           className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-100 transition-colors"
-                          title="Đánh dấu đã đọc"
+                          title="Mark as read"
                         >
                           <CheckCircle size={14} />
                         </button>
@@ -205,7 +205,7 @@ const NotificationDropdown = ({ isNavbar = true }) => {
                       <button
                         onClick={(e) => handleDelete(e, notification._id)}
                         className="text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-red-50 transition-colors"
-                        title="Xóa thông báo"
+                        title="Delete notification"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -224,7 +224,7 @@ const NotificationDropdown = ({ isNavbar = true }) => {
           </div>
           <div className="bg-gray-50 border-t border-gray-100 py-2 px-4 text-center">
             <span className="text-xs text-gray-400 font-medium">
-              Cập nhật hệ thống thông báo 
+              Notification System Updated
             </span>
           </div>
         </div>

@@ -23,7 +23,7 @@ const Profile = () => {
 
         {/* Info */}
         <div className="px-6 pb-6 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">{user.full_name || "Người dùng"}</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">{user.full_name || "User"}</h1>
           <p className="text-gray-500 font-medium text-sm mb-6 flex items-center justify-center gap-1">
              <Mail size={14} /> {user.email}
           </p>
@@ -41,7 +41,7 @@ const Profile = () => {
               onClick={logout}
               className="w-full py-3 bg-red-50 text-red-600 font-bold rounded-xl border border-red-100 hover:bg-red-100 transition-colors"
             >
-              ĐĂNG XUẤT
+              LOGOUT
             </button>
           </div>
         </div>

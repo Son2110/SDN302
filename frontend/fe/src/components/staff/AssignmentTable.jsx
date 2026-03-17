@@ -8,16 +8,16 @@ const STATUS_BADGES = {
 };
 
 const STATUS_LABELS = {
-  pending: "Chờ phản hồi",
-  accepted: "Đã nhận",
-  rejected: "Từ chối",
+  pending: "Pending",
+  accepted: "Accepted",
+  rejected: "Rejected",
 };
 
 export default function AssignmentTable({ assignments, onEdit, onDelete }) {
   if (!assignments || assignments.length === 0) {
     return (
       <div className="text-center py-10 text-gray-500 bg-white rounded-xl shadow-sm border border-gray-100">
-        Không tìm thấy phân công nào.
+        No assignments found.
       </div>
     );
   }
@@ -28,12 +28,12 @@ export default function AssignmentTable({ assignments, onEdit, onDelete }) {
         <table className="w-full table-fixed text-left text-sm text-gray-600">
           <thead className="bg-gray-50 text-gray-700 font-medium">
             <tr>
-              <th className="px-5 py-4 border-b w-[28%]">Đơn (Booking)</th>
-              <th className="px-5 py-4 border-b w-[18%]">Xe</th>
-              <th className="px-5 py-4 border-b w-[18%]">Tài xế</th>
-              <th className="px-5 py-4 border-b w-[16%]">Trạng thái</th>
-              <th className="px-5 py-4 border-b w-[20%]">Thời gian</th>
-              {/* <th className="px-5 py-4 border-b text-center">Thao tác</th> */}
+              <th className="px-5 py-4 border-b w-[28%]">Booking</th>
+              <th className="px-5 py-4 border-b w-[18%]">Vehicle</th>
+              <th className="px-5 py-4 border-b w-[18%]">Driver</th>
+              <th className="px-5 py-4 border-b w-[16%]">Status</th>
+              <th className="px-5 py-4 border-b w-[20%]">Assigned At</th>
+              {/* <th className="px-5 py-4 border-b text-center">Actions</th> */}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -81,7 +81,7 @@ export default function AssignmentTable({ assignments, onEdit, onDelete }) {
                     className="text-xs text-blue-600 mt-1 w-25 truncate"
                     title={a.assigned_by?.user?.full_name}
                   >
-                    Bởi: {a.assigned_by?.user?.full_name || "Staff"}
+                    By: {a.assigned_by?.user?.full_name || "Staff"}
                   </div>
                 </td>
                 {/* <td className="px-5 py-4 flex items-center justify-center space-x-3">

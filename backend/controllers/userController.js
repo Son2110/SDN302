@@ -50,7 +50,7 @@ export const getAllCustomers = async (req, res) => {
     console.error("Error in getAllCustomers:", error);
     res.status(500).json({
       success: false,
-      message: "Lỗi khi lấy danh sách khách hàng",
+      message: "Error fetching customer list",
       error: error.message,
     });
   }
@@ -72,7 +72,7 @@ export const getCustomerById = async (req, res) => {
     if (!customer) {
       return res.status(404).json({
         success: false,
-        message: "Không tìm thấy khách hàng",
+        message: "Customer not found",
       });
     }
 
@@ -84,7 +84,7 @@ export const getCustomerById = async (req, res) => {
     if (!isOwnProfile && !isStaff) {
       return res.status(403).json({
         success: false,
-        message: "Bạn không có quyền xem thông tin này",
+        message: "You do not have permission to view this information",
       });
     }
 
@@ -96,7 +96,7 @@ export const getCustomerById = async (req, res) => {
     console.error("Error in getCustomerById:", error);
     res.status(500).json({
       success: false,
-      message: "Lỗi khi lấy thông tin khách hàng",
+      message: "Error fetching customer info",
       error: error.message,
     });
   }
@@ -136,7 +136,7 @@ export const updateCustomer = async (req, res) => {
     if (!isOwnProfile && !isStaff) {
       return res.status(403).json({
         success: false,
-        message: "Bạn không có quyền cập nhật thông tin này",
+        message: "You do not have permission to update this information",
       });
     }
 
@@ -159,14 +159,14 @@ export const updateCustomer = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Cập nhật thông tin khách hàng thành công",
+      message: "Customer profile updated successfully",
       data: updatedCustomer,
     });
   } catch (error) {
     console.error("Error in updateCustomer:", error);
     res.status(500).json({
       success: false,
-      message: "Lỗi khi cập nhật thông tin khách hàng",
+      message: "Error updating customer info",
       error: error.message,
     });
   }
@@ -247,7 +247,7 @@ export const getAllDrivers = async (req, res) => {
     console.error("Error in getAllDrivers:", error);
     res.status(500).json({
       success: false,
-      message: "Lỗi khi lấy danh sách tài xế",
+      message: "Error fetching driver list",
       error: error.message,
     });
   }
@@ -269,7 +269,7 @@ export const getDriverById = async (req, res) => {
     if (!driver) {
       return res.status(404).json({
         success: false,
-        message: "Không tìm thấy tài xế",
+        message: "Driver not found",
       });
     }
 
@@ -280,7 +280,7 @@ export const getDriverById = async (req, res) => {
     if (!isOwnProfile && !isStaff) {
       return res.status(403).json({
         success: false,
-        message: "Bạn không có quyền xem thông tin này",
+        message: "You do not have permission to view this information",
       });
     }
 
@@ -292,7 +292,7 @@ export const getDriverById = async (req, res) => {
     console.error("Error in getDriverById:", error);
     res.status(500).json({
       success: false,
-      message: "Lỗi khi lấy thông tin tài xế",
+      message: "Error fetching driver info",
       error: error.message,
     });
   }
@@ -351,7 +351,7 @@ export const updateDriver = async (req, res) => {
       if (existing) {
         return res.status(400).json({
           success: false,
-          message: "Số giấy phép lái xe đã tồn tại",
+          message: "Driver's license number already exists",
         });
       }
       driver.license_number = license_number;
@@ -373,14 +373,14 @@ export const updateDriver = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Cập nhật thông tin tài xế thành công",
+      message: "Driver profile updated successfully",
       data: updatedDriver,
     });
   } catch (error) {
     console.error("Error in updateDriver:", error);
     res.status(500).json({
       success: false,
-      message: "Lỗi khi cập nhật thông tin tài xế",
+      message: "Error updating driver profile",
       error: error.message,
     });
   }
@@ -408,7 +408,7 @@ export const registerAsDriver = async (req, res) => {
       return res.status(400).json({
         success: false,
         message:
-          "Vui lòng cung cấp đầy đủ thông tin: license_number, license_type, license_expiry, experience_years",
+          "Please provide all required fields: license_number, license_type, license_expiry, experience_years",
       });
     }
 
@@ -417,7 +417,7 @@ export const registerAsDriver = async (req, res) => {
     if (existingDriver) {
       return res.status(400).json({
         success: false,
-        message: "Bạn đã là tài xế rồi",
+        message: "You are already a driver",
       });
     }
 
@@ -426,7 +426,7 @@ export const registerAsDriver = async (req, res) => {
     if (duplicateLicense) {
       return res.status(400).json({
         success: false,
-        message: "Số giấy phép lái xe đã được đăng ký",
+        message: "Driver's license number has already been registered",
       });
     }
 
@@ -435,7 +435,7 @@ export const registerAsDriver = async (req, res) => {
     if (expiryDate < new Date()) {
       return res.status(400).json({
         success: false,
-        message: "Giấy phép lái xe đã hết hạn",
+        message: "Driver's license has expired",
       });
     }
 
@@ -463,14 +463,14 @@ export const registerAsDriver = async (req, res) => {
     res.status(201).json({
       success: true,
       message:
-        "Đăng ký làm tài xế thành công! Vui lòng chờ nhân viên xét duyệt.",
+        "Driver registration successful! Please wait for staff approval.",
       data: driver,
     });
   } catch (error) {
     console.error("Error in registerAsDriver:", error);
     res.status(500).json({
       success: false,
-      message: "Lỗi khi đăng ký làm tài xế",
+      message: "Error during driver registration",
       error: error.message,
     });
   }
@@ -494,7 +494,7 @@ export const reapplyAsDriver = async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        message: "Vui lòng cung cấp đầy đủ thông tin",
+        message: "Please provide all required information",
       });
     }
 
@@ -509,7 +509,7 @@ export const reapplyAsDriver = async (req, res) => {
     if (existingDriver.status !== "rejected") {
       return res.status(400).json({
         success: false,
-        message: "Chỉ có thể nộp lại khi hồ sơ bị từ chối",
+        message: "You can only re-apply if your profile was rejected",
       });
     }
 
@@ -518,7 +518,7 @@ export const reapplyAsDriver = async (req, res) => {
     if (expiryDate < new Date()) {
       return res.status(400).json({
         success: false,
-        message: "Giấy phép lái xe đã hết hạn",
+        message: "Driver's license has expired",
       });
     }
 
@@ -530,7 +530,7 @@ export const reapplyAsDriver = async (req, res) => {
     if (duplicateLicense) {
       return res.status(400).json({
         success: false,
-        message: "Số giấy phép lái xe đã được đăng ký bởi người khác",
+        message: "Driver's license has already been registered by another user",
       });
     }
 
@@ -555,14 +555,14 @@ export const reapplyAsDriver = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Nộp lại hồ sơ thành công! Vui lòng chờ nhân viên xét duyệt.",
+      message: "Application resubmitted successfully! Please wait for staff approval.",
       data: driver,
     });
   } catch (error) {
     console.error("Error in reapplyAsDriver:", error);
     res.status(500).json({
       success: false,
-      message: "Lỗi khi nộp lại hồ sơ",
+      message: "Error resubmitting application",
       error: error.message,
     });
   }
@@ -589,7 +589,7 @@ export const getMyDriverStatus = async (req, res) => {
     console.error("Error in getMyDriverStatus:", error);
     res.status(500).json({
       success: false,
-      message: "Lỗi khi lấy trạng thái đăng ký tài xế",
+      message: "Error fetching driver registration status",
       error: error.message,
     });
   }
@@ -627,7 +627,7 @@ export const getPendingDrivers = async (req, res) => {
     console.error("Error in getPendingDrivers:", error);
     res.status(500).json({
       success: false,
-      message: "Lỗi khi lấy danh sách tài xế chờ duyệt",
+      message: "Error fetching pending driver list",
       error: error.message,
     });
   }
@@ -662,7 +662,7 @@ export const getDriverStats = async (req, res) => {
     console.error("Error in getDriverStats:", error);
     res.status(500).json({
       success: false,
-      message: "Lỗi khi lấy thống kê tài xế",
+      message: "Error fetching driver statistics",
       error: error.message,
     });
   }
@@ -681,14 +681,14 @@ export const approveDriver = async (req, res) => {
     if (!driver) {
       return res.status(404).json({
         success: false,
-        message: "Không tìm thấy tài xế",
+        message: "Driver not found",
       });
     }
 
     if (driver.status !== "pending") {
       return res.status(400).json({
         success: false,
-        message: "Tài xế này đã được xử lý rồi",
+        message: "This driver has already been processed",
       });
     }
 
@@ -706,14 +706,14 @@ export const approveDriver = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Đã duyệt tài xế thành công",
+      message: "Driver approved successfully",
       data: updatedDriver,
     });
   } catch (error) {
     console.error("Error in approveDriver:", error);
     res.status(500).json({
       success: false,
-      message: "Lỗi khi duyệt tài xế",
+      message: "Error approving driver",
       error: error.message,
     });
   }
@@ -733,14 +733,14 @@ export const rejectDriver = async (req, res) => {
     if (!driver) {
       return res.status(404).json({
         success: false,
-        message: "Không tìm thấy tài xế",
+        message: "Driver not found",
       });
     }
 
     if (driver.status !== "pending") {
       return res.status(400).json({
         success: false,
-        message: "Tài xế này đã được xử lý rồi",
+        message: "This driver has already been processed",
       });
     }
 
@@ -756,14 +756,14 @@ export const rejectDriver = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Đã từ chối tài xế",
+      message: "Driver rejected",
       data: updatedDriver,
     });
   } catch (error) {
     console.error("Error in rejectDriver:", error);
     res.status(500).json({
       success: false,
-      message: "Lỗi khi từ chối tài xế",
+      message: "Error rejecting driver",
       error: error.message,
     });
   }
@@ -781,7 +781,7 @@ export const toggleDriverDuty = async (req, res) => {
     if (!driver) {
       return res.status(404).json({
         success: false,
-        message: "Không tìm thấy thông tin tài xế",
+        message: "Driver information not found",
       });
     }
 
@@ -790,7 +790,7 @@ export const toggleDriverDuty = async (req, res) => {
       return res.status(400).json({
         success: false,
         message:
-          "Không thể chuyển đổi ca làm việc. Trạng thái hiện tại: " +
+          "Cannot toggle duty shift. Current status: " +
           driver.status,
       });
     }
@@ -807,15 +807,15 @@ export const toggleDriverDuty = async (req, res) => {
       success: true,
       message:
         driver.status === "available"
-          ? "Đã bắt đầu ca làm việc (On Duty)"
-          : "Đã kết thúc ca làm việc (Off Duty)",
+          ? "Started duty shift (On Duty)"
+          : "Ended duty shift (Off Duty)",
       data: updatedDriver,
     });
   } catch (error) {
     console.error("Error in toggleDriverDuty:", error);
     res.status(500).json({
       success: false,
-      message: "Lỗi khi chuyển đổi ca làm việc",
+      message: "Error toggling duty shift",
       error: error.message,
     });
   }
@@ -870,7 +870,7 @@ export const getMyProfile = async (req, res) => {
     console.error("Error in getMyProfile:", error);
     res.status(500).json({
       success: false,
-      message: "Lỗi khi lấy thông tin cá nhân",
+      message: "Error fetching profile",
       error: error.message,
     });
   }
@@ -895,7 +895,7 @@ export const updateUserInfo = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Không tìm thấy người dùng",
+        message: "User not found",
       });
     }
 
@@ -913,14 +913,14 @@ export const updateUserInfo = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Cập nhật thông tin thành công",
+      message: "Information updated successfully",
       data: updatedUser,
     });
   } catch (error) {
     console.error("Error in updateUserInfo:", error);
     res.status(500).json({
       success: false,
-      message: "Lỗi khi cập nhật thông tin",
+      message: "Error updating information",
       error: error.message,
     });
   }

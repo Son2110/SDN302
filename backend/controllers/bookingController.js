@@ -34,7 +34,7 @@ export const getAvailableVehicles = async (req, res) => {
     if (checkIn.getTime() >= checkOut.getTime())
       return res
         .status(400)
-        .json({ message: "Ngày bắt đầu phải trước ngày kết thúc" });
+        .json({ message: "Start date must be before end date" });
 
     // Allow today and future dates only
     if (checkIn.getTime() < today.getTime())
@@ -82,7 +82,7 @@ export const createBooking = async (req, res) => {
     // Check if user is admin
     if (req.user.roles && req.user.roles.includes("admin")) {
       return res.status(403).json({
-        message: "Tài khoản Admin không được phép thực hiện đặt xe.",
+        message: "Admin accounts are not allowed to make bookings.",
       });
     }
 
@@ -91,12 +91,12 @@ export const createBooking = async (req, res) => {
     if (!customer)
       return res
         .status(403)
-        .json({ message: "Chỉ khách hàng mới có thể đặt xe" });
+        .json({ message: "Only customers can book vehicles" });
 
     if (rental_type === "self_drive" && !customer.driver_license) {
       return res.status(400).json({
         message:
-          "Bạn chưa cập nhật Giấy phép lái xe. Vui lòng cập nhật trong Hồ sơ trước khi thuê xe tự lái!",
+          "You haven't updated your driver's license. Please update it in your Profile before renting a self-drive vehicle!",
       });
     }
 
@@ -113,7 +113,7 @@ export const createBooking = async (req, res) => {
     if (checkIn.getTime() >= checkOut.getTime())
       return res
         .status(400)
-        .json({ message: "Ngày kết thúc phải sau ngày bắt đầu" });
+        .json({ message: "End date must be after start date" });
 
     // Allow today and future dates only
     if (checkIn.getTime() < today.getTime())
@@ -132,7 +132,7 @@ export const createBooking = async (req, res) => {
 
     if (overlappingBooking)
       return res.status(400).json({
-        message: "Xe đã được khách khác đặt trong khoảng thời gian này",
+        message: "Vehicle is already booked by another customer for this period",
       });
 
     //4. check status vehicle
@@ -140,7 +140,7 @@ export const createBooking = async (req, res) => {
     if (!vehicle || vehicle.status !== "available")
       return res
         .status(404)
-        .json({ message: "Xe không tồn tại hoặc hiện không khả dụng" });
+        .json({ message: "Vehicle does not exist or is currently unavailable" });
 
     //5. count money (billable days: 13-16 = 3 days, exclude last day for handover)
     const diffTime = Math.abs(checkOut - checkIn);
@@ -178,8 +178,8 @@ export const createBooking = async (req, res) => {
     // Notify Customer
     await sendNotification({
       recipientId: customer.user,
-      title: "Đặt xe thành công",
-      message: `Đơn đặt xe #${newBooking._id.toString().slice(-6)} đã được tạo. Vui lòng thanh toán cọc để xác nhận.`,
+      title: "Booking Successful",
+      message: `Booking #${newBooking._id.toString().slice(-6)} has been created. Please pay the deposit to confirm.`,
       type: "booking_created",
       relatedId: newBooking._id,
       relatedModel: "Booking",
@@ -190,8 +190,8 @@ export const createBooking = async (req, res) => {
     for (const staffMember of allStaff) {
       await sendNotification({
         recipientId: staffMember.user,
-        title: "Đơn đặt xe mới",
-        message: `Hệ thống vừa nhận đơn đặt xe mới #${newBooking._id.toString().slice(-6)}. Vui lòng kiểm tra và hỗ trợ khách hàng.`,
+        title: "New Booking Order",
+        message: `The system just received a new booking #${newBooking._id.toString().slice(-6)}. Please check and support the customer.`,
         type: "booking_created",
         relatedId: newBooking._id,
         relatedModel: "Booking",
@@ -201,7 +201,7 @@ export const createBooking = async (req, res) => {
     res.status(201).json({
       success: true,
       message:
-        "Đặt xe thành công. Vui lòng thanh toán tiền cọc để xác nhận đơn.",
+        "Booking successful. Please pay the deposit to confirm your order.",
       data: {
         booking_id: newBooking._id,
         total_amount: newBooking.total_amount,
@@ -228,7 +228,7 @@ export const cancelBooking = async (req, res) => {
     // Chỉ huỷ khi đơn đang pending hoặc confirmed
     if (!["pending", "confirmed"].includes(booking.status)) {
       return res.status(400).json({
-        message: `Đơn đang ở trạng thái "${booking.status}", không thể huỷ.`,
+        message: `Booking is in status "${booking.status}", cannot cancel.`,
       });
     }
 
@@ -240,12 +240,12 @@ export const cancelBooking = async (req, res) => {
       if (booking.customer.toString() !== customer._id.toString()) {
         return res
           .status(403)
-          .json({ message: "Bạn không có quyền huỷ đơn này." });
+          .json({ message: "You do not have permission to cancel this booking." });
       }
     } else if (!staff) {
       return res
         .status(403)
-        .json({ message: "Bạn không có quyền thực hiện thao tác này." });
+        .json({ message: "You do not have permission to perform this action." });
     }
 
     const previousStatus = booking.status;
@@ -286,8 +286,8 @@ export const cancelBooking = async (req, res) => {
       success: true,
       message:
         previousStatus === "confirmed"
-          ? "Đã huỷ đơn thành công. Tiền cọc sẽ được hoàn lại."
-          : "Đã huỷ đơn thành công.",
+          ? "Booking cancelled successfully. Deposit will be refunded."
+          : "Booking cancelled successfully.",
       data: {
         booking_id: booking._id,
         booking_status: booking.status,
@@ -308,7 +308,7 @@ export const getMyBookings = async (req, res) => {
     if (!customer)
       return res
         .status(403)
-        .json({ message: "Chỉ khách hàng mới xem được đơn của mình." });
+        .json({ message: "Only customers can view their own bookings." });
 
     const { status, page = 1, limit = 10 } = req.query;
 
@@ -370,7 +370,7 @@ export const getBookingById = async (req, res) => {
     ) {
       return res
         .status(403)
-        .json({ message: "Bạn không có quyền xem đơn này." });
+        .json({ message: "You do not have permission to view this booking." });
     }
 
     res.status(200).json({
@@ -390,7 +390,7 @@ export const updateBooking = async (req, res) => {
     const staff = await Staff.findOne({ user: req.user._id });
     if (!staff) {
       return res.status(403).json({
-        message: "Chỉ nhân viên mới có quyền thực hiện thao tác này.",
+        message: "Only staff can perform this action.",
       });
     }
 
@@ -401,7 +401,7 @@ export const updateBooking = async (req, res) => {
     // Chỉ cho sửa khi đơn pending hoặc confirmed
     if (!["pending", "confirmed"].includes(booking.status)) {
       return res.status(400).json({
-        message: `Đơn đang ở trạng thái "${booking.status}", không thể chỉnh sửa.`,
+        message: `Booking is in status "${booking.status}", cannot edit.`,
       });
     }
 
@@ -421,7 +421,7 @@ export const updateBooking = async (req, res) => {
     if (checkIn >= checkOut) {
       return res
         .status(400)
-        .json({ message: "Ngày kết thúc phải sau ngày bắt đầu." });
+        .json({ message: "End date must be after start date." });
     }
 
     // Đổi xe nếu có
@@ -432,7 +432,7 @@ export const updateBooking = async (req, res) => {
       if (!vehicle || vehicle.status !== "available") {
         return res
           .status(400)
-          .json({ message: "Xe mới không tồn tại hoặc không khả dụng." });
+          .json({ message: "New vehicle does not exist or is not available." });
       }
 
       // Check trùng lịch xe mới
@@ -450,7 +450,7 @@ export const updateBooking = async (req, res) => {
 
       if (overlapping) {
         return res.status(400).json({
-          message: "Xe mới đã có khách đặt trong khoảng thời gian này.",
+          message: "New vehicle is already booked for this period.",
         });
       }
 
@@ -479,7 +479,7 @@ export const updateBooking = async (req, res) => {
 
         if (overlapping) {
           return res.status(400).json({
-            message: "Xe đã có lịch đặt trùng trong khoảng thời gian mới.",
+            message: "Vehicle already has an overlapping booking for the new dates.",
           });
         }
       }
@@ -514,7 +514,7 @@ export const updateBooking = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Đã cập nhật đơn đặt xe thành công.",
+      message: "Booking updated successfully.",
       data: booking,
     });
   } catch (error) {
@@ -530,7 +530,7 @@ export const deleteBooking = async (req, res) => {
     const staff = await Staff.findOne({ user: req.user._id });
     if (!staff) {
       return res.status(403).json({
-        message: "Chỉ nhân viên mới có quyền thực hiện thao tác này.",
+        message: "Only staff can perform this action.",
       });
     }
 
@@ -541,7 +541,7 @@ export const deleteBooking = async (req, res) => {
     // Chỉ cho xoá khi đơn đã cancelled hoặc đang pending
     if (!["pending", "cancelled"].includes(booking.status)) {
       return res.status(400).json({
-        message: `Đơn đang ở trạng thái "${booking.status}", không thể xoá. Chỉ xoá được đơn pending hoặc cancelled.`,
+        message: `Booking is in status "${booking.status}", cannot delete. Only pending or cancelled bookings can be deleted.`,
       });
     }
 
@@ -549,7 +549,7 @@ export const deleteBooking = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Đã xoá đơn đặt xe thành công.",
+      message: "Booking deleted successfully.",
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
