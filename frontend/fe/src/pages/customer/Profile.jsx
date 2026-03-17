@@ -14,8 +14,8 @@ import {
   TrendingUp,
   Car,
   DollarSign,
-  Star,
   Award,
+  Hourglass,
 } from "lucide-react";
 import {
   getMyProfile,
@@ -25,6 +25,7 @@ import {
   saveUser,
   getUser,
 } from "../../services/api";
+import { getMyBookings } from "../../services/bookingApi";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -37,6 +38,10 @@ const Profile = () => {
   const [success, setSuccess] = useState("");
   const [activeTab, setActiveTab] = useState("info");
   const [editMode, setEditMode] = useState(false);
+  const [stats, setStats] = useState({
+    totalBookings: 0,
+    totalSpent: 0,
+  });
 
   // Profile data
   const [profile, setProfile] = useState(null);
@@ -60,7 +65,49 @@ const Profile = () => {
       return;
     }
     fetchProfile();
+    fetchRealtimeStats();
   }, [navigate]);
+
+  const fetchRealtimeStats = async () => {
+    try {
+      // Total bookings placed
+      const allBookingsRes = await getMyBookings({ page: 1, limit: 1 });
+      const totalBookingsPlaced = allBookingsRes.total || 0;
+
+      // Total spent from completed trips
+      const completedRes = await getMyBookings({
+        status: "completed",
+        page: 1,
+        limit: 200,
+      });
+
+      let completedBookings = completedRes.data || [];
+      const totalPages = completedRes.totalPages || 1;
+
+      if (totalPages > 1) {
+        const pagePromises = [];
+        for (let page = 2; page <= totalPages; page += 1) {
+          pagePromises.push(getMyBookings({ status: "completed", page, limit: 200 }));
+        }
+        const pageResults = await Promise.all(pagePromises);
+        pageResults.forEach((res) => {
+          completedBookings = completedBookings.concat(res.data || []);
+        });
+      }
+
+      const totalSpentFromCompleted = completedBookings.reduce(
+        (sum, booking) => sum + (booking.total_amount || 0),
+        0,
+      );
+
+      setStats({
+        totalBookings: totalBookingsPlaced,
+        totalSpent: totalSpentFromCompleted,
+      });
+    } catch {
+      // Fallback to profile.customer values if realtime fetch fails
+    }
+  };
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -83,14 +130,14 @@ const Profile = () => {
           driver_license: response.data.customer.driver_license || "",
           date_of_birth: response.data.customer.date_of_birth
             ? new Date(response.data.customer.date_of_birth)
-                .toISOString()
-                .split("T")[0]
+              .toISOString()
+              .split("T")[0]
             : "",
           address: response.data.customer.address || "",
         });
       }
     } catch (err) {
-      setError(err.message || "Không thể tải thông tin cá nhân");
+      setError(err.message || "Unable to load profile");
     } finally {
       setLoading(false);
     }
@@ -152,14 +199,14 @@ const Profile = () => {
         avatar_url: updatedUser.avatar_url,
       });
 
-      setSuccess("Cập nhật thông tin thành công!");
+      setSuccess("Profile updated successfully!");
       setEditMode(false);
       setUserData((prev) => ({ ...prev, avatar: null })); // Clear file after upload
       setTimeout(() => {
         fetchProfile();
       }, 1000);
     } catch (err) {
-      setError(err.message || "Không thể cập nhật thông tin");
+      setError(err.message || "Unable to update profile");
     } finally {
       setSaving(false);
     }
@@ -213,7 +260,7 @@ const Profile = () => {
       <div className="min-h-screen bg-gray-50 pt-32 pb-20">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center py-20">
-            <p className="text-gray-600">Không tìm thấy thông tin cá nhân</p>
+            <p className="text-gray-600">Profile information not found</p>
           </div>
         </div>
       </div>
@@ -224,7 +271,7 @@ const Profile = () => {
     <div className="min-h-screen bg-gray-50 pt-32 pb-20">
       <div className="max-w-7xl mx-auto px-6">
         {/* Header with Avatar */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-8 mb-8 shadow-lg">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 mb-8 shadow-lg">
           <div className="flex items-center gap-6">
             <div className="relative">
               <input
@@ -276,9 +323,9 @@ const Profile = () => {
                       className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold text-white uppercase"
                     >
                       {role === "customer"
-                        ? "Khách hàng"
+                        ? "Customer"
                         : role === "driver"
-                          ? "Tài xế"
+                          ? "Driver"
                           : role}
                     </span>
                   ))}
@@ -292,24 +339,24 @@ const Profile = () => {
                   className="flex items-center gap-2 px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition shadow-lg"
                 >
                   <Edit2 className="w-4 h-4" />
-                  Chỉnh sửa
+                  Edit profile
                 </button>
               ) : (
                 <div className="flex gap-2">
                   <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="flex items-center gap-2 px-6 py-3 bg-white text-green-600 rounded-lg font-semibold hover:bg-green-50 transition shadow-lg disabled:opacity-50"
+                    className="flex items-center gap-2 px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition shadow-lg disabled:opacity-50"
                   >
                     <Save className="w-4 h-4" />
-                    {saving ? "Đang lưu..." : "Lưu"}
+                    {saving ? "Saving..." : "Save"}
                   </button>
                   <button
                     onClick={handleCancel}
                     className="flex items-center gap-2 px-6 py-3 bg-white/20 backdrop-blur-sm text-white rounded-lg font-semibold hover:bg-white/30 transition"
                   >
                     <X className="w-4 h-4" />
-                    Hủy
+                    Cancel
                   </button>
                 </div>
               )}
@@ -324,7 +371,7 @@ const Profile = () => {
           </div>
         )}
         {success && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-600 rounded-lg flex items-center gap-2">
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 text-blue-600 rounded-lg flex items-center gap-2">
             <Save className="w-5 h-5" />
             {success}
           </div>
@@ -334,13 +381,12 @@ const Profile = () => {
         <div className="flex gap-4 mb-8 border-b">
           <button
             onClick={() => setActiveTab("info")}
-            className={`pb-4 px-6 font-semibold transition relative ${
-              activeTab === "info"
-                ? "text-blue-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
+            className={`pb-4 px-6 font-semibold transition relative ${activeTab === "info"
+              ? "text-blue-600"
+              : "text-gray-500 hover:text-gray-700"
+              }`}
           >
-            Thông tin cá nhân
+            Personal information
             {activeTab === "info" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"></div>
             )}
@@ -348,13 +394,12 @@ const Profile = () => {
           {profile.customer && (
             <button
               onClick={() => setActiveTab("stats")}
-              className={`pb-4 px-6 font-semibold transition relative ${
-                activeTab === "stats"
-                  ? "text-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
+              className={`pb-4 px-6 font-semibold transition relative ${activeTab === "stats"
+                ? "text-blue-600"
+                : "text-gray-500 hover:text-gray-700"
+                }`}
             >
-              Thống kê
+              Statistics
               {activeTab === "stats" && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"></div>
               )}
@@ -369,13 +414,13 @@ const Profile = () => {
             <div className="bg-white rounded-xl shadow-lg p-8">
               <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
                 <User className="w-6 h-6 text-blue-600" />
-                Thông tin tài khoản
+                Account information
               </h2>
 
               <div className="space-y-5">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Họ và tên
+                    Full name
                   </label>
                   {editMode ? (
                     <input
@@ -402,14 +447,14 @@ const Profile = () => {
                     {profile.user.email || "-"}
                   </p>
                   <span className="text-xs text-gray-400 mt-1 block">
-                    Email không thể thay đổi
+                    Email cannot be changed
                   </span>
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                     <Phone className="w-4 h-4" />
-                    Số điện thoại
+                    Phone number
                   </label>
                   {editMode ? (
                     <input
@@ -434,7 +479,7 @@ const Profile = () => {
               <div className="bg-white rounded-xl shadow-lg p-8">
                 <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
                   <CreditCard className="w-6 h-6 text-blue-600" />
-                  Thông tin khách hàng
+                  Customer information
                 </h2>
 
                 <div className="space-y-5">
@@ -447,14 +492,14 @@ const Profile = () => {
                       {profile.customer.id_card || "-"}
                     </p>
                     <span className="text-xs text-gray-400 mt-1 block">
-                      CMND/CCCD không thể thay đổi
+                      ID card cannot be changed
                     </span>
                   </div>
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                       <Car className="w-4 h-4" />
-                      Giấy phép lái xe
+                      Driver license
                     </label>
                     {editMode ? (
                       <input
@@ -466,12 +511,12 @@ const Profile = () => {
                             driver_license: e.target.value,
                           })
                         }
-                        placeholder="Nhập số GPLX (nếu có)"
+                        placeholder="Enter license number (if any)"
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     ) : (
                       <p className="text-gray-900 text-lg bg-gray-50 px-4 py-3 rounded-lg">
-                        {customerData.driver_license || "Chưa cập nhật"}
+                        {customerData.driver_license || "Not updated"}
                       </p>
                     )}
                   </div>
@@ -479,7 +524,7 @@ const Profile = () => {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
-                      Ngày sinh
+                      Date of birth
                     </label>
                     {editMode ? (
                       <input
@@ -497,9 +542,9 @@ const Profile = () => {
                       <p className="text-gray-900 text-lg bg-gray-50 px-4 py-3 rounded-lg">
                         {customerData.date_of_birth
                           ? new Date(
-                              customerData.date_of_birth,
-                            ).toLocaleDateString("vi-VN")
-                          : "Chưa cập nhật"}
+                            customerData.date_of_birth,
+                          ).toLocaleDateString("vi-VN")
+                          : "Not updated"}
                       </p>
                     )}
                   </div>
@@ -507,7 +552,7 @@ const Profile = () => {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                       <MapPin className="w-4 h-4" />
-                      Địa chỉ
+                      Address
                     </label>
                     {editMode ? (
                       <textarea
@@ -519,12 +564,12 @@ const Profile = () => {
                           })
                         }
                         rows="3"
-                        placeholder="Nhập địa chỉ của bạn"
+                        placeholder="Enter your address"
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     ) : (
                       <p className="text-gray-900 bg-gray-50 px-4 py-3 rounded-lg min-h-[100px]">
-                        {customerData.address || "Chưa cập nhật"}
+                        {customerData.address || "Not updated"}
                       </p>
                     )}
                   </div>
@@ -536,145 +581,86 @@ const Profile = () => {
 
         {/* Statistics Tab */}
         {activeTab === "stats" && profile.customer && (
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
               <div className="flex items-center justify-between mb-4">
                 <Car className="w-10 h-10 opacity-80" />
                 <TrendingUp className="w-6 h-6 opacity-60" />
               </div>
               <h3 className="text-3xl font-bold mb-2">
-                {profile.customer.total_bookings || 0}
+                {stats.totalBookings || profile.customer.total_bookings || 0}
               </h3>
               <p className="text-blue-100 text-sm font-medium">
-                Tổng số lượt thuê
+                Total bookings
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white">
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
               <div className="flex items-center justify-between mb-4">
                 <DollarSign className="w-10 h-10 opacity-80" />
                 <TrendingUp className="w-6 h-6 opacity-60" />
               </div>
               <h3 className="text-2xl font-bold mb-2">
-                {formatCurrency(profile.customer.total_spent)}
+                {formatCurrency(stats.totalSpent || profile.customer.total_spent)}
               </h3>
-              <p className="text-green-100 text-sm font-medium">
-                Tổng chi tiêu
+              <p className="text-blue-100 text-sm font-medium">
+                Total spending
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white">
+            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-lg p-6 text-white">
               <div className="flex items-center justify-between mb-4">
                 <Award className="w-10 h-10 opacity-80" />
-                <TrendingUp className="w-6 h-6 opacity-60" />
+                <Hourglass className="w-6 h-6 opacity-70" />
               </div>
-              <h3 className="text-3xl font-bold mb-2">
-                {profile.customer.loyalty_points || 0}
-              </h3>
-              <p className="text-purple-100 text-sm font-medium">
-                Điểm tích lũy
-              </p>
-            </div>
-
-            <div className="bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl shadow-lg p-6 text-white">
-              <div className="flex items-center justify-between mb-4">
-                <Star className="w-10 h-10 opacity-80" />
-                <TrendingUp className="w-6 h-6 opacity-60" />
-              </div>
-              <h3 className="text-3xl font-bold mb-2">
-                {profile.customer.rating
-                  ? profile.customer.rating.toFixed(1)
-                  : "0.0"}
-                <span className="text-xl ml-1">⭐</span>
-              </h3>
-              <p className="text-yellow-100 text-sm font-medium">
-                Đánh giá trung bình
+              <h3 className="text-2xl font-bold mb-2">Coming soon</h3>
+              <p className="text-blue-100 text-sm font-medium">
+                Loyalty points
               </p>
             </div>
 
             {/* Additional Info Cards */}
-            <div className="md:col-span-2 lg:col-span-4 grid md:grid-cols-2 gap-6 mt-4">
+            <div className="md:col-span-2 lg:col-span-3 grid md:grid-cols-2 gap-6 mt-4">
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                  <Star className="w-5 h-5 text-yellow-500" />
-                  Thành tích
+                  <Award className="w-5 h-5 text-blue-500" />
+                  Achievements
                 </h3>
-                <div className="space-y-3">
-                  {profile.customer.total_bookings >= 10 && (
-                    <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                      <Award className="w-8 h-8 text-blue-600" />
-                      <div>
-                        <p className="font-semibold text-gray-800">
-                          Khách hàng thân thiết
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          Đã thuê xe hơn 10 lần
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  {profile.customer.total_spent >= 10000000 && (
-                    <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                      <Award className="w-8 h-8 text-green-600" />
-                      <div>
-                        <p className="font-semibold text-gray-800">
-                          VIP Member
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          Chi tiêu trên 10 triệu
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  {(profile.customer.rating || 0) >= 4.5 && (
-                    <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg">
-                      <Award className="w-8 h-8 text-yellow-600" />
-                      <div>
-                        <p className="font-semibold text-gray-800">
-                          Khách hàng uy tín
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          Đánh giá cao từ tài xế
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  {profile.customer.total_bookings === 0 && (
-                    <p className="text-gray-500 text-sm py-4 text-center">
-                      Hoàn thành các chuyến đi để nhận thành tích
-                    </p>
-                  )}
+                <div className="rounded-xl border border-blue-200 bg-blue-50 p-6 text-center">
+                  <Hourglass className="w-8 h-8 text-blue-600 mx-auto mb-3" />
+                  <p className="font-semibold text-blue-700">Coming soon</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Achievement system is being updated.
+                  </p>
                 </div>
               </div>
 
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-blue-600" />
-                  Lịch sử hoạt động
+                  Activity history
                 </h3>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600 text-sm">Số lượt thuê</span>
+                    <span className="text-gray-600 text-sm">Total bookings</span>
                     <span className="font-bold text-gray-900">
-                      {profile.customer.total_bookings || 0} lần
+                      {stats.totalBookings || profile.customer.total_bookings || 0} trips
                     </span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600 text-sm">Chi tiêu TB</span>
+                    <span className="text-gray-600 text-sm">Average spending</span>
                     <span className="font-bold text-gray-900">
-                      {profile.customer.total_bookings > 0
+                      {(stats.totalBookings || profile.customer.total_bookings) > 0
                         ? formatCurrency(
-                            profile.customer.total_spent /
-                              profile.customer.total_bookings,
-                          )
+                          (stats.totalSpent || profile.customer.total_spent) /
+                          (stats.totalBookings || profile.customer.total_bookings),
+                        )
                         : formatCurrency(0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600 text-sm">Điểm tích lũy</span>
-                    <span className="font-bold text-gray-900">
-                      {profile.customer.loyalty_points || 0} điểm
-                    </span>
+                    <span className="text-gray-600 text-sm">Loyalty points</span>
+                    <span className="font-bold text-blue-600">Coming soon</span>
                   </div>
                 </div>
               </div>

@@ -51,7 +51,7 @@ const ExtendBooking = () => {
         console.error("Failed to load booked dates:", err);
       }
     } catch (err) {
-      setError(err.message || "Không thể tải thông tin đơn đặt xe");
+      setError(err.message || "Unable to load booking details");
     } finally {
       setLoading(false);
     }
@@ -90,7 +90,8 @@ const ExtendBooking = () => {
     const days = calculateExtensionDays();
     if (days <= 0 || !booking) return 0;
     const dailyRate = booking.vehicle?.daily_rate || 0;
-    let cost = days * dailyRate;
+    const surchargeRate = dailyRate * 1.1; // Extension fee: +10% per day
+    let cost = days * surchargeRate;
 
     // Add driver fee if with_driver
     if (booking.rental_type === "with_driver") {
@@ -106,7 +107,7 @@ const ExtendBooking = () => {
     setError("");
 
     if (!newEndDate) {
-      setError("Vui lòng chọn ngày kết thúc mới");
+      setError("Please select a new end date");
       return;
     }
 
@@ -116,13 +117,13 @@ const ExtendBooking = () => {
     newEnd.setHours(0, 0, 0, 0);
 
     if (newEnd <= currentEnd) {
-      setError("Ngày kết thúc mới phải sau ngày kết thúc hiện tại");
+      setError("New end date must be after current end date");
       return;
     }
 
     const extensionDays = calculateExtensionDays();
     if (extensionDays > 30) {
-      setError("Không thể gia hạn quá 30 ngày một lần");
+      setError("You cannot extend more than 30 days at once");
       return;
     }
 
@@ -132,11 +133,11 @@ const ExtendBooking = () => {
 
       const response = await requestExtension(booking._id, formattedDate);
 
-      toast.success("Yêu cầu gia hạn đã được gửi thành công!");
-      navigate("/my-extensions");
+      toast.success("Extension request has been sent successfully!");
+      navigate("/my-bookings");
     } catch (err) {
-      setError(err.message || "Không thể gửi yêu cầu gia hạn");
-      toast.error(err.message || "Gửi yêu cầu thất bại");
+      setError(err.message || "Unable to submit extension request");
+      toast.error(err.message || "Failed to submit request");
     } finally {
       setSubmitting(false);
     }
@@ -175,7 +176,7 @@ const ExtendBooking = () => {
             onClick={() => navigate("/my-bookings")}
             className="text-blue-600 hover:text-blue-700 underline"
           >
-            Quay lại danh sách đơn hàng
+            Back to list for your booking
           </button>
         </div>
       </div>
@@ -193,40 +194,40 @@ const ExtendBooking = () => {
           <div className="p-2 bg-white rounded-full shadow-sm group-hover:bg-blue-50 transition-colors">
             <ChevronLeft size={20} />
           </div>
-          Quay lại
+          Go back
         </button>
 
         <div className="bg-white rounded-3xl shadow-lg p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">
-            Yêu cầu gia hạn thuê xe
+            Request booking extension
           </h1>
 
           {/* Current Booking Info */}
           <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 mb-8">
             <h2 className="text-lg font-bold text-gray-900 mb-4">
-              Thông tin đơn hiện tại
+              Current booking information
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-gray-600">Xe</p>
+                <p className="text-sm text-gray-600">Vehicle</p>
                 <p className="font-bold text-gray-900">
                   {booking?.vehicle?.brand} {booking?.vehicle?.model}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Biển số</p>
+                <p className="text-sm text-gray-600">License plate</p>
                 <p className="font-bold text-gray-900">
                   {booking?.vehicle?.license_plate}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Ngày bắt đầu</p>
+                <p className="text-sm text-gray-600">Start date</p>
                 <p className="font-bold text-gray-900">
                   {formatDate(booking?.start_date)}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Ngày kết thúc hiện tại</p>
+                <p className="text-sm text-gray-600">Current end date</p>
                 <p className="font-bold text-blue-600">
                   {formatDate(booking?.end_date)}
                 </p>
@@ -247,7 +248,7 @@ const ExtendBooking = () => {
             {/* Date Picker */}
             <div className="mb-6">
               <label className="block text-sm font-bold text-gray-700 mb-3">
-                Chọn ngày kết thúc mới
+                Select new end date
               </label>
               <DatePicker
                 selected={newEndDate}
@@ -260,54 +261,59 @@ const ExtendBooking = () => {
                 } // Max 30 days
                 filterDate={(date) => !isDateBooked(date)}
                 dateFormat="dd/MM/yyyy"
-                placeholderText="Chọn ngày..."
+                placeholderText="Select date..."
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
                 calendarClassName="shadow-xl"
               />
               <p className="text-xs text-gray-500 mt-2">
-                * Có thể gia hạn tối đa 30 ngày. Những ngày bị chặn là ngày xe
-                đã được đặt bởi khách khác.
+                * You can extend up to 30 days. Blocked dates are already
+                booked by other customers.
               </p>
             </div>
 
             {/* Extension Summary */}
             {newEndDate && calculateExtensionDays() > 0 && (
-              <div className="bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 rounded-2xl p-6 mb-6">
+              <div className="bg-gradient-to-br from-blue-50 to-gray-100 border-2 border-blue-200 rounded-2xl p-6 mb-6">
                 <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <Clock size={20} className="text-purple-600" />
-                  Tóm tắt gia hạn
+                  <Clock size={20} className="text-blue-600" />
+                  Extension summary
                 </h3>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Số ngày gia hạn</span>
+                    <span className="text-gray-600">Extension days</span>
                     <span className="font-bold text-gray-900">
-                      {calculateExtensionDays()} ngày
+                      {calculateExtensionDays()} days
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Ngày kết thúc cũ</span>
+                    <span className="text-gray-600">Current end date</span>
                     <span className="text-gray-900">
                       {formatDate(booking.end_date)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Ngày kết thúc mới</span>
-                    <span className="font-bold text-purple-600">
+                    <span className="text-gray-600">New end date</span>
+                    <span className="font-bold text-blue-600">
                       {formatDate(newEndDate)}
                     </span>
                   </div>
-                  <div className="pt-3 border-t border-purple-200 flex justify-between items-center">
+                  <div className="pt-3 border-t border-blue-200 flex justify-between items-center">
                     <span className="text-gray-900 font-bold flex items-center gap-2">
                       <DollarSign size={18} />
-                      Chi phí gia hạn (ước tính)
+                      Estimated extension cost
                     </span>
-                    <span className="text-2xl font-bold text-purple-600">
+                    <span className="text-2xl font-bold text-blue-600">
                       {formatCurrency(calculateExtensionCost())}
                     </span>
                   </div>
                   {booking.rental_type === "with_driver" && (
                     <p className="text-xs text-gray-600 italic">
-                      * Bao gồm phí tài xế (500k/ngày)
+                      * Includes extension surcharge (+10%/day) and driver fee (500k/day)
+                    </p>
+                  )}
+                  {booking.rental_type !== "with_driver" && (
+                    <p className="text-xs text-gray-600 italic">
+                      * Includes extension surcharge (+10%/day)
                     </p>
                   )}
                 </div>
@@ -322,16 +328,16 @@ const ExtendBooking = () => {
                 disabled={submitting}
                 className="flex-1 bg-gray-100 text-gray-700 py-4 rounded-xl font-bold hover:bg-gray-200 transition-all disabled:opacity-50"
               >
-                Hủy
+                Cancel
               </button>
               <button
                 type="submit"
                 disabled={
                   submitting || !newEndDate || calculateExtensionDays() <= 0
                 }
-                className="flex-1 bg-purple-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-purple-200 hover:bg-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? "Đang gửi..." : "Gửi yêu cầu gia hạn"}
+                {submitting ? "Submitting..." : "Submitting an extension request"}
               </button>
             </div>
           </form>

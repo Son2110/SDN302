@@ -48,9 +48,9 @@ export const requestExtension = async (req, res) => {
     const diffTime = Math.abs(requestedEndDate - currentEndDate);
     const daysExtended = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    // 4. Tính toán tiền phát sinh (additional_amount) với phí tăng thêm 20%
+    // 4. Tính toán tiền phát sinh (additional_amount) với phí tăng thêm 10%
     let dailyRate = booking.vehicle.daily_rate;
-    let surchargeRate = dailyRate * 1.2; // Tăng 20% cho việc gia hạn
+    let surchargeRate = dailyRate * 1.1; // Tăng 10% cho việc gia hạn
     let additionalAmount = daysExtended * surchargeRate;
 
     if (booking.rental_type === "with_driver") {
@@ -192,9 +192,8 @@ export const approveExtension = async (req, res) => {
       await sendNotification({
         recipientId: booking.customer.user,
         title: "Gia hạn thành công",
-        message: `Yêu cầu gia hạn xe ${
-          booking.vehicle?.license_plate || ""
-        } đến ${new Date(extensionRequest.new_end_date).toLocaleDateString()} đã được chấp thuận.`,
+        message: `Yêu cầu gia hạn xe ${booking.vehicle?.license_plate || ""
+          } đến ${new Date(extensionRequest.new_end_date).toLocaleDateString()} đã được chấp thuận.`,
         type: "extension_status",
         relatedId: extensionRequest._id,
         relatedModel: "ExtensionRequest",
@@ -261,9 +260,8 @@ export const rejectExtension = async (req, res) => {
       await sendNotification({
         recipientId: booking.customer.user._id || booking.customer.user,
         title: "Gia hạn bị từ chối",
-        message: `Yêu cầu gia hạn xe ${
-          booking.vehicle?.license_plate || ""
-        } bị từ chối. Lý do: ${reject_reason || "Không có lý do"}`,
+        message: `Yêu cầu gia hạn xe ${booking.vehicle?.license_plate || ""
+          } bị từ chối. Lý do: ${reject_reason || "Không có lý do"}`,
         type: "extension_status",
         relatedId: extensionRequest._id,
         relatedModel: "ExtensionRequest",

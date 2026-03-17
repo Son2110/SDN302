@@ -1,12 +1,12 @@
 import FleetCard from "./FleetCard";
-// Import file data riêng của bạn ở đây
-import { fleetData } from "../../../data/fleetData"; 
+// Local fallback data.
+import { fleetData } from "../../../data/fleetData";
 
 const FleetGrid = ({ data }) => {
-  /* Ưu tiên dùng 'data' nhận từ cha (dữ liệu đã qua bộ lọc). 
-     Nếu không có (ví dụ trang chủ hiện tất cả xe), thì dùng 'fleetData' gốc.
+  /* Prefer parent-provided data (already filtered).
+    If absent (for example, homepage), use fallback fleetData.
   */
-  const displayData = data || fleetData; 
+  const displayData = data || fleetData;
 
   return (
     <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -14,17 +14,17 @@ const FleetGrid = ({ data }) => {
         <FleetCard key={car.id} car={car} />
       ))}
 
-      {/* Hiển thị thông báo nếu bộ lọc không khớp với xe nào */}
+      {/* Show message if no vehicles match filters */}
       {displayData.length === 0 && (
         <div className="col-span-full py-20 text-center">
           <p className="text-gray-400 font-medium">
-            Không tìm thấy xe phù hợp với tiêu chí của bạn.
+            No vehicles match your selected criteria.
           </p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="mt-4 text-blue-600 text-sm font-bold underline"
           >
-            Thiết lập lại bộ lọc
+            Reset filters
           </button>
         </div>
       )}

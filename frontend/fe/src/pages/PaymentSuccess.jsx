@@ -11,6 +11,7 @@ import {
   MapPin,
   CreditCard,
   FileText,
+  Lightbulb,
 } from "lucide-react";
 import * as paymentService from "../services/paymentService";
 import { getBookingById } from "../services/bookingApi";
@@ -51,10 +52,10 @@ const PaymentSuccess = () => {
       const response = await getBookingById(bookingId);
       setBooking(response.data);
 
-      // Nếu booking đã confirmed (từ QR payment), tạo mock payment object để hiển thị success
+      // If booking is confirmed from QR payment, create a temporary payment object.
       if (response.data.status === "confirmed" && paymentType === "deposit") {
         setPayment({
-          _id: response.data._id, // Dùng booking ID làm payment ID tạm
+          _id: response.data._id, // Use booking ID as a temporary payment ID
           status: "completed",
           payment_type: "deposit",
           amount: response.data.deposit_amount,
@@ -68,7 +69,7 @@ const PaymentSuccess = () => {
         paymentType === "final"
       ) {
         setPayment({
-          _id: response.data._id, // Dùng booking ID làm payment ID tạm
+          _id: response.data._id, // Use booking ID as a temporary payment ID
           status: "completed",
           payment_type: "rental_fee",
           amount: response.data.final_amount,
@@ -81,7 +82,7 @@ const PaymentSuccess = () => {
 
       setLoading(false);
     } catch (err) {
-      console.error("❌ [PaymentSuccess] Error loading booking:", err);
+      console.error("[PaymentSuccess] Error loading booking:", err);
       setLoading(false);
     }
   };
@@ -105,7 +106,7 @@ const PaymentSuccess = () => {
         await loadPaymentById(vnpTxnRef);
       }
     } catch (err) {
-      console.error("❌ [PaymentSuccess] Error verifying payment:", err);
+      console.error("[PaymentSuccess] Error verifying payment:", err);
       // Still try to load payment
       if (vnpTxnRef) {
         await loadPaymentById(vnpTxnRef);
@@ -124,19 +125,19 @@ const PaymentSuccess = () => {
           typeof paymentData.payment.booking === "string"
             ? paymentData.payment.booking
             : paymentData.payment.booking._id ||
-              paymentData.payment.booking.toString();
+            paymentData.payment.booking.toString();
         const response = await getBookingById(bookingId);
         setBooking(response.data);
       }
 
       setLoading(false);
 
-      // Nếu payment vẫn pending, poll một vài lần để đợi webhook/return handler update
+      // If payment is still pending, poll briefly for webhook/handler updates.
       if (paymentData.payment.status === "pending" && !error) {
         pollPaymentStatus(id);
       }
     } catch (err) {
-      console.error("❌ [PaymentSuccess] Error loading payment:", err);
+      console.error("[PaymentSuccess] Error loading payment:", err);
       setLoading(false);
     }
   };
@@ -153,19 +154,19 @@ const PaymentSuccess = () => {
           typeof paymentData.payment.booking === "string"
             ? paymentData.payment.booking
             : paymentData.payment.booking._id ||
-              paymentData.payment.booking.toString();
+            paymentData.payment.booking.toString();
         const response = await getBookingById(bookingId);
         setBooking(response.data);
       }
 
       setLoading(false);
 
-      // Nếu payment vẫn pending, poll một vài lần để đợi webhook/return handler update
+      // If payment is still pending, poll briefly for webhook/handler updates.
       if (paymentData.payment.status === "pending" && !error) {
         pollPaymentStatus();
       }
     } catch (err) {
-      console.error("❌ [PaymentSuccess] Error loading payment:", err);
+      console.error("[PaymentSuccess] Error loading payment:", err);
       setLoading(false);
     }
   };
@@ -178,18 +179,18 @@ const PaymentSuccess = () => {
           ? bookingId
           : bookingId?._id || bookingId?.toString() || bookingId;
       if (!id) {
-        console.error("❌ [PaymentSuccess] Invalid booking ID:", bookingId);
+        console.error("[PaymentSuccess] Invalid booking ID:", bookingId);
         return;
       }
       const response = await getBookingById(id);
       setBooking(response.data);
     } catch (err) {
-      console.error("❌ [PaymentSuccess] Error loading booking:", err);
+      console.error("[PaymentSuccess] Error loading booking:", err);
     }
   };
 
   const pollPaymentStatus = async (id = paymentId) => {
-    // Poll payment status tối đa 5 lần (10 giây)
+    // Poll payment status up to 5 times (10 seconds).
     let attempts = 0;
     const maxAttempts = 5;
     const interval = setInterval(async () => {
@@ -201,25 +202,25 @@ const PaymentSuccess = () => {
           const paymentData = await paymentService.getPaymentById(id);
           setPayment(paymentData.payment);
 
-          // Reload booking để lấy status mới nhất
+          // Reload booking to get the latest status
           // Handle both cases: booking can be ObjectId string or populated object
           if (paymentData.payment.booking) {
             const bookingId =
               typeof paymentData.payment.booking === "string"
                 ? paymentData.payment.booking
                 : paymentData.payment.booking._id ||
-                  paymentData.payment.booking.toString();
+                paymentData.payment.booking.toString();
             await loadBooking(bookingId);
           }
 
           clearInterval(interval);
         } else if (attempts >= maxAttempts) {
-          // Sau 5 lần vẫn pending → có thể webhook chưa được gọi
-          // Giữ nguyên status pending để user biết
+          // Still pending after 5 attempts, webhook may be delayed.
+          // Keep pending status for user awareness.
           clearInterval(interval);
         }
       } catch (err) {
-        console.error("❌ [PaymentSuccess] Error polling payment status:", err);
+        console.error("[PaymentSuccess] Error polling payment status:", err);
         clearInterval(interval);
       }
     }, 2000);
@@ -228,37 +229,37 @@ const PaymentSuccess = () => {
   const getBookingStatusBadge = (status) => {
     const statusConfig = {
       pending: {
-        label: "Chờ xác nhận",
-        color: "bg-yellow-100 text-yellow-700",
+        label: "Pending",
+        color: "bg-red-100 text-red-700",
         icon: Clock,
       },
       confirmed: {
-        label: "Đã xác nhận",
+        label: "Confirmed",
         color: "bg-blue-100 text-blue-700",
         icon: CheckCircle,
       },
       vehicle_delivered: {
-        label: "Đã bàn giao",
-        color: "bg-green-100 text-green-700",
+        label: "Delivered",
+        color: "bg-blue-100 text-blue-700",
         icon: CheckCircle,
       },
       in_progress: {
-        label: "Đang thuê",
-        color: "bg-green-100 text-green-700",
+        label: "In progress",
+        color: "bg-blue-100 text-blue-700",
         icon: CheckCircle,
       },
       vehicle_returned: {
-        label: "Đã trả xe",
+        label: "Vehicle returned",
         color: "bg-gray-100 text-gray-700",
         icon: CheckCircle,
       },
       completed: {
-        label: "Hoàn thành",
-        color: "bg-green-100 text-green-700",
+        label: "Completed",
+        color: "bg-blue-100 text-blue-700",
         icon: CheckCircle,
       },
       cancelled: {
-        label: "Đã hủy",
+        label: "Cancelled",
         color: "bg-red-100 text-red-700",
         icon: XCircle,
       },
@@ -300,10 +301,10 @@ const PaymentSuccess = () => {
       <div className="min-h-screen bg-gray-50 pt-32 pb-20 flex items-center justify-center">
         <div className="text-center">
           <div className="text-gray-500 text-lg mb-2">
-            Đang xác nhận thanh toán...
+            Verifying payment...
           </div>
           <div className="text-sm text-gray-400">
-            Vui lòng đợi trong giây lát
+            Please wait a moment
           </div>
         </div>
       </div>
@@ -321,40 +322,37 @@ const PaymentSuccess = () => {
     payment?.payment_type === "rental_fee" || paymentType === "final";
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-32 pb-20">
+    <div className="min-h-screen bg-[#F8FAFB] pt-32 pb-20">
       <div className="max-w-3xl mx-auto px-6">
         {/* Success State */}
         {isSuccess && (
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
             {/* Success Header */}
             <div
-              className={`text-white p-8 text-center ${
-                isFinalPayment
-                  ? "bg-gradient-to-r from-purple-500 to-indigo-500"
-                  : "bg-gradient-to-r from-green-500 to-emerald-500"
-              }`}
+              className={`text-white p-8 text-center ${isFinalPayment
+                ? "bg-gradient-to-r from-[#101828] to-[#1556F5]"
+                : "bg-gradient-to-r from-[#101828] to-[#1556F5]"
+                }`}
             >
               <div className="mb-4">
                 <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto shadow-lg">
                   <CheckCircle
                     size={48}
-                    className={
-                      isFinalPayment ? "text-purple-500" : "text-green-500"
-                    }
+                    className="text-[#1556F5]"
                   />
                 </div>
               </div>
               <h1 className="text-3xl font-bold mb-2">
                 {isFinalPayment
-                  ? "Hoàn tất thanh toán!"
-                  : "Thanh toán cọc thành công!"}
+                  ? "Payment completed!"
+                  : "Payment deposit successful!"}
               </h1>
               <p className="text-white/90 text-lg">
                 {isFinalPayment
-                  ? "Đơn hàng của bạn đã hoàn thành"
+                  ? "Your booking has been completed"
                   : booking?.status === "confirmed"
-                    ? "Booking của bạn đã được xác nhận"
-                    : "Đang xử lý booking của bạn..."}
+                    ? "Your booking has been confirmed"
+                    : "Processing your booking..."}
               </p>
             </div>
 
@@ -362,7 +360,7 @@ const PaymentSuccess = () => {
               {/* Timeline - Different for Deposit vs Final */}
               <div className="mb-8">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Tiến trình
+                  Progress
                 </h2>
 
                 {isDepositPayment ? (
@@ -370,34 +368,33 @@ const PaymentSuccess = () => {
                   <div className="space-y-4">
                     <div className="flex items-start gap-4">
                       <div className="flex flex-col items-center">
-                        <div className="w-10 h-10 rounded-full bg-green-500 text-white flex items-center justify-center font-semibold">
+                        <div className="w-10 h-10 rounded-full bg-[#1556F5] text-white flex items-center justify-center font-semibold">
                           <CheckCircle size={20} />
                         </div>
-                        <div className="w-0.5 h-8 bg-green-200 mt-2"></div>
+                        <div className="w-0.5 h-8 bg-[#DCE8FF] mt-2"></div>
                       </div>
                       <div className="flex-1 pt-1">
                         <p className="font-semibold text-gray-900">
-                          Thanh toán cọc hoàn tất
+                          Deposit payment completed
                         </p>
                         <p className="text-sm text-gray-600">
-                          Đã thanh toán 30% giá trị đơn hàng
+                          30% deposit has been paid
                         </p>
                       </div>
                     </div>
                     <div className="flex items-start gap-4">
                       <div className="flex flex-col items-center">
                         <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                            booking?.status === "confirmed" ||
+                          className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${booking?.status === "confirmed" ||
                             booking?.status === "vehicle_delivered" ||
                             booking?.status === "in_progress"
-                              ? "bg-green-500 text-white"
-                              : "bg-gray-200 text-gray-500"
-                          }`}
+                            ? "bg-[#1556F5] text-white"
+                            : "bg-gray-200 text-gray-500"
+                            }`}
                         >
                           {booking?.status === "confirmed" ||
-                          booking?.status === "vehicle_delivered" ||
-                          booking?.status === "in_progress" ? (
+                            booking?.status === "vehicle_delivered" ||
+                            booking?.status === "in_progress" ? (
                             <CheckCircle size={20} />
                           ) : (
                             <Clock size={20} />
@@ -407,29 +404,28 @@ const PaymentSuccess = () => {
                       </div>
                       <div className="flex-1 pt-1">
                         <p className="font-semibold text-gray-900">
-                          Xác nhận booking
+                          Booking confirmation
                         </p>
                         <p className="text-sm text-gray-600">
                           {booking?.status === "confirmed" ||
-                          booking?.status === "vehicle_delivered" ||
-                          booking?.status === "in_progress"
-                            ? "Booking đã được xác nhận"
-                            : "Đang chờ xác nhận..."}
+                            booking?.status === "vehicle_delivered" ||
+                            booking?.status === "in_progress"
+                            ? "Booking has been confirmed"
+                            : "Awaiting confirmation..."}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-start gap-4">
                       <div className="flex flex-col items-center">
                         <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                            booking?.status === "vehicle_delivered" ||
+                          className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${booking?.status === "vehicle_delivered" ||
                             booking?.status === "in_progress"
-                              ? "bg-green-500 text-white"
-                              : "bg-gray-200 text-gray-500"
-                          }`}
+                            ? "bg-[#1556F5] text-white"
+                            : "bg-gray-200 text-gray-500"
+                            }`}
                         >
                           {booking?.status === "vehicle_delivered" ||
-                          booking?.status === "in_progress" ? (
+                            booking?.status === "in_progress" ? (
                             <CheckCircle size={20} />
                           ) : (
                             <Clock size={20} />
@@ -437,12 +433,12 @@ const PaymentSuccess = () => {
                         </div>
                       </div>
                       <div className="flex-1 pt-1">
-                        <p className="font-semibold text-gray-900">Nhận xe</p>
+                        <p className="font-semibold text-gray-900">Vehicle pickup</p>
                         <p className="text-sm text-gray-600">
                           {booking?.status === "vehicle_delivered" ||
-                          booking?.status === "in_progress"
-                            ? "Đã bàn giao xe"
-                            : "Chờ đến ngày nhận xe"}
+                            booking?.status === "in_progress"
+                            ? "Vehicle delivered"
+                            : "Waiting for pickup date"}
                         </p>
                       </div>
                     </div>
@@ -452,46 +448,46 @@ const PaymentSuccess = () => {
                   <div className="space-y-4">
                     <div className="flex items-start gap-4">
                       <div className="flex flex-col items-center">
-                        <div className="w-10 h-10 rounded-full bg-green-500 text-white flex items-center justify-center font-semibold">
+                        <div className="w-10 h-10 rounded-full bg-[#1556F5] text-white flex items-center justify-center font-semibold">
                           <CheckCircle size={20} />
                         </div>
-                        <div className="w-0.5 h-8 bg-green-200 mt-2"></div>
+                        <div className="w-0.5 h-8 bg-[#DCE8FF] mt-2"></div>
                       </div>
                       <div className="flex-1 pt-1">
-                        <p className="font-semibold text-gray-900">Đã trả xe</p>
+                        <p className="font-semibold text-gray-900">Vehicle returned</p>
                         <p className="text-sm text-gray-600">
-                          Xe đã được hoàn trả và kiểm tra
+                          Vehicle has been returned and inspected
                         </p>
                       </div>
                     </div>
                     <div className="flex items-start gap-4">
                       <div className="flex flex-col items-center">
-                        <div className="w-10 h-10 rounded-full bg-green-500 text-white flex items-center justify-center font-semibold">
+                        <div className="w-10 h-10 rounded-full bg-[#1556F5] text-white flex items-center justify-center font-semibold">
                           <CheckCircle size={20} />
                         </div>
-                        <div className="w-0.5 h-8 bg-green-200 mt-2"></div>
+                        <div className="w-0.5 h-8 bg-[#DCE8FF] mt-2"></div>
                       </div>
                       <div className="flex-1 pt-1">
                         <p className="font-semibold text-gray-900">
-                          Thanh toán hoàn tất
+                          Final payment completed
                         </p>
                         <p className="text-sm text-gray-600">
-                          Đã thanh toán toàn bộ số tiền còn lại
+                          Remaining balance has been paid in full
                         </p>
                       </div>
                     </div>
                     <div className="flex items-start gap-4">
                       <div className="flex flex-col items-center">
-                        <div className="w-10 h-10 rounded-full bg-purple-500 text-white flex items-center justify-center font-semibold">
+                        <div className="w-10 h-10 rounded-full bg-[#1556F5] text-white flex items-center justify-center font-semibold">
                           <CheckCircle size={20} />
                         </div>
                       </div>
                       <div className="flex-1 pt-1">
                         <p className="font-semibold text-gray-900">
-                          Hoàn thành đơn hàng
+                          Booking completed
                         </p>
                         <p className="text-sm text-gray-600">
-                          Chuyến đi của bạn đã kết thúc
+                          Your trip has ended
                         </p>
                       </div>
                     </div>
@@ -501,24 +497,24 @@ const PaymentSuccess = () => {
 
               {/* Booking Info Card */}
               {booking && (
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 mb-6 border border-blue-100">
+                <div className="bg-[#EEF4FF] rounded-xl p-6 mb-6 border border-[#DCE8FF]">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-bold text-lg flex items-center gap-2">
                       <Calendar size={20} />
-                      Thông tin booking
+                      Booking information
                     </h3>
                     {getBookingStatusBadge(booking.status)}
                   </div>
                   <div className="grid md:grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p className="text-gray-600 mb-1">Mã booking</p>
+                      <p className="text-gray-600 mb-1">Booking ID</p>
                       <p className="font-semibold text-gray-900">
                         {booking._id.slice(-8).toUpperCase()}
                       </p>
                     </div>
                     {booking.vehicle && (
                       <div>
-                        <p className="text-gray-600 mb-1">Xe thuê</p>
+                        <p className="text-gray-600 mb-1">Vehicle</p>
                         <p className="font-semibold text-gray-900">
                           {booking.vehicle.brand} {booking.vehicle.model}
                         </p>
@@ -526,7 +522,7 @@ const PaymentSuccess = () => {
                     )}
                     {booking.start_date && (
                       <div>
-                        <p className="text-gray-600 mb-1">Ngày nhận</p>
+                        <p className="text-gray-600 mb-1">Pickup date</p>
                         <p className="font-semibold text-gray-900">
                           {new Date(booking.start_date).toLocaleDateString(
                             "vi-VN",
@@ -536,7 +532,7 @@ const PaymentSuccess = () => {
                     )}
                     {booking.end_date && (
                       <div>
-                        <p className="text-gray-600 mb-1">Ngày trả</p>
+                        <p className="text-gray-600 mb-1">Return date</p>
                         <p className="font-semibold text-gray-900">
                           {new Date(booking.end_date).toLocaleDateString(
                             "vi-VN",
@@ -550,45 +546,45 @@ const PaymentSuccess = () => {
 
               {/* Final Payment Breakdown - Only show for final payment */}
               {isFinalPayment && booking && (
-                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 mb-6 border border-purple-200">
-                  <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-purple-900">
+                <div className="bg-[#EEF4FF] rounded-xl p-6 mb-6 border border-[#DCE8FF]">
+                  <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-[#101828]">
                     <FileText size={20} />
-                    Tổng kết thanh toán
+                    Payment summary
                   </h3>
                   <div className="space-y-3 text-sm">
-                    <div className="flex justify-between py-2 border-b border-purple-100">
-                      <span className="text-gray-700">Tổng tiền thuê xe</span>
+                    <div className="flex justify-between py-2 border-b border-[#DCE8FF]">
+                      <span className="text-gray-700">Total rental amount</span>
                       <span className="font-semibold text-gray-900">
                         {formatPrice(booking.total_amount)}
                       </span>
                     </div>
-                    <div className="flex justify-between py-2 border-b border-purple-100">
-                      <span className="text-gray-700">Đã thanh toán cọc</span>
-                      <span className="font-semibold text-green-600">
+                    <div className="flex justify-between py-2 border-b border-[#DCE8FF]">
+                      <span className="text-gray-700">Deposit paid</span>
+                      <span className="font-semibold text-[#1556F5]">
                         -{formatPrice(booking.deposit_amount)}
                       </span>
                     </div>
                     {booking.final_amount &&
                       booking.final_amount !==
-                        booking.total_amount - booking.deposit_amount && (
-                        <div className="flex justify-between py-2 border-b border-purple-100">
+                      booking.total_amount - booking.deposit_amount && (
+                        <div className="flex justify-between py-2 border-b border-[#DCE8FF]">
                           <span className="text-gray-700">
-                            Phí phát sinh (sạc pin, phạt, gia hạn...)
+                            Additional fees (charging, penalties, extension)
                           </span>
-                          <span className="font-semibold text-orange-600">
+                          <span className="font-semibold text-red-600">
                             +
                             {formatPrice(
                               booking.final_amount -
-                                (booking.total_amount - booking.deposit_amount),
+                              (booking.total_amount - booking.deposit_amount),
                             )}
                           </span>
                         </div>
                       )}
-                    <div className="flex justify-between pt-3 border-t-2 border-purple-200">
-                      <span className="font-bold text-lg text-purple-900">
-                        Đã thanh toán lúc trả xe
+                    <div className="flex justify-between pt-3 border-t-2 border-[#DCE8FF]">
+                      <span className="font-bold text-lg text-[#101828]">
+                        Paid at return
                       </span>
-                      <span className="font-bold text-2xl text-purple-600">
+                      <span className="font-bold text-2xl text-[#1556F5]">
                         {formatPrice(payment?.amount || booking.final_amount)}
                       </span>
                     </div>
@@ -601,46 +597,46 @@ const PaymentSuccess = () => {
                 <div className="bg-gray-50 rounded-xl p-6 mb-6 border border-gray-200">
                   <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
                     <CreditCard size={20} />
-                    Chi tiết thanh toán
+                    Payment details
                   </h2>
                   <div className="grid md:grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p className="text-gray-600 mb-1">Mã giao dịch</p>
+                      <p className="text-gray-600 mb-1">Transaction ID</p>
                       <p className="font-semibold text-gray-900 font-mono">
                         {payment.transaction_id ||
                           payment._id.slice(-8).toUpperCase()}
                       </p>
                     </div>
                     <div>
-                      <p className="text-gray-600 mb-1">Số tiền</p>
+                      <p className="text-gray-600 mb-1">Amount</p>
                       <p className="font-semibold text-blue-600 text-lg">
                         {formatPrice(payment.amount)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-gray-600 mb-1">Phương thức</p>
+                      <p className="text-gray-600 mb-1">Method</p>
                       <p className="font-semibold text-gray-900 capitalize">
                         {payment.payment_method}
                       </p>
                     </div>
                     <div>
-                      <p className="text-gray-600 mb-1">Loại thanh toán</p>
+                      <p className="text-gray-600 mb-1">Payment type</p>
                       <p className="font-semibold text-gray-900">
                         {payment.payment_type === "deposit"
-                          ? "Tiền cọc (30%)"
+                          ? "Deposit (30%)"
                           : payment.payment_type === "rental_fee"
-                            ? "Thanh toán cuối cùng"
+                            ? "Final Payment"
                             : payment.payment_type === "extension_fee"
-                              ? "Phí gia hạn"
+                              ? "Extension fee"
                               : payment.payment_type === "penalty"
-                                ? "Phí phạt"
+                                ? "Penalty fee"
                                 : payment.payment_type}
                       </p>
                     </div>
                     {payment.payment_date && (
                       <div className="md:col-span-2">
                         <p className="text-gray-600 mb-1">
-                          Thời gian thanh toán
+                          Payment time
                         </p>
                         <p className="font-semibold text-gray-900">
                           {new Date(payment.payment_date).toLocaleString(
@@ -654,18 +650,18 @@ const PaymentSuccess = () => {
                   {/* Remaining amount for deposit payment */}
                   {isDepositPayment && booking && (
                     <div className="mt-4 pt-4 border-t border-gray-200">
-                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                        <p className="text-sm font-semibold text-yellow-900 mb-2">
-                          💡 Số tiền còn lại cần thanh toán khi trả xe:
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <p className="text-sm font-semibold text-red-900 mb-2 flex items-center gap-2">
+                          <Lightbulb size={16} />
+                          Remaining amount to pay at return:
                         </p>
-                        <p className="text-2xl font-bold text-yellow-700">
+                        <p className="text-2xl font-bold text-red-700">
                           {formatPrice(
                             booking.total_amount - booking.deposit_amount,
                           )}
                         </p>
-                        <p className="text-xs text-yellow-700 mt-2">
-                          * Có thể phát sinh thêm phí sạc pin, phí phạt hoặc phí
-                          gia hạn (nếu có)
+                        <p className="text-xs text-red-700 mt-2">
+                          * Additional charging, penalty, or extension fees may apply.
                         </p>
                       </div>
                     </div>
@@ -675,17 +671,16 @@ const PaymentSuccess = () => {
 
               {/* Next Steps */}
               <div
-                className={`rounded-xl p-6 mb-6 border ${
-                  isFinalPayment
-                    ? "bg-purple-50 border-purple-100"
-                    : "bg-blue-50 border-blue-100"
-                }`}
+                className={`rounded-xl p-6 mb-6 border ${isFinalPayment
+                  ? "bg-[#EEF4FF] border-[#DCE8FF]"
+                  : "bg-[#EEF4FF] border-[#DCE8FF]"
+                  }`}
               >
                 <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
                   <ArrowRight size={20} />
                   {isFinalPayment
-                    ? "Cảm ơn bạn đã sử dụng dịch vụ"
-                    : "Bước tiếp theo"}
+                    ? "Thank you for using our service"
+                    : "Next steps"}
                 </h3>
 
                 {isFinalPayment ? (
@@ -694,38 +689,37 @@ const PaymentSuccess = () => {
                     <li className="flex items-start gap-2">
                       <CheckCircle
                         size={16}
-                        className="text-purple-600 shrink-0 mt-0.5"
+                        className="text-[#1556F5] shrink-0 mt-0.5"
                       />
                       <span>
-                        Đơn hàng của bạn đã hoàn thành và được lưu vào lịch sử
+                        Your booking has been completed and saved in history
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle
                         size={16}
-                        className="text-purple-600 shrink-0 mt-0.5"
+                        className="text-[#1556F5] shrink-0 mt-0.5"
                       />
                       <span>
-                        Hóa đơn chi tiết đã được gửi đến email của bạn
+                        A detailed invoice has been sent to your email
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle
                         size={16}
-                        className="text-purple-600 shrink-0 mt-0.5"
+                        className="text-[#1556F5] shrink-0 mt-0.5"
                       />
                       <span>
-                        Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ thuê xe của
-                        chúng tôi
+                        Thank you for choosing our car rental service
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle
                         size={16}
-                        className="text-purple-600 shrink-0 mt-0.5"
+                        className="text-[#1556F5] shrink-0 mt-0.5"
                       />
                       <span>
-                        Hẹn gặp lại bạn trong những chuyến đi tiếp theo!
+                        We look forward to serving you again
                       </span>
                     </li>
                   </ul>
@@ -735,39 +729,37 @@ const PaymentSuccess = () => {
                     <li className="flex items-start gap-2">
                       <CheckCircle
                         size={16}
-                        className="text-green-600 shrink-0 mt-0.5"
+                        className="text-[#1556F5] shrink-0 mt-0.5"
                       />
                       <span>
-                        Bạn sẽ nhận được email xác nhận booking trong vài phút
+                        You will receive a booking confirmation email shortly
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle
                         size={16}
-                        className="text-green-600 shrink-0 mt-0.5"
+                        className="text-[#1556F5] shrink-0 mt-0.5"
                       />
                       <span>
-                        Vui lòng đến đúng thời gian và địa điểm đã đặt để nhận
-                        xe
+                        Please arrive at your scheduled time and location for pickup
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle
                         size={16}
-                        className="text-green-600 shrink-0 mt-0.5"
+                        className="text-[#1556F5] shrink-0 mt-0.5"
                       />
                       <span>
-                        Mang theo CMND/CCCD và bằng lái xe khi đến nhận xe
+                        Bring your ID card and driver license for pickup
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle
                         size={16}
-                        className="text-green-600 shrink-0 mt-0.5"
+                        className="text-[#1556F5] shrink-0 mt-0.5"
                       />
                       <span>
-                        Số tiền còn lại sẽ thanh toán khi trả xe hoặc khi kết
-                        thúc chuyến đi
+                        The remaining amount is paid at return or at trip end
                       </span>
                     </li>
                   </ul>
@@ -781,10 +773,10 @@ const PaymentSuccess = () => {
                   <>
                     <Link
                       to="/fleet"
-                      className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                      className="px-6 py-3 bg-[#1556F5] text-white rounded-lg font-semibold hover:bg-[#0F3FCC] transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
                     >
                       <ArrowRight size={20} />
-                      Đặt xe lần nữa
+                      Book again
                     </Link>
                     {getBookingId(payment?.booking) && (
                       <Link
@@ -792,7 +784,7 @@ const PaymentSuccess = () => {
                         className="px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center gap-2"
                       >
                         <FileText size={20} />
-                        Xem chi tiết đơn
+                        View booking details
                       </Link>
                     )}
                     <button
@@ -800,7 +792,7 @@ const PaymentSuccess = () => {
                       className="px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center gap-2"
                     >
                       <Download size={20} />
-                      In hóa đơn
+                      Print invoice
                     </button>
                   </>
                 ) : (
@@ -812,21 +804,21 @@ const PaymentSuccess = () => {
                         className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
                       >
                         <FileText size={20} />
-                        Xem chi tiết booking
+                        View booking details
                       </Link>
                     )}
                     <Link
                       to="/my-bookings"
                       className="px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center gap-2"
                     >
-                      Đơn hàng của tôi
+                      My bookings
                     </Link>
                     <button
                       onClick={() => window.print()}
                       className="px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center gap-2"
                     >
                       <Download size={20} />
-                      In hóa đơn
+                      Print invoice
                     </button>
                   </>
                 )}
@@ -841,18 +833,17 @@ const PaymentSuccess = () => {
             <div className="mb-6">
               <Clock
                 size={64}
-                className="mx-auto text-yellow-500 animate-pulse"
+                className="mx-auto text-[#1556F5] animate-pulse"
               />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              Đang xử lý thanh toán
+              Payment is being processed
             </h1>
             <p className="text-gray-600 mb-6">
-              Vui lòng đợi trong giây lát, chúng tôi đang xác nhận giao dịch của
-              bạn...
+              Please wait while we verify your transaction...
             </p>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
-              <p>Nếu thanh toán đã hoàn tất, trang này sẽ tự động cập nhật.</p>
+            <div className="bg-[#EEF4FF] border border-[#DCE8FF] rounded-lg p-4 text-sm text-[#101828]">
+              <p>If payment is complete, this page will update automatically.</p>
             </div>
           </div>
         )}
@@ -866,11 +857,11 @@ const PaymentSuccess = () => {
                   <XCircle size={48} className="text-red-500" />
                 </div>
               </div>
-              <h1 className="text-3xl font-bold mb-2">Thanh toán thất bại</h1>
+              <h1 className="text-3xl font-bold mb-2">Payment failed</h1>
               <p className="text-red-50 text-lg">
                 {payment?.status === "failed"
-                  ? "Giao dịch không thành công. Vui lòng thử lại."
-                  : "Không thể xác nhận trạng thái thanh toán."}
+                  ? "Transaction failed. Please try again."
+                  : "Unable to verify payment status."}
               </p>
             </div>
 
@@ -878,24 +869,24 @@ const PaymentSuccess = () => {
               {payment && (
                 <div className="bg-gray-50 rounded-xl p-6 mb-6 border border-gray-200">
                   <h2 className="font-bold text-lg mb-4">
-                    Thông tin giao dịch
+                    Transaction information
                   </h2>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Mã giao dịch:</span>
+                      <span className="text-gray-600">Transaction ID:</span>
                       <span className="font-semibold font-mono">
                         {payment.transaction_id ||
                           payment._id.slice(-8).toUpperCase()}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Số tiền:</span>
+                      <span className="text-gray-600">Amount:</span>
                       <span className="font-semibold">
                         {formatPrice(payment.amount)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Phương thức:</span>
+                      <span className="text-gray-600">Method:</span>
                       <span className="font-semibold capitalize">
                         {payment.payment_method}
                       </span>
@@ -906,13 +897,13 @@ const PaymentSuccess = () => {
 
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
                 <p className="text-sm text-red-800">
-                  <strong>Lý do có thể:</strong>
+                  <strong>Possible reasons:</strong>
                 </p>
                 <ul className="list-disc list-inside text-sm text-red-700 mt-2 space-y-1">
-                  <li>Số dư tài khoản không đủ</li>
-                  <li>Thông tin thẻ không chính xác</li>
-                  <li>Giao dịch bị từ chối bởi ngân hàng</li>
-                  <li>Kết nối mạng không ổn định</li>
+                  <li>Insufficient account balance</li>
+                  <li>Incorrect card information</li>
+                  <li>Transaction rejected by bank</li>
+                  <li>Unstable network connection</li>
                 </ul>
               </div>
 
@@ -924,13 +915,13 @@ const PaymentSuccess = () => {
                       className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
                     >
                       <CreditCard size={20} />
-                      Thử lại thanh toán
+                      Try payment again
                     </Link>
                     <Link
                       to={`/bookings/${getBookingId(payment?.booking)}`}
                       className="px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center gap-2"
                     >
-                      Quay lại booking
+                      Back to booking
                     </Link>
                   </>
                 )}

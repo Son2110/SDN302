@@ -17,12 +17,12 @@ const MyBookings = () => {
     });
 
     const tabs = [
-        { key: "all", label: "Tất cả", count: 0 },
-        { key: "pending", label: "Chờ xác nhận", count: 0 },
-        { key: "confirmed", label: "Đã xác nhận", count: 0 },
-        { key: "in_progress", label: "Đang thuê", count: 0 },
-        { key: "completed", label: "Hoàn thành", count: 0 },
-        { key: "cancelled", label: "Đã hủy", count: 0 },
+        { key: "all", label: "All", count: 0 },
+        { key: "pending", label: "Pending", count: 0 },
+        { key: "confirmed", label: "Confirmed", count: 0 },
+        { key: "in_progress", label: "In progress", count: 0 },
+        { key: "completed", label: "Completed", count: 0 },
+        { key: "cancelled", label: "Cancelled", count: 0 },
     ];
 
     useEffect(() => {
@@ -54,7 +54,7 @@ const MyBookings = () => {
                 total: response.total || 0,
             });
         } catch (err) {
-            setError(err.message || "Không thể tải danh sách đơn đặt xe");
+            setError(err.message || "Unable to load bookings");
         } finally {
             setLoading(false);
         }
@@ -62,12 +62,12 @@ const MyBookings = () => {
 
     const getStatusBadge = (status) => {
         const statusConfig = {
-            pending: { label: "Chờ xác nhận", color: "bg-yellow-50 text-yellow-600 border-yellow-200" },
-            confirmed: { label: "Đã xác nhận", color: "bg-blue-50 text-blue-600 border-blue-200" },
-            in_progress: { label: "Đang thuê", color: "bg-green-50 text-green-600 border-green-200" },
-            vehicle_returned: { label: "Đã trả xe", color: "bg-purple-50 text-purple-600 border-purple-200" },
-            completed: { label: "Hoàn thành", color: "bg-gray-50 text-gray-600 border-gray-200" },
-            cancelled: { label: "Đã hủy", color: "bg-red-50 text-red-600 border-red-200" },
+            pending: { label: "Pending", color: "bg-blue-50 text-blue-600 border-blue-200" },
+            confirmed: { label: "Confirmed", color: "bg-blue-50 text-blue-600 border-blue-200" },
+            in_progress: { label: "In progress", color: "bg-blue-50 text-blue-600 border-blue-200" },
+            vehicle_returned: { label: "Vehicle returned", color: "bg-blue-50 text-blue-600 border-blue-200" },
+            completed: { label: "Completed", color: "bg-gray-50 text-gray-600 border-gray-200" },
+            cancelled: { label: "Cancelled", color: "bg-red-50 text-red-600 border-red-200" },
         };
 
         const config = statusConfig[status] || { label: status, color: "bg-gray-50 text-gray-600" };
@@ -93,13 +93,19 @@ const MyBookings = () => {
         }).format(amount);
     };
 
+    const handleActionClick = (e, path) => {
+        e.preventDefault();
+        e.stopPropagation();
+        navigate(path);
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 pt-32 pb-20">
             <div className="max-w-7xl mx-auto px-6">
                 {/* Header */}
                 <div className="mb-8">
-                    <h1 className="text-4xl font-bold text-gray-900">Đơn đặt xe của tôi</h1>
-                    <p className="text-gray-500 mt-2">Quản lý và theo dõi tất cả các đơn thuê xe của bạn</p>
+                    <h1 className="text-4xl font-bold text-gray-900">My bookings</h1>
+                    <p className="text-gray-500 mt-2">Manage and track all your rental bookings</p>
                 </div>
 
                 {/* Tabs */}
@@ -139,13 +145,13 @@ const MyBookings = () => {
                     // Empty State
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
                         <Car className="mx-auto mb-4 text-gray-300" size={64} />
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">Chưa có đơn đặt xe</h3>
-                        <p className="text-gray-500 mb-6">Bắt đầu khám phá và thuê xe điện ngay hôm nay!</p>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">No bookings yet</h3>
+                        <p className="text-gray-500 mb-6">Start exploring and book an electric vehicle today.</p>
                         <Link
                             to="/fleet"
                             className="inline-block bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all"
                         >
-                            Xem danh sách xe
+                            Browse fleet
                         </Link>
                     </div>
                 ) : (
@@ -181,7 +187,7 @@ const MyBookings = () => {
                                                     {booking.vehicle?.brand} {booking.vehicle?.model}
                                                 </h3>
                                                 <p className="text-sm text-gray-500">
-                                                    Mã đơn: <span className="font-mono font-semibold">{booking._id?.slice(-8)}</span>
+                                                    Booking ID: <span className="font-mono font-semibold">{booking._id?.slice(-8)}</span>
                                                 </p>
                                             </div>
                                             {getStatusBadge(booking.status)}
@@ -196,11 +202,11 @@ const MyBookings = () => {
                                                 </span>
                                             </div>
                                             <div className="flex items-start gap-2 text-sm text-gray-600">
-                                                <DollarSign size={16} className="text-green-500 mt-0.5" />
+                                                <DollarSign size={16} className="text-blue-500 mt-0.5" />
                                                 <div>
                                                     <span className="font-bold text-gray-900 block">{formatCurrency(booking.total_amount)}</span>
                                                     {booking.rental_type === "with_driver" && (
-                                                        <span className="text-xs text-gray-500">(Bao gồm tài xế)</span>
+                                                        <span className="text-xs text-gray-500">(Driver included)</span>
                                                     )}
                                                 </div>
                                             </div>
@@ -211,7 +217,7 @@ const MyBookings = () => {
                                             <div className="flex items-center gap-2 text-sm text-gray-600">
                                                 <Clock size={16} className="text-gray-400" />
                                                 <span>
-                                                    {booking.rental_type === "self_drive" ? "Tự lái" : "Có tài xế"}
+                                                    {booking.rental_type === "self_drive" ? "Self-drive" : "With driver"}
                                                 </span>
                                             </div>
                                         </div>
@@ -219,18 +225,35 @@ const MyBookings = () => {
                                         {/* Action Buttons Based on Status */}
                                         <div className="flex gap-3">
                                             {booking.status === "pending" && (
-                                                <button className="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-all">
-                                                    Thanh toán cọc
+                                                <button
+                                                    onClick={(e) => handleActionClick(e, `/payment/deposit/${booking._id}`)}
+                                                    className="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-all"
+                                                >
+                                                    Deposit payment
                                                 </button>
                                             )}
                                             {booking.status === "confirmed" && (
-                                                <button className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-200 transition-all">
-                                                    Xem chi tiết
+                                                <button
+                                                    onClick={(e) => handleActionClick(e, `/bookings/${booking._id}`)}
+                                                    className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-200 transition-all"
+                                                >
+                                                    View details
+                                                </button>
+                                            )}
+                                            {booking.status === "confirmed" && (
+                                                <button
+                                                    onClick={(e) => handleActionClick(e, `/bookings/${booking._id}/extend`)}
+                                                    className="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-all"
+                                                >
+                                                    Extend booking
                                                 </button>
                                             )}
                                             {booking.status === "vehicle_returned" && (
-                                                <button className="px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-lg hover:bg-green-700 transition-all">
-                                                    Thanh toán còn lại
+                                                <button
+                                                    onClick={(e) => handleActionClick(e, `/payment/final/${booking._id}`)}
+                                                    className="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-all"
+                                                >
+                                                    Remaining payment
                                                 </button>
                                             )}
                                         </div>
@@ -252,17 +275,17 @@ const MyBookings = () => {
                             disabled={pagination.page === 1}
                             className="px-4 py-2 rounded-lg font-bold bg-white border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:border-blue-600 transition-all"
                         >
-                            Trước
+                            Previous
                         </button>
                         <span className="px-4 py-2 text-sm text-gray-600">
-                            Trang {pagination.page} / {pagination.totalPages}
+                            Page {pagination.page} / {pagination.totalPages}
                         </span>
                         <button
                             onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
                             disabled={pagination.page === pagination.totalPages}
                             className="px-4 py-2 rounded-lg font-bold bg-white border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:border-blue-600 transition-all"
                         >
-                            Tiếp
+                            Next
                         </button>
                     </div>
                 )}

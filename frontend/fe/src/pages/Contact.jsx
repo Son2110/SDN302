@@ -15,13 +15,13 @@ const Contact = () => {
     const contactInfo = [
         {
             icon: MapPin,
-            title: "Địa chỉ",
-            content: "123 Võ Văn Ngân, Phường Linh Chiểu, TP. Thủ Đức, TP.HCM",
+            title: "Address",
+            content: "123 Vo Van Ngan, Linh Chieu Ward, City. Thu Duc, Ho Chi Minh City",
             color: "text-red-600"
         },
         {
             icon: Phone,
-            title: "Điện thoại",
+            title: "Phone",
             content: "(028) 1234 5678",
             subContent: "Hotline: 1900-xxxx",
             color: "text-green-600"
@@ -35,9 +35,9 @@ const Contact = () => {
         },
         {
             icon: Clock,
-            title: "Giờ làm việc",
-            content: "Thứ 2 - Thứ 7: 8:00 - 20:00",
-            subContent: "Chủ nhật: 9:00 - 18:00",
+            title: "Business hours",
+            content: "Monday - Saturday: 8:00 - 20:00",
+            subContent: "Sunday: 9:00 - 18:00",
             color: "text-purple-600"
         }
     ];
@@ -79,10 +79,10 @@ const Contact = () => {
                 <div className="absolute inset-0 bg-black/20"></div>
                 <div className="relative max-w-7xl mx-auto px-6 text-center">
                     <h1 className="text-5xl md:text-6xl font-bold mb-6">
-                        Liên Hệ Với Chúng Tôi
+                        Contact Us
                     </h1>
                     <p className="text-xl md:text-2xl text-blue-100 max-w-3xl mx-auto">
-                        Chúng tôi luôn sẵn sàng hỗ trợ bạn. Hãy liên hệ để được tư vấn và đặt xe ngay hôm nay!
+                        We are always ready to help. Reach out for consultation and booking support.
                     </p>
                 </div>
             </section>
@@ -123,18 +123,18 @@ const Contact = () => {
                         {/* Contact Form */}
                         <div>
                             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-                                Gửi tin nhắn cho chúng tôi
+                                Send us a message
                             </h2>
                             <p className="text-gray-600 mb-8">
-                                Điền thông tin vào form bên dưới và chúng tôi sẽ phản hồi trong vòng 24 giờ
+                                Fill in the form below and we will reply within 24 hours.
                             </p>
 
                             {submitted && (
                                 <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 flex items-center gap-3">
                                     <CheckCircle className="text-green-600" size={24} />
                                     <div>
-                                        <p className="font-bold text-green-900">Gửi thành công!</p>
-                                        <p className="text-sm text-green-700">Chúng tôi sẽ liên hệ lại với bạn sớm nhất.</p>
+                                        <p className="font-bold text-green-900">Sent successfully!</p>
+                                        <p className="text-sm text-green-700">We will contact you as soon as possible.</p>
                                     </div>
                                 </div>
                             )}
@@ -143,7 +143,7 @@ const Contact = () => {
                                 <div className="grid md:grid-cols-2 gap-6">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-700 mb-2">
-                                            Họ và tên <span className="text-red-500">*</span>
+                                            Full name <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="text"
@@ -152,7 +152,7 @@ const Contact = () => {
                                             onChange={handleChange}
                                             required
                                             className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                                            placeholder="Nguyễn Văn A"
+                                            placeholder="Nguyen Van A"
                                         />
                                     </div>
                                     <div>
@@ -174,7 +174,7 @@ const Contact = () => {
                                 <div className="grid md:grid-cols-2 gap-6">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-700 mb-2">
-                                            Số điện thoại <span className="text-red-500">*</span>
+                                            Phone number <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="tel"
@@ -188,7 +188,7 @@ const Contact = () => {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-bold text-gray-700 mb-2">
-                                            Chủ đề <span className="text-red-500">*</span>
+                                            Subject <span className="text-red-500">*</span>
                                         </label>
                                         <select
                                             name="subject"
@@ -197,19 +197,19 @@ const Contact = () => {
                                             required
                                             className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
                                         >
-                                            <option value="">Chọn chủ đề</option>
-                                            <option value="booking">Đặt xe</option>
-                                            <option value="pricing">Giá cả</option>
-                                            <option value="support">Hỗ trợ kỹ thuật</option>
-                                            <option value="feedback">Góp ý</option>
-                                            <option value="other">Khác</option>
+                                            <option value="">Select a subject</option>
+                                            <option value="booking">Booking</option>
+                                            <option value="pricing">Pricing</option>
+                                            <option value="support">Technical support</option>
+                                            <option value="feedback">Feedback</option>
+                                            <option value="other">Other</option>
                                         </select>
                                     </div>
                                 </div>
 
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 mb-2">
-                                        Nội dung <span className="text-red-500">*</span>
+                                        Message <span className="text-red-500">*</span>
                                     </label>
                                     <textarea
                                         name="message"
@@ -218,7 +218,7 @@ const Contact = () => {
                                         required
                                         rows={6}
                                         className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all resize-none"
-                                        placeholder="Nhập nội dung tin nhắn của bạn..."
+                                        placeholder="Enter your message..."
                                     />
                                 </div>
 
@@ -230,12 +230,12 @@ const Contact = () => {
                                     {submitting ? (
                                         <>
                                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                                            Đang gửi...
+                                            Submitting...
                                         </>
                                     ) : (
                                         <>
                                             <Send size={20} />
-                                            Gửi tin nhắn
+                                            Send message
                                         </>
                                     )}
                                 </button>
@@ -261,25 +261,25 @@ const Contact = () => {
                             {/* FAQ */}
                             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 border border-blue-200">
                                 <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                                    Câu hỏi thường gặp
+                                    Frequently asked questions
                                 </h3>
                                 <div className="space-y-4">
                                     <div>
-                                        <h4 className="font-bold text-gray-900 mb-1">Làm sao để đặt xe?</h4>
+                                        <h4 className="font-bold text-gray-900 mb-1">How can I book a vehicle?</h4>
                                         <p className="text-gray-600 text-sm">
-                                            Bạn có thể đặt xe trực tiếp trên website hoặc liên hệ hotline để được hỗ trợ.
+                                            You can book directly on the website or contact our hotline for support.
                                         </p>
                                     </div>
                                     <div>
-                                        <h4 className="font-bold text-gray-900 mb-1">Có cần đặt cọc không?</h4>
+                                        <h4 className="font-bold text-gray-900 mb-1">Is a deposit required?</h4>
                                         <p className="text-gray-600 text-sm">
-                                            Có, tiền cọc là 30% tổng giá trị đơn hàng và sẽ được hoàn lại khi trả xe.
+                                            Yes. The deposit is 30% of your booking value and is settled according to the return process.
                                         </p>
                                     </div>
                                     <div>
-                                        <h4 className="font-bold text-gray-900 mb-1">Có hỗ trợ giao xe tận nơi?</h4>
+                                        <h4 className="font-bold text-gray-900 mb-1">Do you offer vehicle delivery?</h4>
                                         <p className="text-gray-600 text-sm">
-                                            Có, chúng tôi hỗ trợ giao xe tận nơi trong khu vực TP.HCM.
+                                            Yes, we support delivery within Ho Chi Minh City.
                                         </p>
                                     </div>
                                 </div>
@@ -293,10 +293,10 @@ const Contact = () => {
             <section className="py-20 bg-gradient-to-br from-blue-900 to-indigo-900 text-white">
                 <div className="max-w-4xl mx-auto px-6 text-center">
                     <h2 className="text-4xl font-bold mb-6">
-                        Bạn cần tư vấn ngay?
+                        Need immediate consultation?
                     </h2>
                     <p className="text-xl text-blue-100 mb-8">
-                        Gọi hotline hoặc ghé thăm showroom của chúng tôi để trải nghiệm trực tiếp
+                        Call our hotline or visit our showroom for direct support.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <a
@@ -304,13 +304,13 @@ const Contact = () => {
                             className="px-8 py-4 bg-white text-blue-900 rounded-xl font-bold text-lg hover:bg-gray-100 transition-colors shadow-lg"
                         >
                             <Phone className="inline mr-2" size={20} />
-                            Gọi ngay: (028) 1234 5678
+                            Call now: (028) 1234 5678
                         </a>
                         <a
                             href="/fleet"
                             className="px-8 py-4 bg-blue-600 text-white rounded-xl font-bold text-lg hover:bg-blue-500 transition-colors border-2 border-white"
                         >
-                            Xem đội xe
+                            Browse fleet
                         </a>
                     </div>
                 </div>

@@ -16,6 +16,7 @@ import {
   Star,
   Edit2,
   Send,
+  ClipboardCheck,
 } from "lucide-react";
 import { getBookingById, cancelBooking } from "../../services/bookingApi";
 import { getToken } from "../../services/api";
@@ -39,7 +40,7 @@ const StarPicker = ({ value, onChange }) => (
         <Star
           size={28}
           className={
-            s <= value ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
+            s <= value ? "text-blue-500 fill-blue-500" : "text-gray-300"
           }
         />
       </button>
@@ -54,7 +55,7 @@ const StarDisplay = ({ value }) => (
         key={s}
         size={18}
         className={
-          s <= value ? "text-yellow-400 fill-yellow-400" : "text-gray-200"
+          s <= value ? "text-blue-500 fill-blue-500" : "text-gray-200"
         }
       />
     ))}
@@ -97,7 +98,7 @@ const ReviewCard = ({
             <textarea
               value={editComment}
               onChange={(e) => setEditComment(e.target.value)}
-              placeholder="Nhận xét của bạn..."
+              placeholder="Your comment..."
               rows={3}
               className="w-full px-4 py-3 border border-gray-200 rounded-xl resize-none focus:outline-none focus:border-blue-400 text-sm"
             />
@@ -108,13 +109,13 @@ const ReviewCard = ({
                 className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-blue-700 transition-all disabled:opacity-50"
               >
                 <Send size={16} />
-                {editSubmitting ? "Đang lưu..." : "Lưu chỉnh sửa"}
+                {editSubmitting ? "Saving..." : "Save changes"}
               </button>
               <button
                 onClick={onEditCancel}
                 className="px-5 py-2.5 rounded-xl font-semibold text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all"
               >
-                Hủy
+                Cancel
               </button>
             </div>
           </div>
@@ -132,7 +133,7 @@ const ReviewCard = ({
                 className="mt-4 flex items-center gap-1.5 text-blue-600 text-sm font-semibold hover:text-blue-700 transition-colors"
               >
                 <Edit2 size={15} />
-                Chỉnh sửa đánh giá (còn 1 lần)
+                Edit review (1 edit left)
               </button>
             )}
           </div>
@@ -146,15 +147,15 @@ const ReviewCard = ({
       <h2 className="text-xl font-bold text-gray-900 mb-4">{title}</h2>
       <div className="space-y-4">
         <div>
-          <p className="text-sm text-gray-500 mb-2">Đánh giá sao</p>
+          <p className="text-sm text-gray-500 mb-2">Star rating</p>
           <StarPicker value={rating} onChange={setRating} />
         </div>
         <div>
-          <p className="text-sm text-gray-500 mb-2">Nhận xét (tuỳ chọn)</p>
+          <p className="text-sm text-gray-500 mb-2">Comment (optional)</p>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            placeholder="Chia sẻ trải nghiệm của bạn..."
+            placeholder="Share your experience..."
             rows={3}
             className="w-full px-4 py-3 border border-gray-200 rounded-xl resize-none focus:outline-none focus:border-blue-400 text-sm"
           />
@@ -165,7 +166,7 @@ const ReviewCard = ({
           className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold text-sm hover:bg-blue-700 transition-all disabled:opacity-50 shadow-sm shadow-blue-200"
         >
           <Send size={16} />
-          {submitting ? "Đang gửi..." : "Gửi đánh giá"}
+          {submitting ? "Submitting..." : "Submit review"}
         </button>
       </div>
     </div>
@@ -214,7 +215,7 @@ const BookingDetail = () => {
         fetchReviews(id);
       }
     } catch (err) {
-      setError(err.message || "Không thể tải thông tin đơn đặt xe");
+      setError(err.message || "Unable to load booking details");
     } finally {
       setLoading(false);
     }
@@ -251,7 +252,7 @@ const BookingDetail = () => {
       }
     } catch (err) {
       alert(
-        err.response?.data?.message || err.message || "Không thể gửi đánh giá",
+        err.response?.data?.message || err.message || "Unable to submit review",
       );
     } finally {
       setSending(false);
@@ -272,7 +273,7 @@ const BookingDetail = () => {
       setEditingReview(null);
     } catch (err) {
       alert(
-        err.response?.data?.message || err.message || "Không thể sửa đánh giá",
+        err.response?.data?.message || err.message || "Unable to update review",
       );
     } finally {
       setEditSubmitting(false);
@@ -283,10 +284,10 @@ const BookingDetail = () => {
     setCancelling(true);
     try {
       await cancelBooking(id);
-      alert("Đã hủy đơn thành công!");
+      alert("Booking canceled successfully!");
       navigate("/my-bookings");
     } catch (err) {
-      alert(err.message || "Không thể hủy đơn. Vui lòng thử lại.");
+      alert(err.message || "Unable to cancel booking. Please try again.");
     } finally {
       setCancelling(false);
       setShowCancelModal(false);
@@ -296,27 +297,27 @@ const BookingDetail = () => {
   const getStatusBadge = (status) => {
     const statusConfig = {
       pending: {
-        label: "Chờ xác nhận",
-        color: "bg-yellow-50 text-yellow-600 border-yellow-200",
+        label: "Pending",
+        color: "bg-blue-50 text-blue-600 border-blue-200",
       },
       confirmed: {
-        label: "Đã xác nhận",
+        label: "Confirmed",
         color: "bg-blue-50 text-blue-600 border-blue-200",
       },
       in_progress: {
-        label: "Đang thuê",
-        color: "bg-green-50 text-green-600 border-green-200",
+        label: "In progress",
+        color: "bg-blue-50 text-blue-600 border-blue-200",
       },
       vehicle_returned: {
-        label: "Đã trả xe",
-        color: "bg-purple-50 text-purple-600 border-purple-200",
+        label: "Vehicle returned",
+        color: "bg-blue-50 text-blue-600 border-blue-200",
       },
       completed: {
-        label: "Hoàn thành",
+        label: "Completed",
         color: "bg-gray-50 text-gray-600 border-gray-200",
       },
       cancelled: {
-        label: "Đã hủy",
+        label: "Cancelled",
         color: "bg-red-50 text-red-600 border-red-200",
       },
     };
@@ -367,14 +368,14 @@ const BookingDetail = () => {
       <div className="min-h-screen bg-gray-50 pt-32 pb-20">
         <div className="max-w-4xl mx-auto px-6">
           <div className="bg-red-50 border border-red-200 text-red-600 px-6 py-4 rounded-xl">
-            {error || "Không tìm thấy đơn đặt xe"}
+            {error || "Booking not found"}
           </div>
           <Link
             to="/my-bookings"
             className="inline-flex items-center gap-2 mt-6 text-blue-600 font-semibold hover:gap-3 transition-all"
           >
             <ChevronLeft size={20} />
-            Quay lại danh sách
+            Back to list
           </Link>
         </div>
       </div>
@@ -392,7 +393,7 @@ const BookingDetail = () => {
           <div className="p-2 bg-white rounded-full shadow-sm group-hover:bg-blue-50 transition-colors">
             <ChevronLeft size={20} />
           </div>
-          Quay lại danh sách
+          Back to list
         </button>
 
         {/* Header */}
@@ -400,10 +401,10 @@ const BookingDetail = () => {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Chi tiết đơn đặt xe
+                Booking details
               </h1>
               <p className="text-gray-500">
-                Mã đơn:{" "}
+                Booking ID:{" "}
                 <span className="font-mono font-bold">{booking._id}</span>
               </p>
             </div>
@@ -417,12 +418,12 @@ const BookingDetail = () => {
             {/* Vehicle Info */}
             <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
               <h2 className="text-xl font-bold text-gray-900 mb-6">
-                Thông tin xe
+                Vehicle information
               </h2>
               <div className="flex gap-6">
                 <div className="w-48 h-32 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0">
                   {booking.vehicle?.image_url ||
-                  booking.vehicle?.image_urls?.[0] ? (
+                    booking.vehicle?.image_urls?.[0] ? (
                     <img
                       src={
                         booking.vehicle.image_url ||
@@ -442,13 +443,13 @@ const BookingDetail = () => {
                     {booking.vehicle?.brand} {booking.vehicle?.model}
                   </h3>
                   <p className="text-gray-500 mb-1">
-                    Biển số:{" "}
+                    License plate:{" "}
                     <span className="font-bold">
                       {booking.vehicle?.license_plate || "N/A"}
                     </span>
                   </p>
                   <p className="text-gray-500">
-                    Loại xe: {booking.vehicle?.vehicle_type?.type_name || "N/A"}
+                    Vehicle type: {booking.vehicle?.vehicle_type?.type_name || "N/A"}
                   </p>
                 </div>
               </div>
@@ -457,7 +458,7 @@ const BookingDetail = () => {
             {/* Booking Details */}
             <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
               <h2 className="text-xl font-bold text-gray-900 mb-6">
-                Chi tiết đặt xe
+                Booking details
               </h2>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
@@ -466,7 +467,7 @@ const BookingDetail = () => {
                     size={20}
                   />
                   <div>
-                    <p className="text-sm text-gray-500">Thời gian thuê</p>
+                    <p className="text-sm text-gray-500">Rental time</p>
                     <p className="font-bold text-gray-900">
                       {formatDate(booking.start_date)} -{" "}
                       {formatDate(booking.end_date)}
@@ -479,7 +480,7 @@ const BookingDetail = () => {
                     size={20}
                   />
                   <div>
-                    <p className="text-sm text-gray-500">Điểm đón</p>
+                    <p className="text-sm text-gray-500">Pickup location</p>
                     <p className="font-bold text-gray-900">
                       {booking.pickup_location}
                     </p>
@@ -487,11 +488,11 @@ const BookingDetail = () => {
                 </div>
                 <div className="flex items-start gap-3">
                   <MapPin
-                    className="text-green-500 mt-1 flex-shrink-0"
+                    className="text-blue-500 mt-1 flex-shrink-0"
                     size={20}
                   />
                   <div>
-                    <p className="text-sm text-gray-500">Điểm trả</p>
+                    <p className="text-sm text-gray-500">Return location</p>
                     <p className="font-bold text-gray-900">
                       {booking.return_location}
                     </p>
@@ -499,15 +500,15 @@ const BookingDetail = () => {
                 </div>
                 <div className="flex items-start gap-3">
                   <Clock
-                    className="text-purple-500 mt-1 flex-shrink-0"
+                    className="text-blue-500 mt-1 flex-shrink-0"
                     size={20}
                   />
                   <div>
-                    <p className="text-sm text-gray-500">Loại thuê</p>
+                    <p className="text-sm text-gray-500">Rental type</p>
                     <p className="font-bold text-gray-900">
                       {booking.rental_type === "self_drive"
-                        ? "Tự lái"
-                        : "Có tài xế"}
+                        ? "Self-drive"
+                        : "With driver"}
                     </p>
                   </div>
                 </div>
@@ -518,7 +519,7 @@ const BookingDetail = () => {
             {booking.driver && (
               <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
                 <h2 className="text-xl font-bold text-gray-900 mb-6">
-                  Thông tin tài xế
+                  Driver information
                 </h2>
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
@@ -552,7 +553,7 @@ const BookingDetail = () => {
               ) : (
                 <>
                   <ReviewCard
-                    title="Đánh giá chuyến đi"
+                    title="Trip review"
                     reviewType="overall"
                     existingReview={overallReview}
                     rating={overallRating}
@@ -573,7 +574,7 @@ const BookingDetail = () => {
                   />
                   {booking.rental_type === "with_driver" && booking.driver && (
                     <ReviewCard
-                      title="Đánh giá tài xế"
+                      title="Driver review"
                       reviewType="driver"
                       existingReview={driverReview}
                       rating={driverRating}
@@ -602,22 +603,22 @@ const BookingDetail = () => {
             {/* Payment Summary */}
             <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 sticky top-32">
               <h2 className="text-xl font-bold text-gray-900 mb-6">
-                Thanh toán
+                Payment
               </h2>
               <div className="space-y-3 mb-6">
                 {(() => {
-                  // Tính số ngày thuê
+                  // Calculate rental days
                   const startDate = new Date(booking.start_date);
                   const endDate = new Date(booking.end_date);
                   const diffTime = Math.abs(endDate - startDate);
                   const rentalDays =
                     Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
 
-                  // Tính tiền xe
+                  // Calculate vehicle fee
                   const vehicleDailyRate = booking.vehicle?.daily_rate || 0;
                   const vehicleTotal = rentalDays * vehicleDailyRate;
 
-                  // Tính tiền tài xế (nếu có)
+                  // Calculate chauffeur fee (if applicable)
                   const DRIVER_FEE_PER_DAY = 500000;
                   const driverTotal =
                     booking.rental_type === "with_driver"
@@ -628,7 +629,7 @@ const BookingDetail = () => {
                     <>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-500">
-                          Tiền xe ({rentalDays} ngày ×{" "}
+                          Vehicle fee ({rentalDays} days x{" "}
                           {formatCurrency(vehicleDailyRate)})
                         </span>
                         <span className="font-semibold text-gray-900">
@@ -638,7 +639,7 @@ const BookingDetail = () => {
                       {driverTotal > 0 && (
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-500">
-                            Tiền tài xế ({rentalDays} ngày ×{" "}
+                            Driver fee ({rentalDays} days x{" "}
                             {formatCurrency(DRIVER_FEE_PER_DAY)})
                           </span>
                           <span className="font-semibold text-gray-900">
@@ -648,7 +649,7 @@ const BookingDetail = () => {
                       )}
                       <div className="flex justify-between text-sm pt-3 border-t border-gray-200">
                         <span className="font-semibold text-gray-700">
-                          Tổng tiền
+                          Total amount
                         </span>
                         <span className="font-bold text-gray-900">
                           {formatCurrency(booking.total_amount)}
@@ -656,9 +657,9 @@ const BookingDetail = () => {
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-500">
-                          Tiền cọc (30% gốc)
+                          Deposit (30%)
                         </span>
-                        <span className="font-bold text-orange-600">
+                        <span className="font-bold text-blue-600">
                           {formatCurrency(booking.deposit_amount)}
                         </span>
                       </div>
@@ -668,40 +669,40 @@ const BookingDetail = () => {
                           {/* For completed bookings, show final payment details */}
                           {(booking.charging_fee > 0 ||
                             booking.penalty_amount > 0) && (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-500">
-                                Phí phát sinh
-                              </span>
-                              <span className="font-bold text-red-600">
-                                +
-                                {formatCurrency(
-                                  (booking.charging_fee || 0) +
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-500">
+                                  Additional fees
+                                </span>
+                                <span className="font-bold text-red-600">
+                                  +
+                                  {formatCurrency(
+                                    (booking.charging_fee || 0) +
                                     (booking.penalty_amount || 0),
-                                )}
-                              </span>
-                            </div>
-                          )}
+                                  )}
+                                </span>
+                              </div>
+                            )}
                           <div className="flex justify-between text-sm pt-3 border-t border-gray-200">
                             <span className="font-semibold text-gray-700">
-                              Thanh toán cuối
+                              Final payment
                             </span>
-                            <span className="font-bold text-green-600">
+                            <span className="font-bold text-blue-600">
                               {formatCurrency(
                                 booking.final_amount ||
-                                  booking.total_amount - booking.deposit_amount,
+                                booking.total_amount - booking.deposit_amount,
                               )}
                             </span>
                           </div>
-                          <div className="flex justify-between text-sm pt-3 border-t-2 border-purple-200">
+                          <div className="flex justify-between text-sm pt-3 border-t-2 border-blue-200">
                             <span className="font-bold text-gray-900">
-                              Tổng đã thanh toán
+                              Total paid
                             </span>
-                            <span className="font-bold text-purple-600 text-lg">
+                            <span className="font-bold text-blue-600 text-lg">
                               {formatCurrency(
                                 booking.deposit_amount +
-                                  (booking.final_amount ||
-                                    booking.total_amount -
-                                      booking.deposit_amount),
+                                (booking.final_amount ||
+                                  booking.total_amount -
+                                  booking.deposit_amount),
                               )}
                             </span>
                           </div>
@@ -709,7 +710,7 @@ const BookingDetail = () => {
                       ) : (
                         <div className="flex justify-between text-sm pt-3 border-t border-gray-200">
                           <span className="font-semibold text-gray-700">
-                            Còn lại
+                            Remaining
                           </span>
                           <span className="font-bold text-blue-600">
                             {formatCurrency(
@@ -725,24 +726,24 @@ const BookingDetail = () => {
 
               {/* Payment Status */}
               {booking.status === "completed" ? (
-                <div className="flex items-center gap-2 text-purple-600 bg-purple-50 px-4 py-3 rounded-xl mb-4">
+                <div className="flex items-center gap-2 text-blue-600 bg-blue-50 px-4 py-3 rounded-xl mb-4">
                   <CheckCircle size={20} />
                   <span className="text-sm font-bold">
-                    Đã thanh toán đầy đủ
+                    Fully paid
                   </span>
                 </div>
               ) : booking.status === "confirmed" ||
                 booking.status === "in_progress" ||
                 booking.status === "vehicle_delivered" ||
                 booking.status === "vehicle_returned" ? (
-                <div className="flex items-center gap-2 text-green-600 bg-green-50 px-4 py-3 rounded-xl mb-4">
+                <div className="flex items-center gap-2 text-blue-600 bg-blue-50 px-4 py-3 rounded-xl mb-4">
                   <CheckCircle size={20} />
-                  <span className="text-sm font-bold">Đã thanh toán cọc</span>
+                  <span className="text-sm font-bold">Deposit paid</span>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 text-yellow-600 bg-yellow-50 px-4 py-3 rounded-xl mb-4">
+                <div className="flex items-center gap-2 text-red-600 bg-red-50 px-4 py-3 rounded-xl mb-4">
                   <AlertCircle size={20} />
-                  <span className="text-sm font-bold">Chưa thanh toán cọc</span>
+                  <span className="text-sm font-bold">Deposit unpaid</span>
                 </div>
               )}
 
@@ -754,39 +755,51 @@ const BookingDetail = () => {
                     className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
                   >
                     <CreditCard size={20} />
-                    Thanh toán cọc
+                    Deposit payment
                   </button>
                 )}
 
                 {booking.status === "vehicle_returned" && (
                   <button
                     onClick={() => navigate(`/payment/final/${booking._id}`)}
-                    className="w-full bg-green-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-green-200 hover:bg-green-700 transition-all flex items-center justify-center gap-2"
+                    className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
                   >
                     <CreditCard size={20} />
-                    Thanh toán còn lại
+                    Remaining payment
                   </button>
                 )}
 
-                {booking.status === "in_progress" && (
+                {(booking.status === "in_progress" || booking.status === "confirmed") && (
                   <Link
                     to={`/bookings/${booking._id}/extend`}
-                    className="w-full bg-purple-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-purple-200 hover:bg-purple-700 transition-all flex items-center justify-center gap-2"
+                    className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
                   >
                     <Clock size={20} />
-                    Yêu cầu gia hạn
+                    Request extension
                   </Link>
                 )}
 
+                {(booking.status === "in_progress" ||
+                  booking.status === "vehicle_returned" ||
+                  booking.status === "completed") && (
+                    <Link
+                      to={`/bookings/${booking._id}/handover-receipt`}
+                      className="w-full bg-white text-blue-700 py-4 rounded-2xl font-bold hover:bg-blue-50 transition-all border border-blue-200 flex items-center justify-center gap-2"
+                    >
+                      <ClipboardCheck size={20} />
+                      Delivery handover receipt
+                    </Link>
+                  )}
+
                 {(booking.status === "pending" ||
                   booking.status === "confirmed") && (
-                  <button
-                    onClick={() => setShowCancelModal(true)}
-                    className="w-full bg-red-50 text-red-600 py-4 rounded-2xl font-bold hover:bg-red-100 transition-all border border-red-200"
-                  >
-                    Hủy đơn
-                  </button>
-                )}
+                    <button
+                      onClick={() => setShowCancelModal(true)}
+                      className="w-full bg-red-50 text-red-600 py-4 rounded-2xl font-bold hover:bg-red-100 transition-all border border-red-200"
+                    >
+                      Cancel booking
+                    </button>
+                  )}
               </div>
             </div>
           </div>
@@ -801,16 +814,16 @@ const BookingDetail = () => {
                   <AlertCircle className="text-red-600" size={32} />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Xác nhận hủy đơn
+                  Confirm booking cancellation
                 </h3>
                 <p className="text-gray-500">
-                  Bạn có chắc chắn muốn hủy đơn đặt xe này không?
+                  Are you sure you want to cancel this booking?
                   {(booking.status === "confirmed" ||
                     booking.status === "in_progress") && (
-                    <span className="block mt-2 text-green-600 font-semibold">
-                      Tiền cọc sẽ được hoàn lại.
-                    </span>
-                  )}
+                      <span className="block mt-2 text-blue-600 font-semibold">
+                        Your deposit will be refunded.
+                      </span>
+                    )}
                 </p>
               </div>
               <div className="flex gap-3">
@@ -819,14 +832,14 @@ const BookingDetail = () => {
                   disabled={cancelling}
                   className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition-all disabled:opacity-50"
                 >
-                  Quay lại
+                  Go back
                 </button>
                 <button
                   onClick={handleCancelBooking}
                   disabled={cancelling}
                   className="flex-1 bg-red-600 text-white py-3 rounded-xl font-bold hover:bg-red-700 transition-all disabled:opacity-50"
                 >
-                  {cancelling ? "Đang hủy..." : "Xác nhận hủy"}
+                  {cancelling ? "Canceling..." : "Confirm cancellation"}
                 </button>
               </div>
             </div>
