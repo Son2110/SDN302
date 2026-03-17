@@ -71,6 +71,19 @@ export const processDepositPayment = async (req, res) => {
       relatedModel: "Booking",
     });
 
+    // Notify all Staff
+    const allStaff = await Staff.find();
+    for (const staffMember of allStaff) {
+      await sendNotification({
+        recipientId: staffMember.user,
+        title: "Đơn được xác nhận",
+        message: `Khách hàng đã thanh toán cọc thành công cho đơn đặt xe #${booking._id.toString().slice(-6)}.`,
+        type: "payment_success",
+        relatedId: booking._id,
+        relatedModel: "Booking",
+      });
+    }
+
     //8 response
     res.status(200).json({
       success: true,
@@ -172,6 +185,7 @@ export const processFinalPayment = async (req, res) => {
     booking.updateStatus("completed");
     await booking.save();
 
+    // Notify Customer
     await sendNotification({
       recipientId: customer.user,
       title: "Thanh toán hoàn tất",
@@ -180,6 +194,19 @@ export const processFinalPayment = async (req, res) => {
       relatedId: newPayment._id,
       relatedModel: "Payment",
     });
+
+    // Notify all Staff
+    const allStaff = await Staff.find();
+    for (const staffMember of allStaff) {
+      await sendNotification({
+        recipientId: staffMember.user,
+        title: "Thanh toán chốt sổ",
+        message: `Đơn hàng #${booking._id.toString().slice(-6)} đã được thanh toán phần còn lại và hoàn tất.`,
+        type: "payment_success",
+        relatedId: booking._id,
+        relatedModel: "Booking",
+      });
+    }
 
     // 7. Cộng điểm Loyalty cho khách hàng
     customer.loyalty_points += Math.floor(booking.total_amount / 100000);

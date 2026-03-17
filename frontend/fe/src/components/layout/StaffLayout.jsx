@@ -12,6 +12,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { logout } from "../../services/api";
+import NotificationDropdown from "./NotificationDropdown";
 
 const StaffLayout = () => {
   const navigate = useNavigate();
@@ -111,12 +112,16 @@ const StaffLayout = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Mobile Header */}
-        <header className="md:hidden bg-white border-b border-gray-200 h-16 flex items-center px-4 justify-between">
-          <h2 className="text-lg font-bold text-blue-600">Staff Panel</h2>
-          <button onClick={handleLogout} className="text-red-500">
-            <LogOut className="w-5 h-5" />
-          </button>
+        {/* Top Header */}
+        <header className="bg-white border-b border-gray-200 h-16 flex items-center px-4 md:px-8 justify-between">
+          <h2 className="text-lg font-bold text-blue-600 md:hidden">Staff Panel</h2>
+          <div className="hidden md:block"></div>
+          <div className="flex items-center gap-4">
+            <NotificationDropdown isNavbar={false} />
+            <button onClick={handleLogout} className="text-red-500 md:hidden">
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
         </header>
 
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 md:p-8">
