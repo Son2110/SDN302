@@ -102,7 +102,7 @@ export const respondToAssignment = async (req, res) => {
     if (!assignment) {
       return res
         .status(404)
-        .json({ message: "Không tìm thấy yêu cầu phân công này." });
+        .json({ message: "Assignment request not found." });
     }
 
     if (assignment.driver.toString() !== driver._id.toString()) {
@@ -127,7 +127,7 @@ export const respondToAssignment = async (req, res) => {
         "customer",
       );
       if (!booking || booking.status !== "confirmed") {
-        // Đơn đã bị huỷ hoặc thay đổi trạng thái → rollback assignment
+        // Booking was cancelled or status changed → rollback assignment
         assignment.status = "rejected";
         assignment.response_note =
           "Booking is no longer in pending assignment status.";
@@ -184,7 +184,7 @@ export const respondToAssignment = async (req, res) => {
   }
 };
 
-// ==================== STAFF: LẤY TẤT CẢ PHÂN CÔNG ====================
+// ==================== STAFF: GET ALL ASSIGNMENTS ====================
 // @route GET /api/driver-assignment
 // @access Private (Staff)
 export const getAllAssignments = async (req, res) => {
@@ -227,7 +227,7 @@ export const getAllAssignments = async (req, res) => {
   }
 };
 
-// ==================== XEM CHI TIẾT 1 PHÂN CÔNG ====================
+// ==================== VIEW ASSIGNMENT DETAILS ====================
 // @route GET /api/driver-assignment/:id
 // @access Private (Staff, Driver)
 export const getAssignmentById = async (req, res) => {
@@ -261,10 +261,10 @@ export const getAssignmentById = async (req, res) => {
     if (!assignment) {
       return res
         .status(404)
-        .json({ message: "Không tìm thấy yêu cầu phân công này." });
+        .json({ message: "Assignment request not found." });
     }
 
-    // Driver chỉ xem được assignment của mình
+    // Driver can only view their own assignments
     const driver = await Driver.findOne({ user: req.user._id });
     if (driver && assignment.driver._id.toString() !== driver._id.toString()) {
       return res.status(403).json({
@@ -281,7 +281,7 @@ export const getAssignmentById = async (req, res) => {
   }
 };
 
-// ==================== STAFF: CẬP NHẬT PHÂN CÔNG (ĐỔI TÀI XẾ) ====================
+// ==================== STAFF: UPDATE ASSIGNMENT (CHANGE DRIVER) ====================
 // @route PUT /api/driver-assignment/:id
 // @access Private (Staff)
 export const updateAssignment = async (req, res) => {
@@ -291,7 +291,7 @@ export const updateAssignment = async (req, res) => {
     const staff = await Staff.findOne({ user: req.user._id });
     if (!staff) {
       return res.status(403).json({
-        message: "Chỉ nhân viên mới có quyền thực hiện thao tác này.",
+        message: "Only staff can perform this action.",
       });
     }
 
@@ -299,10 +299,10 @@ export const updateAssignment = async (req, res) => {
     if (!assignment) {
       return res
         .status(404)
-        .json({ message: "Không tìm thấy yêu cầu phân công này." });
+        .json({ message: "Assignment request not found." });
     }
 
-    // Chỉ cho phép cập nhật khi đang pending hoặc bị rejected
+    // Only allow updates when status is pending or rejected
     if (assignment.status === "accepted") {
       return res.status(400).json({
         message:
@@ -318,7 +318,7 @@ export const updateAssignment = async (req, res) => {
         });
       }
       assignment.driver = newDriver._id;
-      assignment.status = "pending"; // Reset về pending khi đổi tài xế
+      assignment.status = "pending"; // Reset to pending when changing driver
       assignment.response_note = undefined;
       assignment.assigned_by = staff._id;
       assignment.assigned_at = Date.now();
@@ -336,7 +336,7 @@ export const updateAssignment = async (req, res) => {
   }
 };
 
-// ==================== STAFF: HUỶ PHÂN CÔNG ====================
+// ==================== STAFF: CANCEL ASSIGNMENT ====================
 // @route DELETE /api/driver-assignment/:id
 // @access Private (Staff)
 export const deleteAssignment = async (req, res) => {
@@ -344,7 +344,7 @@ export const deleteAssignment = async (req, res) => {
     const staff = await Staff.findOne({ user: req.user._id });
     if (!staff) {
       return res.status(403).json({
-        message: "Chỉ nhân viên mới có quyền thực hiện thao tác này.",
+        message: "Only staff can perform this action.",
       });
     }
 
@@ -352,10 +352,10 @@ export const deleteAssignment = async (req, res) => {
     if (!assignment) {
       return res
         .status(404)
-        .json({ message: "Không tìm thấy yêu cầu phân công này." });
+        .json({ message: "Assignment request not found." });
     }
 
-    // Nếu tài xế đã nhận chuyến → phải rollback booking và driver status
+    // If driver already accepted the trip → must rollback booking and driver status
     if (assignment.status === "accepted") {
       const booking = await Booking.findById(assignment.booking);
       if (booking) {
@@ -381,7 +381,7 @@ export const deleteAssignment = async (req, res) => {
   }
 };
 
-// ==================== TÀI XẾ XEM CHUYẾN CỦA MÌNH ====================
+// ==================== DRIVER: VIEW MY ASSIGNMENTS ====================
 // @route GET /api/driver-assignment/my-assignments
 // @access Private (Driver)
 export const getMyAssignments = async (req, res) => {
