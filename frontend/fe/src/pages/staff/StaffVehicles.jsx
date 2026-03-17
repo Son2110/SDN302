@@ -242,11 +242,11 @@ const StaffVehicles = () => {
       rented: "bg-blue-100 text-blue-700",
       maintenance: "bg-yellow-100 text-yellow-700",
     };
-    const labels = {
-      available: "Sẵn sàng",
-      rented: "Đang thuê",
-      maintenance: "Bảo trì",
-    };
+const labels = {
+  available: "Available",
+  rented: "Rented",
+  maintenance: "Maintenance",
+};
     return (
       <span
         className={`px-3 py-1 rounded-full text-xs font-semibold ${colors[status]}`}
@@ -259,7 +259,7 @@ const StaffVehicles = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-gray-600">Đang tải...</div>
+        <div className="text-gray-600">Loading...</div>
       </div>
     );
   }
@@ -271,10 +271,10 @@ const StaffVehicles = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
             <Car size={32} className="text-blue-600" />
-            Quản Lý Xe
+            Vehicle Management
           </h1>
           <p className="text-gray-600 mt-1">
-            Quản lý danh sách xe trong hệ thống
+            Manage the list of vehicles in the system
           </p>
         </div>
         <div className="flex gap-2">
@@ -283,7 +283,7 @@ const StaffVehicles = () => {
             className="bg-white border border-gray-300 text-gray-700 px-5 py-3 rounded-xl font-semibold flex items-center gap-2 hover:bg-gray-50 transition shadow-sm"
           >
             <Tag size={18} />
-            Thêm Loại Xe
+            Add Vehicle Type
           </button>
           <button
             onClick={() => {
@@ -294,7 +294,7 @@ const StaffVehicles = () => {
             className="bg-gray-900 text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 hover:bg-gray-700 transition shadow-sm"
           >
             <Plus size={20} />
-            Thêm Xe Mới
+            Add New Vehicle
           </button>
         </div>
       </div>
@@ -316,7 +316,7 @@ const StaffVehicles = () => {
             />
             <input
               type="text"
-              placeholder="Tìm kiếm xe (brand, model, biển số)..."
+              placeholder="Search vehicle (brand, model, license plate)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -327,10 +327,10 @@ const StaffVehicles = () => {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="">Tất cả trạng thái</option>
-            <option value="available">Sẵn sàng</option>
-            <option value="rented">Đang thuê</option>
-            <option value="maintenance">Bảo trì</option>
+            <option value="">All Statuses</option>
+            <option value="available">Available</option>
+            <option value="rented">Rented</option>
+            <option value="maintenance">Maintenance</option>
           </select>
         </div>
       </div>
@@ -361,15 +361,15 @@ const StaffVehicles = () => {
               </div>
               <div className="space-y-2 mb-4 text-sm text-gray-700">
                 <div className="flex justify-between">
-                  <span>Năm:</span>
+                  <span>Year:</span>
                   <span className="font-semibold">{vehicle.year}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Màu:</span>
+                  <span>Color:</span>
                   <span className="font-semibold">{vehicle.color}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Giá thuê/ngày:</span>
+                  <span>Rental/Day:</span>
                   <span className="font-bold text-blue-600">
                     {formatPrice(vehicle.daily_rate)}
                   </span>
@@ -377,7 +377,7 @@ const StaffVehicles = () => {
                 {vehicle.is_electric && (
                   <div className="flex items-center gap-2 text-green-600">
                     <CheckCircle size={16} />
-                    <span>Xe điện</span>
+                    <span>Electric Vehicle</span>
                   </div>
                 )}
               </div>
@@ -387,7 +387,7 @@ const StaffVehicles = () => {
                   className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-blue-700 transition"
                 >
                   <Edit size={16} />
-                  Sửa
+                  Edit
                 </button>
                 {vehicle.status !== "rented" && (
                   <>
@@ -399,7 +399,7 @@ const StaffVehicles = () => {
                         className="flex-1 bg-yellow-500 text-white py-2 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-yellow-600 transition"
                       >
                         <Wrench size={16} />
-                        Bảo trì
+                        Maintenance
                       </button>
                     ) : (
                       <button
@@ -409,7 +409,7 @@ const StaffVehicles = () => {
                         className="flex-1 bg-green-500 text-white py-2 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-green-600 transition"
                       >
                         <CheckCircle size={16} />
-                        Sẵn sàng
+                        Available
                       </button>
                     )}
                     <button
@@ -428,7 +428,7 @@ const StaffVehicles = () => {
 
       {filteredVehicles.length === 0 && (
         <div className="text-center py-12 text-gray-500">
-          Không tìm thấy xe nào
+          No vehicles found
         </div>
       )}
 
@@ -452,7 +452,7 @@ const StaffVehicles = () => {
                   <Car size={18} className="text-white" />
                 </div>
                 <h2 className="text-lg font-bold text-gray-900">
-                  {editingVehicle ? "Chỉnh Sửa Xe" : "Thêm Xe Mới"}
+                  {editingVehicle ? "Edit Vehicle" : "Add New Vehicle"}
                 </h2>
               </div>
               <button
@@ -471,12 +471,12 @@ const StaffVehicles = () => {
               {/* Section: Loại & biển số */}
               <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                  Thông tin cơ bản
+                  Basic Information
                 </p>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Loại xe *
+                      Vehicle Type *
                     </label>
                     <select
                       required
@@ -489,7 +489,7 @@ const StaffVehicles = () => {
                       }
                       className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-300 focus:outline-none bg-gray-50"
                     >
-                      <option value="">Chọn loại xe</option>
+                      <option value="">Select vehicle type</option>
                       {vehicleTypes.map((type) => (
                         <option key={type._id} value={type._id}>
                           {type.type_name}
@@ -499,7 +499,7 @@ const StaffVehicles = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Hãng xe *
+                      Brand *
                     </label>
                     <input
                       type="text"
@@ -529,7 +529,7 @@ const StaffVehicles = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Biển số *
+                      License Plate *
                     </label>
                     <input
                       type="text"
@@ -547,7 +547,7 @@ const StaffVehicles = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Năm SX *
+                      Manufactured Year *
                     </label>
                     <input
                       type="number"
@@ -568,12 +568,12 @@ const StaffVehicles = () => {
               {/* Section: Giá & km */}
               <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                  Giá & tình trạng
+                  Price & Condition
                 </p>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Màu sắc
+                      Color
                     </label>
                     <input
                       type="text"
@@ -582,12 +582,12 @@ const StaffVehicles = () => {
                         setFormData({ ...formData, color: e.target.value })
                       }
                       className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-300 focus:outline-none bg-gray-50"
-                      placeholder="Đen"
+                      placeholder="Black"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Giá thuê/ngày (VNĐ) *
+                      Rental/Day (VND) *
                     </label>
                     <input
                       type="number"
@@ -604,7 +604,7 @@ const StaffVehicles = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Số km đã chạy
+                      ODO Mileage
                     </label>
                     <input
                       type="number"
@@ -622,7 +622,7 @@ const StaffVehicles = () => {
                     <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
                       <Zap size={14} className="text-green-600" />
                       <span className="text-sm font-medium text-green-700">
-                        Xe điện
+                        Electric Vehicle
                       </span>
                     </div>
                   </div>
@@ -632,14 +632,14 @@ const StaffVehicles = () => {
               {/* Section: Ảnh */}
               <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                  Hình ảnh (Chỉ 1 ảnh)
+                  Images (Only 1 image)
                 </p>
 
                 {/* --- DISPLAY EXISTING OR SELECTED IMAGE --- */}
                 {(formData.image_urls.length > 0 || selectedFile) && (
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Ảnh xe
+                      Vehicle Image
                     </label>
                     <div className="relative w-40 h-40 border rounded-lg overflow-hidden group">
                       <img
@@ -669,7 +669,7 @@ const StaffVehicles = () => {
                 {!selectedFile && formData.image_urls.length === 0 && (
                   <>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Tải ảnh lên
+                      Upload Image
                     </label>
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 bg-gray-50 text-center hover:bg-gray-100 transition relative">
                       <input
@@ -683,7 +683,7 @@ const StaffVehicles = () => {
                           <Plus size={24} />
                         </div>
                         <p className="text-sm text-gray-600 font-medium">
-                          Click để chọn ảnh hoặc kéo thả vào đây
+                          Click to choose an image or drag and drop here
                         </p>
                         <p className="text-xs text-gray-400">
                           PNG, JPG, WEBP (Max 5MB)
@@ -705,13 +705,13 @@ const StaffVehicles = () => {
                   }}
                   className="flex-1 py-2.5 border border-gray-200 text-gray-600 rounded-xl font-semibold hover:bg-gray-50 transition text-sm"
                 >
-                  Hủy
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   className="flex-1 py-2.5 bg-gray-900 text-white rounded-xl font-semibold hover:bg-gray-700 transition text-sm"
                 >
-                  {editingVehicle ? "Lưu thay đổi" : "Thêm xe"}
+                  {editingVehicle ? "Save Changes" : "Add Vehicle"}
                 </button>
               </div>
             </form>
@@ -734,7 +734,7 @@ const StaffVehicles = () => {
                   <Tag size={16} className="text-white" />
                 </div>
                 <h2 className="text-lg font-bold text-gray-900">
-                  Thêm Loại Xe Mới
+                  Add New Vehicle Type
                 </h2>
               </div>
               <button
@@ -748,7 +748,7 @@ const StaffVehicles = () => {
             <form onSubmit={handleTypeSubmit} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Tên loại xe *
+                  Vehicle Type Name *
                 </label>
                 <input
                   type="text"
@@ -761,14 +761,14 @@ const StaffVehicles = () => {
                     })
                   }
                   className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none bg-gray-50"
-                  placeholder="VD: SUV điện 5 chỗ"
+                  placeholder="e.g. 5-seater Electric SUV"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="inline-flex items-center gap-1 text-sm font-medium text-gray-700 mb-1.5">
-                    <Settings size={13} /> Phân loại
+                    <Settings size={13} /> Category
                   </label>
                   <select
                     value={typeFormData.category}
@@ -788,7 +788,7 @@ const StaffVehicles = () => {
                 </div>
                 <div>
                   <label className="inline-flex items-center gap-1 text-sm font-medium text-gray-700 mb-1.5">
-                    <Users size={13} /> Số chỗ *
+                    <Users size={13} /> Seats *
                   </label>
                   <input
                     type="number"
@@ -808,7 +808,7 @@ const StaffVehicles = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Hộp số
+                    Transmission
                   </label>
                   <select
                     value={typeFormData.transmission}
@@ -820,13 +820,13 @@ const StaffVehicles = () => {
                     }
                     className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none bg-gray-50"
                   >
-                    <option value="auto">Tự động</option>
-                    <option value="manual">Số sàn</option>
+                    <option value="auto">Auto</option>
+                    <option value="manual">Manual</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Giá cơ bản/ngày (VNĐ) *
+                    Base Price/Day (VND) *
                   </label>
                   <input
                     type="number"
@@ -845,7 +845,7 @@ const StaffVehicles = () => {
                 </div>
                 <div>
                   <label className="inline-flex items-center gap-1 text-sm font-medium text-gray-700 mb-1.5">
-                    <Zap size={13} /> Dung lượng pin (kWh)
+                    <Zap size={13} /> Battery Capacity (kWh)
                   </label>
                   <input
                     type="number"
@@ -865,7 +865,7 @@ const StaffVehicles = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  URL ảnh đại diện
+                  Thumbnail URL
                 </label>
                 <input
                   type="url"
@@ -887,14 +887,14 @@ const StaffVehicles = () => {
                   onClick={() => setShowTypeModal(false)}
                   className="flex-1 py-2.5 border border-gray-200 text-gray-600 rounded-xl font-semibold hover:bg-gray-50 transition text-sm"
                 >
-                  Hủy
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={typeSubmitting}
                   className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition text-sm disabled:opacity-50"
                 >
-                  {typeSubmitting ? "Đang lưu..." : "Thêm loại xe"}
+                  {typeSubmitting ? "Saving..." : "Add vehicle type"}
                 </button>
               </div>
             </form>

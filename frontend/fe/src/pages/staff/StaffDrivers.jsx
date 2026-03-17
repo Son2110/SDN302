@@ -16,11 +16,11 @@ import {
 import * as userApi from "../../services/userApi";
 
 const STATUS_BADGE = {
-  pending: { label: "Chờ duyệt", cls: "bg-yellow-100 text-yellow-700" },
-  available: { label: "Sẵn sàng", cls: "bg-green-100 text-green-700" },
-  busy: { label: "Đang bận", cls: "bg-blue-100 text-blue-700" },
+  pending: { label: "Pending Review", cls: "bg-yellow-100 text-yellow-700" },
+  available: { label: "Available", cls: "bg-green-100 text-green-700" },
+  busy: { label: "Busy", cls: "bg-blue-100 text-blue-700" },
   offline: { label: "Offline", cls: "bg-gray-100 text-gray-600" },
-  rejected: { label: "Đã từ chối", cls: "bg-red-100 text-red-700" },
+  rejected: { label: "Rejected", cls: "bg-red-100 text-red-700" },
 };
 
 const StatusBadge = ({ status }) => {
@@ -35,7 +35,7 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-const formatDate = (date) => new Date(date).toLocaleDateString("vi-VN");
+const formatDate = (date) => new Date(date).toLocaleDateString("en-US");
 
 // ─── Driver Card ─────────────────────────────────────────────────────────────
 const DriverCard = ({
@@ -56,7 +56,7 @@ const DriverCard = ({
           <div className="flex items-center gap-1 mt-0.5">
             <Star size={12} fill="gold" color="gold" />
             <span className="text-xs text-gray-300 font-medium">
-              {driver.rating?.toFixed(1)} · {driver.total_trips} chuyến
+              {driver.rating?.toFixed(1)} · {driver.total_trips} trips
             </span>
           </div>
         </div>
@@ -69,14 +69,14 @@ const DriverCard = ({
           <div className="flex items-center gap-2">
             <IdCard size={14} className="text-gray-400 shrink-0" />
             <span>
-              <strong>GPLX:</strong> {driver.license_number}
+              <strong>License:</strong> {driver.license_number}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <Award size={14} className="text-gray-400 shrink-0" />
             <span>
-              <strong>Hạng:</strong> {driver.license_type} ·{" "}
-              {driver.experience_years} năm KN
+              <strong>Class:</strong> {driver.license_type} ·{" "}
+              {driver.experience_years} yrs exp
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -84,7 +84,7 @@ const DriverCard = ({
             <span
               className={licenseExpired ? "text-red-600 font-semibold" : ""}
             >
-              <strong>Hết hạn:</strong> {formatDate(driver.license_expiry)}
+              <strong>Expiry:</strong> {formatDate(driver.license_expiry)}
               {licenseExpired && " ⚠️"}
             </span>
           </div>
@@ -105,7 +105,7 @@ const DriverCard = ({
         {/* Rejection reason */}
         {driver.status === "rejected" && driver.rejection_reason && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">
-            <strong>Lý do từ chối:</strong> {driver.rejection_reason}
+            <strong>Rejection reason:</strong> {driver.rejection_reason}
           </div>
         )}
 
@@ -116,13 +116,13 @@ const DriverCard = ({
               onClick={() => onApprove(driver._id)}
               className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 transition"
             >
-              <Check size={15} /> Duyệt
+              <Check size={15} /> Approve
             </button>
             <button
               onClick={() => onReject(driver._id)}
               className="flex-1 bg-red-100 hover:bg-red-200 text-red-700 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 transition"
             >
-              <X size={15} /> Từ chối
+              <X size={15} /> Reject
             </button>
           </div>
         )}
@@ -221,25 +221,25 @@ const StaffDrivers = () => {
   };
 
   const handleApprove = async (driverId) => {
-    if (!window.confirm("Duyệt tài xế này?")) return;
+    if (!window.confirm("Approve this driver?")) return;
     try {
       await userApi.approveDriver(driverId);
       loadPendingDrivers();
       loadStats();
     } catch (err) {
-      alert("Lỗi: " + err.message);
+      alert("Error: " + err.message);
     }
   };
 
   const handleReject = async (driverId) => {
-    const reason = window.prompt("Lý do từ chối:", "Không đáp ứng yêu cầu");
+    const reason = window.prompt("Rejection reason:", "Does not meet requirements");
     if (reason === null) return;
     try {
       await userApi.rejectDriver(driverId, reason);
       loadPendingDrivers();
       loadStats();
     } catch (err) {
-      alert("Lỗi: " + err.message);
+      alert("Error: " + err.message);
     }
   };
 
@@ -253,10 +253,10 @@ const StaffDrivers = () => {
           disabled={state.page === 1}
           className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition"
         >
-          Trước
+          Previous
         </button>
         <span className="text-sm text-gray-500 font-medium">
-          Trang {state.page} / {state.pages}
+          Page {state.page} / {state.pages}
         </span>
         <button
           onClick={() =>
@@ -265,7 +265,7 @@ const StaffDrivers = () => {
           disabled={state.page === state.pages}
           className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition"
         >
-          Sau
+          Next
         </button>
       </div>
     ) : null;
@@ -275,7 +275,7 @@ const StaffDrivers = () => {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Users size={24} /> Quản Lý Tài Xế
+          <Users size={24} /> Driver Management
         </h1>
       </div>
 
@@ -283,18 +283,18 @@ const StaffDrivers = () => {
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {[
-            { label: "Tổng", value: stats.total, cls: "text-gray-900" },
+            { label: "Total", value: stats.total, cls: "text-gray-900" },
             {
-              label: "Chờ duyệt",
+              label: "Pending Review",
               value: stats.pending,
               cls: "text-yellow-600",
             },
             {
-              label: "Sẵn sàng",
+              label: "Available",
               value: stats.available,
               cls: "text-green-600",
             },
-            { label: "Đang bận", value: stats.busy, cls: "text-blue-600" },
+            { label: "Busy", value: stats.busy, cls: "text-blue-600" },
             { label: "Offline", value: stats.offline, cls: "text-gray-500" },
           ].map((s) => (
             <div
@@ -317,7 +317,7 @@ const StaffDrivers = () => {
             : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
         >
-          Danh sách tài xế
+          Driver List
           {stats && (
             <span className="ml-2 bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">
               {pagination.total || stats.total}
@@ -331,7 +331,7 @@ const StaffDrivers = () => {
             : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
         >
-          <Clock size={14} /> Chờ duyệt
+          <Clock size={14} /> Pending Review
           {stats?.pending > 0 && (
             <span className="bg-yellow-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
               {stats.pending}
@@ -340,7 +340,7 @@ const StaffDrivers = () => {
         </button>
       </div>
 
-      {/* ── Tab: Danh sách ── */}
+      {/* ── Tab: List ── */}
       {activeTab === "list" && (
         <>
           <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
@@ -355,7 +355,7 @@ const StaffDrivers = () => {
                 />
                 <input
                   type="text"
-                  placeholder="Tìm theo tên, email, SĐT..."
+                  placeholder="Search by name, email, phone..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-300 focus:outline-none"
@@ -369,17 +369,17 @@ const StaffDrivers = () => {
                 }}
                 className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-300 focus:outline-none"
               >
-                <option value="">Tất cả (đã duyệt)</option>
-                <option value="available">Sẵn sàng</option>
-                <option value="busy">Đang bận</option>
+                <option value="">All (Approved)</option>
+                <option value="available">Available</option>
+                <option value="busy">Busy</option>
                 <option value="offline">Offline</option>
-                <option value="rejected">Đã từ chối</option>
+                <option value="rejected">Rejected</option>
               </select>
               <button
                 type="submit"
                 className="px-5 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition"
               >
-                Tìm
+                Search
               </button>
             </form>
           </div>
@@ -392,12 +392,12 @@ const StaffDrivers = () => {
 
           {loadingList && drivers.length === 0 ? (
             <div className="flex justify-center py-20 text-gray-400">
-              Đang tải...
+              Loading...
             </div>
           ) : drivers.length === 0 ? (
             <div className="flex flex-col items-center py-20 text-gray-400">
               <Users size={40} className="mb-3 text-gray-300" />
-              Không tìm thấy tài xế nào
+              No drivers found
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -415,7 +415,7 @@ const StaffDrivers = () => {
         </>
       )}
 
-      {/* ── Tab: Chờ duyệt ── */}
+      {/* ── Tab: Pending Review ── */}
       {activeTab === "pending" && (
         <>
           {errorPending && (
@@ -426,17 +426,17 @@ const StaffDrivers = () => {
 
           {loadingPending && pendingDrivers.length === 0 ? (
             <div className="flex justify-center py-20 text-gray-400">
-              Đang tải...
+              Loading...
             </div>
           ) : pendingDrivers.length === 0 ? (
             <div className="flex flex-col items-center py-20 text-gray-400">
               <Check size={40} className="mb-3 text-green-300" />
-              <p className="font-medium">Không có tài xế nào đang chờ duyệt</p>
+              <p className="font-medium">No drivers pending review</p>
             </div>
           ) : (
             <>
               <p className="text-sm text-gray-500">
-                {pendingPage.total} tài xế đang chờ xét duyệt
+                {pendingPage.total} drivers pending review
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {pendingDrivers.map((d) => (

@@ -32,7 +32,7 @@ export default function HandoverDeliveryForm() {
       };
 
       await createDeliveryHandover(payload);
-      alert("Lập biên bản giao xe thành công!");
+      alert("Delivery record created successfully!");
       navigate("/staff/handovers");
     } catch (err) {
       setError(err.message);
@@ -48,8 +48,8 @@ export default function HandoverDeliveryForm() {
           <ArrowLeft className="w-5 h-5 text-gray-600" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Biên bản Giao xe (Delivery)</h1>
-          <p className="text-gray-500 text-sm mt-1">Bàn giao xe cho khách hàng và bắt đầu chuyến đi</p>
+          <h1 className="text-2xl font-bold text-gray-900">Delivery Handover Record</h1>
+          <p className="text-gray-500 text-sm mt-1">Handover vehicle to customer and start the trip</p>
         </div>
       </div>
 
@@ -58,7 +58,7 @@ export default function HandoverDeliveryForm() {
           {error && <div className="p-4 bg-red-50 text-red-600 rounded-lg">{error}</div>}
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">ID Đơn đặt xe (Booking ID) <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Booking ID <span className="text-red-500">*</span></label>
             <input
               type="text"
               name="booking_id"
@@ -66,25 +66,25 @@ export default function HandoverDeliveryForm() {
               value={formData.booking_id}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="VD: 665c..."
+              placeholder="e.g. 665c..."
             />
-            <p className="text-xs text-gray-500 mt-1">Đơn phải ở trạng thái "confirmed"</p>
+            <p className="text-xs text-gray-500 mt-1">Booking must be in 'confirmed' status</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Số Km ODO hiện tại</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Current ODO (km)</label>
               <input
                 type="number"
                 name="mileage"
                 value={formData.mileage}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none"
-                placeholder="VD: 35000"
+                placeholder="e.g. 35000"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">% Pin (Nếu là xe điện)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Battery % (For electric vehicles)</label>
               <input
                 type="number"
                 name="battery_level_percentage"
@@ -93,20 +93,20 @@ export default function HandoverDeliveryForm() {
                 value={formData.battery_level_percentage}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none"
-                placeholder="VD: 95"
+                placeholder="e.g. 95"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú tình trạng xe</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle Condition Notes</label>
             <textarea
               name="notes"
               rows={3}
               value={formData.notes}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="Xe bị trầy xước nhẹ ở cản trước, đủ giấy tờ..."
+              placeholder="Minor scratches on front bumper, all papers included..."
             />
           </div>
 
@@ -117,7 +117,7 @@ export default function HandoverDeliveryForm() {
               className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium transition flex items-center disabled:opacity-50 w-full md:w-auto justify-center"
             >
               {loading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <KeyRound className="w-5 h-5 mr-2" />}
-              Tạo Biên Bản Giao Xe
+              Create Delivery Record
             </button>
           </div>
         </form>

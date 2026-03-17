@@ -32,12 +32,12 @@ export default function StaffAssignments() {
   }, [statusFilter]);
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Bạn có chắc chắn muốn huỷ phân công này?")) return;
+    if (!window.confirm("Are you sure you want to cancel this assignment?")) return;
     try {
       await deleteAssignment(id);
       fetchAssignments();
     } catch (err) {
-      alert("Lỗi khi huỷ: " + err.message);
+      alert("Error cancelling: " + err.message);
     }
   };
 
@@ -69,7 +69,7 @@ export default function StaffAssignments() {
       setIsModalOpen(false);
       fetchAssignments();
     } catch (err) {
-      alert("Lỗi: " + err.message);
+      alert("Error: " + err.message);
     } finally {
       setProcessing(false);
     }
@@ -80,8 +80,8 @@ export default function StaffAssignments() {
       {/* Header & Actions */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Phân công tài xế</h1>
-          <p className="text-gray-500 text-sm mt-1">Quản lý và điều phối tài xế cho đơn hàng</p>
+          <h1 className="text-2xl font-bold text-gray-900">Driver Assignment</h1>
+          <p className="text-gray-500 text-sm mt-1">Manage and coordinate drivers for bookings</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -90,10 +90,10 @@ export default function StaffAssignments() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="appearance-none bg-white border border-gray-200 text-gray-700 py-2.5 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-shadow font-medium"
           >
-            <option value="">Tất cả trạng thái</option>
-            <option value="pending">Chờ phản hồi</option>
-            <option value="accepted">Đã nhận</option>
-            <option value="rejected">Từ chối</option>
+            <option value="">All Statuses</option>
+            <option value="pending">Waiting for response</option>
+            <option value="accepted">Accepted</option>
+            <option value="rejected">Rejected</option>
           </select>
 
           {/* <button
@@ -121,7 +121,7 @@ export default function StaffAssignments() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
               <h3 className="text-lg font-bold text-gray-900">
-                {editingId ? "Đổi tài xế" : "Phân công tài xế mới"}
+                {editingId ? "Change Driver" : "Assign New Driver"}
               </h3>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
@@ -130,7 +130,7 @@ export default function StaffAssignments() {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               {!editingId && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">ID Đơn đặt xe</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Booking ID</label>
                   <input
                     type="text"
                     name="booking_id"
@@ -138,14 +138,14 @@ export default function StaffAssignments() {
                     value={formData.booking_id}
                     onChange={handleFormChange}
                     className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
-                    placeholder="Nhập ID đơn đặt xe..."
+                    placeholder="Enter booking ID..."
                   />
-                  <p className="text-xs text-gray-500 mt-1">Lưu ý: Đơn phải có loại thuê là "with_driver" và đã "confirmed".</p>
+                  <p className="text-xs text-gray-500 mt-1">Note: Booking must be 'with_driver' and 'confirmed'.</p>
                 </div>
               )}
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">ID Tài xế</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Driver ID</label>
                 <input
                   type="text"
                   name="driver_id"
@@ -153,7 +153,7 @@ export default function StaffAssignments() {
                   value={formData.driver_id}
                   onChange={handleFormChange}
                   className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
-                  placeholder="Nhập ID tài xế..."
+                  placeholder="Enter driver ID..."
                 />
               </div>
 
@@ -163,7 +163,7 @@ export default function StaffAssignments() {
                   onClick={() => setIsModalOpen(false)}
                   className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 font-medium transition"
                 >
-                  Huỷ
+                  Cancel
                 </button>
                 <button
                   type="submit"
@@ -171,7 +171,7 @@ export default function StaffAssignments() {
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition flex items-center disabled:opacity-50"
                 >
                   {processing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                  Lưu
+                  Save
                 </button>
               </div>
             </form>
