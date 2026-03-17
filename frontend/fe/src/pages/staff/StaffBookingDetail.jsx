@@ -85,8 +85,8 @@ function DeliveryModal({ bookingId, onClose, onSuccess }) {
             <KeyRound className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-gray-900">Biên bản Giao xe</h2>
-            <p className="text-xs text-gray-500">Bàn giao xe cho khách hàng</p>
+            <h2 className="text-base font-bold text-gray-900">Delivery Handover Record</h2>
+            <p className="text-xs text-gray-500">Handing over vehicle to customer</p>
           </div>
         </div>
         <button
@@ -108,7 +108,7 @@ function DeliveryModal({ bookingId, onClose, onSuccess }) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Số Km ODO hiện tại
+              Current ODO Mileage
             </label>
             <input
               type="number"
@@ -121,7 +121,7 @@ function DeliveryModal({ bookingId, onClose, onSuccess }) {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              % Pin (Xe điện)
+              Battery % (EV only)
             </label>
             <input
               type="number"
@@ -131,14 +131,14 @@ function DeliveryModal({ bookingId, onClose, onSuccess }) {
               value={form.battery_level_percentage}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-              placeholder="VD: 95"
+              placeholder="e.g. 95"
             />
           </div>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Ghi chú tình trạng xe
+            Vehicle Condition Notes
           </label>
           <textarea
             name="notes"
@@ -146,7 +146,7 @@ function DeliveryModal({ bookingId, onClose, onSuccess }) {
             value={form.notes}
             onChange={handleChange}
             className="w-full border border-gray-300 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
-            placeholder="Xe bị trầy xước nhẹ ở cản trước, đủ giấy tờ..."
+            placeholder="Minor scratches on front bumper, all documents included..."
           />
         </div>
 
@@ -157,7 +157,7 @@ function DeliveryModal({ bookingId, onClose, onSuccess }) {
             onClick={onClose}
             className="px-4 py-2 border border-gray-300 rounded-xl text-sm text-gray-700 hover:bg-gray-50 font-medium transition"
           >
-            Huỷ
+            Cancel
           </button>
           <button
             type="submit"
@@ -169,7 +169,7 @@ function DeliveryModal({ bookingId, onClose, onSuccess }) {
             ) : (
               <KeyRound className="w-4 h-4" />
             )}
-            Tạo Biên Bản Giao Xe
+            Create Delivery Record
           </button>
         </div>
       </form>
@@ -223,8 +223,8 @@ function ReturnModal({ bookingId, onClose, onSuccess }) {
             <ArrowRightLeft className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-gray-900">Biên bản Thu xe</h2>
-            <p className="text-xs text-gray-500">Ghi nhận tình trạng xe khi hoàn tất</p>
+            <h2 className="text-base font-bold text-gray-900">Return Handover Record</h2>
+            <p className="text-xs text-gray-500">Record vehicle condition upon completion</p>
           </div>
         </div>
         <button
@@ -246,7 +246,7 @@ function ReturnModal({ bookingId, onClose, onSuccess }) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Số Km ODO lúc trả <span className="text-red-500">*</span>
+              Return ODO Mileage <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
@@ -260,7 +260,7 @@ function ReturnModal({ bookingId, onClose, onSuccess }) {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              % Pin lúc trả (Xe điện)
+              Return Battery % (EV only)
             </label>
             <input
               type="number"
@@ -275,7 +275,7 @@ function ReturnModal({ bookingId, onClose, onSuccess }) {
           </div>
           <div className="col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tiền phạt (VNĐ – nếu có)
+              Penalty Amount (VND – if any)
             </label>
             <input
               type="number"
@@ -291,7 +291,7 @@ function ReturnModal({ bookingId, onClose, onSuccess }) {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Ghi chú tình trạng xe lúc trả
+            Return Vehicle Condition Notes
           </label>
           <textarea
             name="notes"
@@ -299,7 +299,7 @@ function ReturnModal({ bookingId, onClose, onSuccess }) {
             value={form.notes}
             onChange={handleChange}
             className="w-full border border-gray-300 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none resize-none"
-            placeholder="Xước nhẹ cản trước..."
+            placeholder="Minor scratches on front bumper..."
           />
         </div>
 
@@ -310,7 +310,7 @@ function ReturnModal({ bookingId, onClose, onSuccess }) {
             onClick={onClose}
             className="px-4 py-2 border border-gray-300 rounded-xl text-sm text-gray-700 hover:bg-gray-50 font-medium transition"
           >
-            Huỷ
+            Cancel
           </button>
           <button
             type="submit"
@@ -322,7 +322,7 @@ function ReturnModal({ bookingId, onClose, onSuccess }) {
             ) : (
               <ArrowRightLeft className="w-4 h-4" />
             )}
-            Tạo Biên Bản Thu Xe
+            Create Return Record
           </button>
         </div>
       </form>
@@ -421,19 +421,19 @@ export default function StaffBookingDetail() {
       setIsEditing(false);
       fetchData();
     } catch (err) {
-      alert("Lỗi khi cập nhật: " + err.message);
+      alert("Error updating: " + err.message);
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Bạn có chắc chắn muốn xoá đơn đặt xe này?")) return;
+    if (!window.confirm("Are you sure you want to delete this booking?")) return;
     try {
       await deleteBooking(id);
       navigate("/staff/bookings");
     } catch (err) {
-      alert("Lỗi khi xoá: " + err.message);
+      alert("Error deleting: " + err.message);
     }
   };
 
@@ -466,7 +466,7 @@ export default function StaffBookingDetail() {
   if (!booking)
     return (
       <div className="p-10 text-gray-500 text-center">
-        Không tìm thấy đơn đặt xe.
+        Booking not found.
       </div>
     );
 
@@ -512,10 +512,10 @@ export default function StaffBookingDetail() {
             </button>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                Chi tiết đơn #{booking._id.slice(-6).toUpperCase()}
+                Booking Details #{booking._id.slice(-6).toUpperCase()}
               </h1>
               <p className="text-gray-500 text-sm mt-1">
-                Trạng thái:{" "}
+                Status:{" "}
                 <span className="font-semibold uppercase text-blue-600">
                   {booking.status}
                 </span>
@@ -530,7 +530,7 @@ export default function StaffBookingDetail() {
                 className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 font-medium rounded-lg hover:bg-blue-100 transition text-sm"
               >
                 <Edit className="w-4 h-4" />
-                Sửa đơn
+                Edit Booking
               </button>
             )}
             {canDelete && !isEditing && (
@@ -539,7 +539,7 @@ export default function StaffBookingDetail() {
                 className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 font-medium rounded-lg hover:bg-red-100 transition text-sm"
               >
                 <Trash2 className="w-4 h-4" />
-                Xoá đơn
+                Delete Booking
               </button>
             )}
             {canDelivery && !isEditing && (
@@ -548,7 +548,7 @@ export default function StaffBookingDetail() {
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 font-medium rounded-lg hover:bg-indigo-100 transition text-sm"
               >
                 <KeyRound className="w-4 h-4" />
-                Lập BB Giao xe
+                Create Delivery Record
               </button>
             )}
             {canReturn && !isEditing && (
@@ -557,7 +557,7 @@ export default function StaffBookingDetail() {
                 className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 font-medium rounded-lg hover:bg-emerald-100 transition text-sm"
               >
                 <ArrowRightLeft className="w-4 h-4" />
-                Lập BB Thu xe
+                Create Return Record
               </button>
             )}
           </div>
@@ -568,7 +568,7 @@ export default function StaffBookingDetail() {
           <div className="flex items-center gap-3 p-4 bg-indigo-50 border border-indigo-100 rounded-2xl">
             <CheckCircle2 className="w-5 h-5 text-indigo-600 shrink-0" />
             <p className="text-indigo-700 font-medium text-sm">
-              Lập biên bản giao xe thành công!
+              Delivery record created successfully!
             </p>
           </div>
         )}
@@ -582,29 +582,29 @@ export default function StaffBookingDetail() {
               </div>
               <div>
                 <h2 className="text-base font-bold text-green-800">
-                  Nhận lại xe thành công!
+                  Vehicle returned successfully!
                 </h2>
                 <p className="text-sm text-gray-500">
-                  Biên bản thu hồi xe đã được lưu.
+                  Return handover record has been saved.
                 </p>
               </div>
             </div>
             <div className="bg-gray-50 rounded-xl p-4 space-y-3">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Phí sạc pin:</span>
+                <span className="text-gray-500">Charging Fee:</span>
                 <span className="font-semibold text-gray-900">
                   {formatCurrency(returnSuccessData.charging_fee)}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Tiền phạt:</span>
+                <span className="text-gray-500">Penalty Amount:</span>
                 <span className="font-semibold text-gray-900">
                   {formatCurrency(returnSuccessData.penalty_amount)}
                 </span>
               </div>
               <div className="border-t border-gray-200 pt-3 flex justify-between">
                 <span className="font-bold text-gray-800 text-sm">
-                  Khách cần thanh toán thêm:
+                  Customer needs to pay extra:
                 </span>
                 <span className="font-bold text-red-600 text-base">
                   {formatCurrency(returnSuccessData.final_amount_to_pay)}
@@ -620,14 +620,14 @@ export default function StaffBookingDetail() {
             {/* Trip info */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <h2 className="text-lg font-bold text-gray-800 mb-4">
-                Thông tin chuyến đi
+                Trip Information
               </h2>
               {isEditing ? (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Dịch vụ
+                        Service
                       </label>
                       <select
                         name="rental_type"
@@ -635,14 +635,14 @@ export default function StaffBookingDetail() {
                         onChange={handleEditChange}
                         className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition"
                       >
-                        <option value="">(Bỏ qua nếu không đổi)</option>
-                        <option value="self_drive">Thuê xe tự lái</option>
-                        <option value="with_driver">Thuê xe kèm tài xế</option>
+                        <option value="">(Optional: Leave blank if no change)</option>
+                        <option value="self_drive">Self-drive</option>
+                        <option value="with_driver">With Driver</option>
                       </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        ID Xe cần đổi
+                        Vehicle ID to Change
                       </label>
                       <input
                         type="text"
@@ -650,12 +650,12 @@ export default function StaffBookingDetail() {
                         value={editForm.vehicle_id}
                         onChange={handleEditChange}
                         className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                        placeholder="Nhập ID Xe..."
+                        placeholder="Enter Vehicle ID..."
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Ngày bắt đầu
+                        Start Date
                       </label>
                       <input
                         type="date"
@@ -667,7 +667,7 @@ export default function StaffBookingDetail() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Ngày kết thúc
+                        End Date
                       </label>
                       <input
                         type="date"
@@ -679,7 +679,7 @@ export default function StaffBookingDetail() {
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Điểm nhận xe
+                        Pickup Location
                       </label>
                       <input
                         type="text"
@@ -691,7 +691,7 @@ export default function StaffBookingDetail() {
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Điểm trả xe
+                        Return Location
                       </label>
                       <input
                         type="text"
@@ -707,7 +707,7 @@ export default function StaffBookingDetail() {
                       onClick={() => setIsEditing(false)}
                       className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center transition font-medium"
                     >
-                      <X className="w-4 h-4 mr-2" /> Huỷ
+                      <X className="w-4 h-4 mr-2" /> Cancel
                     </button>
                     <button
                       onClick={handleUpdate}
@@ -719,52 +719,52 @@ export default function StaffBookingDetail() {
                       ) : (
                         <Save className="w-4 h-4 mr-2" />
                       )}
-                      Lưu thay đổi
+                      Save Changes
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-6">
                   <div>
-                    <p className="text-sm text-gray-500">Ngày bắt đầu</p>
+                    <p className="text-sm text-gray-500">Start Date</p>
                     <p className="font-semibold text-gray-900 mt-1">
                       {formatDate(booking.start_date, true)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Ngày kết thúc</p>
+                    <p className="text-sm text-gray-500">End Date</p>
                     <p className="font-semibold text-gray-900 mt-1">
                       {formatDate(booking.end_date, true)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Dịch vụ</p>
+                    <p className="text-sm text-gray-500">Service</p>
                     <p className="font-medium text-gray-800 mt-1 uppercase text-xs bg-gray-100 inline-block px-2.5 py-1 rounded">
                       {booking.rental_type === "with_driver"
-                        ? "Thuê xe kèm tài xế"
+                        ? "With Driver"
                         : booking.rental_type === "self_drive"
-                        ? "Thuê xe tự lái"
+                        ? "Self-drive"
                         : booking.rental_type}
                     </p>
                   </div>
                   {booking.rental_type === "with_driver" && (
                     <div>
-                      <p className="text-sm text-gray-500">Tài xế</p>
+                      <p className="text-sm text-gray-500">Driver</p>
                       <p className="font-medium text-gray-900 mt-1">
-                        {booking.driver?.user?.full_name || "Chưa phân công"}
+                        {booking.driver?.user?.full_name || "Not assigned"}
                       </p>
                     </div>
                   )}
                   <div className="md:col-span-2">
-                    <p className="text-sm text-gray-500">Điểm nhận xe</p>
+                    <p className="text-sm text-gray-500">Pickup Location</p>
                     <p className="font-medium text-gray-900 mt-1">
-                      {booking.pickup_location || "Không có thông tin"}
+                      {booking.pickup_location || "No information"}
                     </p>
                   </div>
                   <div className="md:col-span-2">
-                    <p className="text-sm text-gray-500">Điểm trả xe</p>
+                    <p className="text-sm text-gray-500">Return Location</p>
                     <p className="font-medium text-gray-900 mt-1">
-                      {booking.return_location || "Không có thông tin"}
+                      {booking.return_location || "No information"}
                     </p>
                   </div>
                 </div>
@@ -774,7 +774,7 @@ export default function StaffBookingDetail() {
             {/* Vehicle */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <h2 className="text-lg font-bold text-gray-800 mb-4">
-                Thông tin xe
+                Vehicle Information
               </h2>
               {booking.vehicle ? (
                 <div className="flex items-start md:items-center space-x-5 flex-col md:flex-row space-y-4 md:space-y-0">
@@ -806,7 +806,7 @@ export default function StaffBookingDetail() {
                   </div>
                 </div>
               ) : (
-                <p className="text-gray-500">Không có dữ liệu xe</p>
+                <p className="text-gray-500">No vehicle data available</p>
               )}
             </div>
           </div>
@@ -816,17 +816,17 @@ export default function StaffBookingDetail() {
             {/* Customer */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <h2 className="text-lg font-bold text-gray-800 mb-4">
-                Khách hàng
+                Customer
               </h2>
               <div className="space-y-4">
                 <div>
-                  <p className="text-sm text-gray-500">Họ tên</p>
+                  <p className="text-sm text-gray-500">Full Name</p>
                   <p className="font-semibold text-gray-900 mt-0.5">
                     {booking.customer?.user?.full_name}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Số điện thoại</p>
+                  <p className="text-sm text-gray-500">Phone Number</p>
                   <p className="font-semibold text-gray-900 mt-0.5">
                     {booking.customer?.user?.phone}
                   </p>
@@ -842,16 +842,16 @@ export default function StaffBookingDetail() {
 
             {/* Finance */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h2 className="text-lg font-bold text-gray-800 mb-4">Tài chính</h2>
+              <h2 className="text-lg font-bold text-gray-800 mb-4">Finance</h2>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-500 font-medium">Tổng tiền</span>
+                  <span className="text-gray-500 font-medium">Total Amount</span>
                   <span className="font-bold text-gray-900">
                     {formatCurrency(booking.total_amount)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-500 font-medium">Tiền cọc</span>
+                  <span className="text-gray-500 font-medium">Deposit</span>
                   <span className="font-bold text-gray-900">
                     {formatCurrency(booking.deposit_amount)}
                   </span>
@@ -861,14 +861,14 @@ export default function StaffBookingDetail() {
                     <div className="border-t border-gray-100 pt-3 mt-3" />
                     <div className="flex justify-between items-center">
                       <span className="text-gray-500 font-medium">
-                        Đã thanh toán
+                        Total Paid
                       </span>
                       <span className="font-bold text-green-600">
                         {formatCurrency(payments.summary.total_paid)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg mt-2">
-                      <span className="text-gray-800 font-bold">Còn lại</span>
+                      <span className="text-gray-800 font-bold">Remaining Balance</span>
                       <span className="font-bold text-red-600 text-lg">
                         {formatCurrency(payments.summary.remaining)}
                       </span>
@@ -882,18 +882,18 @@ export default function StaffBookingDetail() {
             {handovers?.delivery && (
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                 <h2 className="text-lg font-bold text-gray-800 mb-4">
-                  Biên bản bàn giao
+                  Handover Records
                 </h2>
                 <div className="space-y-4">
                   <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-1 h-full bg-blue-400" />
-                    <p className="text-sm font-bold text-blue-900">Giao xe</p>
+                    <p className="text-sm font-bold text-blue-900">Delivery Handover</p>
                     <p className="text-sm font-medium text-gray-700 mt-1">
                       {formatDate(handovers.delivery.handover_time, true)}
                     </p>
                     <p className="text-xs text-gray-500 mt-1 flex justify-between">
                       <span>
-                        Nhân viên: {handovers.delivery.staff?.user?.full_name}
+                        Staff: {handovers.delivery.staff?.user?.full_name}
                       </span>
                       <span className="font-medium text-gray-700">
                         {handovers.delivery.mileage} km
@@ -903,16 +903,16 @@ export default function StaffBookingDetail() {
                   {handovers.return && (
                     <div className="p-4 bg-green-50 border border-green-100 rounded-xl relative overflow-hidden">
                       <div className="absolute top-0 left-0 w-1 h-full bg-green-400" />
-                      <p className="text-sm font-bold text-green-900">Trả xe</p>
+                      <p className="text-sm font-bold text-green-900">Return Handover</p>
                       <p className="text-sm font-medium text-gray-700 mt-1">
                         {formatDate(handovers.return.handover_time, true)}
                       </p>
                       <p className="text-xs text-gray-500 mt-1 flex justify-between">
                         <span>
-                          Nhân viên: {handovers.return.staff?.user?.full_name}
+                          Staff: {handovers.return.staff?.user?.full_name}
                         </span>
                         <span className="font-medium text-gray-700">
-                          Chạy: {handovers.km_driven} km
+                          Driven: {handovers.km_driven} km
                         </span>
                       </p>
                     </div>

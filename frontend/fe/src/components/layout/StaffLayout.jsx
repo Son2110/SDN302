@@ -24,42 +24,42 @@ const StaffLayout = () => {
 
   const navItems = [
     {
-      label: "Đơn đặt xe",
+      label: "Bookings",
       icon: <Car className="w-5 h-5" />,
       path: "/staff/bookings",
     },
     {
-      label: "Đơn quá hạn",
+      label: "Overdue Bookings",
       icon: <AlertTriangle className="w-5 h-5" />,
       path: "/staff/overdue-bookings",
     },
     {
-      label: "Quản lý xe",
+      label: "Vehicle Management",
       icon: <Truck className="w-5 h-5" />,
       path: "/staff/vehicles",
     },
     {
-      label: "Quản lý tài xế",
+      label: "Driver Management",
       icon: <UserCheck className="w-5 h-5" />,
       path: "/staff/drivers",
     },
     {
-      label: "Phân công tài xế",
+      label: "Driver Assignment",
       icon: <Users className="w-5 h-5" />,
       path: "/staff/assignments",
     },
     {
-      label: "Biên bản bàn giao",
+      label: "Handover Records",
       icon: <FileText className="w-5 h-5" />,
       path: "/staff/handovers",
     },
     {
-      label: "Yêu cầu gia hạn",
+      label: "Extension Requests",
       icon: <Clock className="w-5 h-5" />,
       path: "/staff/extensions",
     },
     {
-      label: "Thanh toán",
+      label: "Payments",
       icon: <CreditCard className="w-5 h-5" />,
       path: "/staff/payments",
     },
@@ -98,14 +98,14 @@ const StaffLayout = () => {
             className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 w-full px-4 py-3 rounded-xl transition-colors font-medium border border-gray-200"
           >
             <HomeIcon className="w-5 h-5" />
-            <span>Trở về Trang chủ</span>
+            <span>Back to Home</span>
           </NavLink>
           <button
             onClick={handleLogout}
             className="flex items-center space-x-3 text-red-600 hover:bg-red-50 w-full px-4 py-3 rounded-xl transition-colors font-medium"
           >
             <LogOut className="w-5 h-5" />
-            <span>Đăng xuất</span>
+            <span>Logout</span>
           </button>
         </div>
       </aside>

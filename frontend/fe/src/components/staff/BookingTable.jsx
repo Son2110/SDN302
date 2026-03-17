@@ -13,18 +13,18 @@ const STATUS_BADGES = {
 };
 
 const STATUS_LABELS = {
-  pending: "Chờ xác nhận",
-  confirmed: "Đã xác nhận",
-  in_progress: "Đang thuê",
-  vehicle_returned: "Đã trả xe",
-  vehicle_delivered: "Đã bàn giao xe",
-  completed: "Hoàn thành",
-  cancelled: "Đã huỷ",
+  pending: "Pending",
+  confirmed: "Confirmed",
+  in_progress: "In Progress",
+  vehicle_returned: "Vehicle Returned",
+  vehicle_delivered: "Vehicle Delivered",
+  completed: "Completed",
+  cancelled: "Cancelled",
 };
 
 const RENTAL_TYPES = {
-  self_drive: "Thuê xe tự lái",
-  with_driver: "Thuê xe kèm tài xế",
+  self_drive: "Self-drive",
+  with_driver: "With Driver",
 };
 
 export default function BookingTable({ bookings, onDelete }) {
@@ -33,7 +33,7 @@ export default function BookingTable({ bookings, onDelete }) {
   if (!bookings || bookings.length === 0) {
     return (
       <div className="text-center py-10 text-gray-500 bg-white rounded-xl shadow-sm border border-gray-100">
-        Không tìm thấy đơn đặt xe nào.
+        No bookings found.
       </div>
     );
   }
@@ -48,13 +48,13 @@ export default function BookingTable({ bookings, onDelete }) {
         <table className="w-full text-left text-sm text-gray-600">
           <thead className="bg-gray-50 text-gray-700 font-medium">
             <tr>
-              <th className="px-5 py-4 border-b">Mã/Khách hàng</th>
-              <th className="px-5 py-4 border-b">Xe & Loại</th>
-              <th className="px-5 py-4 border-b">Thời gian</th>
-              <th className="px-5 py-4 border-b">Tổng tiền</th>
-              <th className="px-5 py-4 border-b">Tài xế</th>
-              <th className="px-5 py-4 border-b">Trạng thái</th>
-              <th className="px-5 py-4 border-b text-center">Thao tác</th>
+              <th className="px-5 py-4 border-b">ID / Customer</th>
+              <th className="px-5 py-4 border-b">Vehicle & Type</th>
+              <th className="px-5 py-4 border-b">Duration</th>
+              <th className="px-5 py-4 border-b">Total Amount</th>
+              <th className="px-5 py-4 border-b">Driver</th>
+              <th className="px-5 py-4 border-b">Status</th>
+              <th className="px-5 py-4 border-b text-center">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -69,7 +69,7 @@ export default function BookingTable({ bookings, onDelete }) {
                     #{b._id.slice(-6).toUpperCase()}
                   </div>
                   <div className="text-sm mt-1">
-                    {b.customer?.user?.full_name || "Khách"}
+                    {b.customer?.user?.full_name || "Guest"}
                   </div>
                   <div className="text-xs text-gray-400">
                     {b.customer?.user?.phone}
@@ -98,13 +98,13 @@ export default function BookingTable({ bookings, onDelete }) {
                 {/* Thời gian */}
                 <td className="px-5 py-4">
                   <div className="text-sm">
-                    Từ:{" "}
+                    From:{" "}
                     <span className="font-medium">
                       {formatDate(b.start_date)}
                     </span>
                   </div>
                   <div className="text-sm mt-1">
-                    Đến:{" "}
+                    To:{" "}
                     <span className="font-medium">
                       {formatDate(b.end_date)}
                     </span>
@@ -118,7 +118,7 @@ export default function BookingTable({ bookings, onDelete }) {
                   </div>
                   {b.deposit_amount > 0 && (
                     <div className="text-xs text-gray-500 mt-1">
-                      Cọc: {formatCurrency(b.deposit_amount)}
+                      Deposit: {formatCurrency(b.deposit_amount)}
                     </div>
                   )}
                 </td>
@@ -127,18 +127,18 @@ export default function BookingTable({ bookings, onDelete }) {
                 <td className="px-5 py-4">
                   {b.rental_type === "self_drive" ? (
                     <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md font-medium">
-                      Tự lái
+                      Self-drive
                     </span>
                   ) : b.driver ? (
                     <div>
                       <span className="inline-block mt-1 px-2 py-0.5 bg-teal-100 text-teal-700 text-xs font-medium rounded-full">
-                        Đã phân công
+                        Assigned
                       </span>
                     </div>
                   ) : (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                      Chưa phân công
+                      Unassigned
                     </span>
                   )}
                 </td>
@@ -160,7 +160,7 @@ export default function BookingTable({ bookings, onDelete }) {
                     <Link
                       to={`/staff/bookings/${b._id}`}
                       className="p-1.5 text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
-                      title="Xem chi tiết"
+                      title="View Details"
                     >
                       <Eye className="w-4 h-4" />
                     </Link>
@@ -172,7 +172,7 @@ export default function BookingTable({ bookings, onDelete }) {
                           navigate(`/staff/bookings/${b._id}/assign-driver`)
                         }
                         className="p-1.5 text-indigo-600 bg-indigo-50 rounded hover:bg-indigo-100 transition-colors"
-                        title="Phân công tài xế"
+                        title="Assign Driver"
                       >
                         <UserPlus className="w-4 h-4" />
                       </button>
@@ -182,7 +182,7 @@ export default function BookingTable({ bookings, onDelete }) {
                       <button
                         onClick={() => onDelete(b._id)}
                         className="p-1.5 text-red-600 bg-red-50 rounded hover:bg-red-100 transition-colors"
-                        title="Xoá đơn"
+                        title="Delete Booking"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

@@ -6,15 +6,15 @@ const TYPE_BADGES = {
 };
 
 const TYPE_LABELS = {
-  delivery: "Giao xe (Delivery)",
-  return: "Trả xe (Return)",
+  delivery: "Delivery",
+  return: "Return",
 };
 
 export default function HandoverTable({ handovers }) {
   if (!handovers || handovers.length === 0) {
     return (
       <div className="text-center py-10 text-gray-500 bg-white rounded-xl shadow-sm border border-gray-100">
-        Không tìm thấy biên bản nào.
+        No records found.
       </div>
     );
   }
@@ -25,12 +25,12 @@ export default function HandoverTable({ handovers }) {
         <table className="w-full text-left text-sm text-gray-600">
           <thead className="bg-gray-50 text-gray-700 font-medium">
             <tr>
-              <th className="px-5 py-4 border-b">Loại Biên Bản</th>
-              <th className="px-5 py-4 border-b">Thời gian</th>
-              <th className="px-5 py-4 border-b">Booking & Khách</th>
-              <th className="px-5 py-4 border-b">Xe</th>
-              <th className="px-5 py-4 border-b">Tình trạng (Km / Pin)</th>
-              <th className="px-5 py-4 border-b">Nhân viên</th>
+              <th className="px-5 py-4 border-b">Type</th>
+              <th className="px-5 py-4 border-b">Time</th>
+              <th className="px-5 py-4 border-b">Booking & Customer</th>
+              <th className="px-5 py-4 border-b">Vehicle</th>
+              <th className="px-5 py-4 border-b">Condition (ODO / Battery)</th>
+              <th className="px-5 py-4 border-b">Staff</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -64,11 +64,11 @@ export default function HandoverTable({ handovers }) {
                 </td>
                 <td className="px-5 py-4">
                   <div>
-                    <span className="text-gray-500">ODO:</span> <span className="font-medium text-gray-900">{h.mileage?.toLocaleString("vi-VN")} km</span>
+                    <span className="text-gray-500">ODO:</span> <span className="font-medium text-gray-900">{h.mileage?.toLocaleString("en-US")} km</span>
                   </div>
                   {h.battery_level_percentage !== undefined && h.battery_level_percentage !== null && (
                     <div className="mt-1">
-                      <span className="text-gray-500">Pin:</span> <span className="font-medium text-gray-900">{h.battery_level_percentage}%</span>
+                      <span className="text-gray-500">Battery:</span> <span className="font-medium text-gray-900">{h.battery_level_percentage}%</span>
                     </div>
                   )}
                 </td>

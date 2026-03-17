@@ -18,7 +18,7 @@ export default function AssignDriverModal({ booking, onClose, onSuccess }) {
         const res = await getAllDrivers({ status: "available", limit: 100 });
         setDrivers(res.data || []);
       } catch (err) {
-        setError("Không thể tải danh sách tài xế: " + err.message);
+        setError("Cannot load driver list: " + err.message);
       } finally {
         setLoading(false);
       }
@@ -61,9 +61,9 @@ export default function AssignDriverModal({ booking, onClose, onSuccess }) {
               <Users className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Phân công tài xế</h2>
+              <h2 className="text-lg font-bold text-gray-900">Assign Driver</h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                Đơn #{booking._id.slice(-6).toUpperCase()} ·{" "}
+                Booking #{booking._id.slice(-6).toUpperCase()} ·{" "}
                 {booking.vehicle?.brand} {booking.vehicle?.model}
               </p>
             </div>
@@ -81,17 +81,17 @@ export default function AssignDriverModal({ booking, onClose, onSuccess }) {
           {/* Booking Info Strip */}
           <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl mb-5 text-sm">
             <div>
-              <span className="text-gray-500">Khách:</span>{" "}
+              <span className="text-gray-500">Customer:</span>{" "}
               <span className="font-semibold text-gray-800">
                 {booking.customer?.user?.full_name || "—"}
               </span>
             </div>
             <div className="w-px h-4 bg-gray-300" />
             <div>
-              <span className="text-gray-500">Thời gian:</span>{" "}
+              <span className="text-gray-500">Duration:</span>{" "}
               <span className="font-semibold text-gray-800">
-                {new Date(booking.start_date).toLocaleDateString("vi-VN")} →{" "}
-                {new Date(booking.end_date).toLocaleDateString("vi-VN")}
+                {new Date(booking.start_date).toLocaleDateString("en-US")} →{" "}
+                {new Date(booking.end_date).toLocaleDateString("en-US")}
               </span>
             </div>
           </div>
@@ -109,7 +109,7 @@ export default function AssignDriverModal({ booking, onClose, onSuccess }) {
             <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-100 rounded-xl mb-4">
               <CheckCircle2 className="w-5 h-5 text-green-500" />
               <p className="text-sm text-green-700 font-medium">
-                Đã gửi yêu cầu phân công thành công! Đang chờ tài xế xác nhận.
+                Assignment request sent successfully! Waiting for driver confirmation.
               </p>
             </div>
           )}
@@ -122,15 +122,15 @@ export default function AssignDriverModal({ booking, onClose, onSuccess }) {
           ) : drivers.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              <p className="font-medium">Không có tài xế nào sẵn sàng</p>
+              <p className="font-medium">No drivers available</p>
               <p className="text-xs mt-1 text-gray-400">
-                Tất cả tài xế đang bận hoặc chưa được duyệt
+                All drivers are busy or not yet approved
               </p>
             </div>
           ) : (
             <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                {drivers.length} tài xế đang rảnh
+                {drivers.length} drivers available
               </p>
               {drivers.map((driver) => {
                 const isSelected = selectedDriverId === driver._id;
@@ -157,7 +157,7 @@ export default function AssignDriverModal({ booking, onClose, onSuccess }) {
                         className={`font-semibold text-sm ${isSelected ? "text-blue-800" : "text-gray-800"
                           }`}
                       >
-                        {driver.user?.full_name || "Không rõ tên"}
+                        {driver.user?.full_name || "Unknown name"}
                       </p>
                       <div className="flex items-center gap-1 mt-0.5 text-xs text-gray-500">
                         <Phone className="w-3 h-3" />
@@ -166,7 +166,7 @@ export default function AssignDriverModal({ booking, onClose, onSuccess }) {
                     </div>
                     {/* Available badge */}
                     <span className="shrink-0 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                      Sẵn sàng
+                      Available
                     </span>
                     {isSelected && (
                       <UserCheck className="w-5 h-5 text-blue-600 shrink-0" />
@@ -184,7 +184,7 @@ export default function AssignDriverModal({ booking, onClose, onSuccess }) {
             onClick={onClose}
             className="px-5 py-2.5 border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-100 transition-colors text-sm"
           >
-            Huỷ
+            Cancel
           </button>
           <button
             onClick={handleAssign}
@@ -194,12 +194,12 @@ export default function AssignDriverModal({ booking, onClose, onSuccess }) {
             {assigning ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Đang phân công...
+                Assigning...
               </>
             ) : (
               <>
                 <UserCheck className="w-4 h-4" />
-                Xác nhận phân công
+                Confirm Assignment
               </>
             )}
           </button>
