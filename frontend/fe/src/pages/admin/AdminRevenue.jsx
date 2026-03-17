@@ -15,11 +15,11 @@ import { formatCurrency } from "../../utils/formatters";
 const API_URL = import.meta.env.VITE_API_URL;
 
 const TYPE_LABELS = {
-  deposit: "Đặt cọc",
-  rental_fee: "Phí thuê xe",
-  extension_fee: "Phí gia hạn",
-  penalty: "Tiền phạt",
-  refund: "Hoàn tiền",
+  deposit: "Deposit",
+  rental_fee: "Rental Fee",
+  extension_fee: "Extension Fee",
+  penalty: "Penalty",
+  refund: "Refund",
 };
 
 const TYPE_COLORS = {
@@ -39,18 +39,18 @@ const TYPE_TEXT = {
 };
 
 const MONTH_NAMES = [
-  "Th1",
-  "Th2",
-  "Th3",
-  "Th4",
-  "Th5",
-  "Th6",
-  "Th7",
-  "Th8",
-  "Th9",
-  "Th10",
-  "Th11",
-  "Th12",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 
 const AdminRevenue = () => {
@@ -73,7 +73,7 @@ const AdminRevenue = () => {
       });
       const json = await res.json();
       if (!res.ok)
-        throw new Error(json.message || "Không thể tải dữ liệu doanh thu");
+        throw new Error(json.message || "Unable to load revenue data");
       setData(json.data);
     } catch (err) {
       setError(err.message);
@@ -98,10 +98,10 @@ const AdminRevenue = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Doanh thu & Thống kê
+            Revenue & Statistics
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            Tổng quan tài chính toàn hệ thống
+            System-wide financial overview
           </p>
         </div>
 
@@ -142,37 +142,33 @@ const AdminRevenue = () => {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-gray-500">
-                  Doanh thu toàn thời gian
-                </span>
+                <span className="text-sm text-gray-500">All-time Revenue</span>
                 <DollarSign className="w-5 h-5 text-gray-400" />
               </div>
               <div className="text-xl font-bold text-gray-900">
                 {formatCurrency(data.totalRevenue)}
               </div>
               <div className="text-xs text-gray-400 mt-1">
-                {data.totalTransactions} giao dịch
+                {data.totalTransactions} transactions
               </div>
             </div>
 
             <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-gray-500">
-                  Doanh thu năm {year}
-                </span>
+                <span className="text-sm text-gray-500">Revenue {year}</span>
                 <TrendingUp className="w-5 h-5 text-green-500" />
               </div>
               <div className="text-xl font-bold text-gray-900">
                 {formatCurrency(data.yearRevenue)}
               </div>
               <div className="text-xs text-gray-400 mt-1">
-                {data.yearTransactions} giao dịch
+                {data.yearTransactions} transactions
               </div>
             </div>
 
             <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-gray-500">Tổng đơn đặt xe</span>
+                <span className="text-sm text-gray-500">Total Bookings</span>
                 <Car className="w-5 h-5 text-blue-500" />
               </div>
               <div className="text-xl font-bold text-gray-900">
@@ -180,23 +176,21 @@ const AdminRevenue = () => {
               </div>
               <div className="text-xs text-gray-400 mt-1">
                 <CheckCircle className="inline w-3 h-3 text-green-500 mr-1" />
-                {data.completedBookings} hoàn thành
+                {data.completedBookings} completed
               </div>
             </div>
 
             <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-gray-500">
-                  Người dùng hoạt động
-                </span>
+                <span className="text-sm text-gray-500">Active Users</span>
                 <Users className="w-5 h-5 text-orange-500" />
               </div>
               <div className="text-xl font-bold text-gray-900">
                 {data.totalUsers}
               </div>
               <div className="text-xs text-gray-400 mt-1">
-                {data.totalCustomers} KH · {data.totalDriversActive} tài xế
-                active
+                {data.totalCustomers} Customers · {data.totalDriversActive}{" "}
+                Active Drivers
               </div>
             </div>
           </div>
@@ -204,7 +198,7 @@ const AdminRevenue = () => {
           {/* Monthly Bar Chart */}
           <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
             <h2 className="text-base font-bold text-gray-900 mb-6">
-              Doanh thu theo tháng — {year}
+              Monthly Revenue — {year}
             </h2>
             <div className="flex items-end gap-2 h-48">
               {monthlyFull.map((m) => {
@@ -220,7 +214,9 @@ const AdminRevenue = () => {
                         <div className="font-bold">
                           {formatCurrency(m.revenue)}
                         </div>
-                        <div className="text-gray-300">{m.count} giao dịch</div>
+                        <div className="text-gray-300">
+                          {m.count} transactions
+                        </div>
                       </div>
                     )}
                     <div
@@ -246,10 +242,10 @@ const AdminRevenue = () => {
           {/* Revenue by Type */}
           <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
             <h2 className="text-base font-bold text-gray-900 mb-5">
-              Phân loại doanh thu
+              Revenue by Type
             </h2>
             {data.byType.length === 0 ? (
-              <p className="text-gray-500 text-sm">Chưa có dữ liệu</p>
+              <p className="text-gray-500 text-sm">No data available</p>
             ) : (
               <div className="space-y-4">
                 {data.byType.map((t) => {
@@ -264,7 +260,7 @@ const AdminRevenue = () => {
                         </span>
                         <div className="flex items-center gap-4 text-sm">
                           <span className="text-gray-500">
-                            {t.count} giao dịch
+                            {t.count} transactions
                           </span>
                           <span className="font-bold text-gray-900">
                             {formatCurrency(t.revenue)}
@@ -291,17 +287,17 @@ const AdminRevenue = () => {
           <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
             <div className="px-6 py-4 border-b border-gray-200">
               <h2 className="text-base font-bold text-gray-900">
-                Chi tiết theo tháng — {year}
+                Monthly Details — {year}
               </h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                   <tr>
-                    <th className="px-5 py-3.5">Tháng</th>
-                    <th className="px-5 py-3.5 text-right">Số giao dịch</th>
-                    <th className="px-5 py-3.5 text-right">Doanh thu</th>
-                    <th className="px-5 py-3.5">Tỷ trọng</th>
+                    <th className="px-5 py-3.5">Month</th>
+                    <th className="px-5 py-3.5 text-right">Transactions</th>
+                    <th className="px-5 py-3.5 text-right">Revenue</th>
+                    <th className="px-5 py-3.5">Share</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -316,7 +312,7 @@ const AdminRevenue = () => {
                         className={`hover:bg-gray-50 transition-colors ${m.revenue === 0 ? "opacity-40" : ""}`}
                       >
                         <td className="px-5 py-3.5 font-medium text-gray-700">
-                          Tháng {m.month}
+                          {MONTH_NAMES[m.month - 1]}
                         </td>
                         <td className="px-5 py-3.5 text-right text-gray-500">
                           {m.count}
@@ -344,7 +340,7 @@ const AdminRevenue = () => {
                 <tfoot className="bg-gray-50">
                   <tr>
                     <td className="px-5 py-4 font-bold text-gray-900">
-                      Tổng năm {year}
+                      Total {year}
                     </td>
                     <td className="px-5 py-4 text-right font-bold text-gray-900">
                       {data.yearTransactions}
