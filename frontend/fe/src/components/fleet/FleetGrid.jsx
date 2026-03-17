@@ -2,7 +2,7 @@ import FleetCard from "./FleetCard";
 // Local fallback data.
 import { fleetData } from "../../../data/fleetData";
 
-const FleetGrid = ({ data }) => {
+const FleetGrid = ({ data, onReset }) => {
   /* Prefer parent-provided data (already filtered).
     If absent (for example, homepage), use fallback fleetData.
   */
@@ -21,7 +21,7 @@ const FleetGrid = ({ data }) => {
             No vehicles match your selected criteria.
           </p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={onReset}
             className="mt-4 text-blue-600 text-sm font-bold underline"
           >
             Reset filters

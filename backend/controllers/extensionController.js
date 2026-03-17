@@ -48,10 +48,13 @@ export const requestExtension = async (req, res) => {
     const diffTime = Math.abs(requestedEndDate - currentEndDate);
     const daysExtended = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    // 4. Tính toán tiền phát sinh (additional_amount) với phí tăng thêm 10%
-    let dailyRate = booking.vehicle.daily_rate;
-    let surchargeRate = dailyRate * 1.1; // Tăng 10% cho việc gia hạn
-    let additionalAmount = daysExtended * surchargeRate;
+    // 4. Tính toán tiền phát sinh:
+    // - Gia hạn trước khi xe đang chạy (status = confirmed) => giá ngày thường
+    // - Gia hạn trong thời gian thuê thực tế (status = in_progress) => +10%
+    const dailyRate = booking.vehicle.daily_rate;
+    const isDuringRental = booking.status === "in_progress";
+    const extensionDailyRate = isDuringRental ? dailyRate * 1.1 : dailyRate;
+    let additionalAmount = daysExtended * extensionDailyRate;
 
     if (booking.rental_type === "with_driver") {
       const DRIVER_FEE_PER_DAY = 500000; // Có thể lấy từ Config DB

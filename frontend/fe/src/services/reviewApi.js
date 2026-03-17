@@ -1,5 +1,6 @@
 const API_URL = import.meta.env.VITE_API_URL;
 import { getToken } from "./api";
+import { toEnglishError } from "../utils/errorMessages";
 
 // POST /api/reviews  (auth: customer)
 export const createReview = async (
@@ -22,7 +23,7 @@ export const createReview = async (
     }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Không thể gửi đánh giá");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Unable to submit review"));
   return data;
 };
 
@@ -32,7 +33,7 @@ export const getReviewsByBooking = async (bookingId) => {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Không thể lấy đánh giá");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Unable to load reviews"));
   return data; // { success, data: [] }
 };
 
@@ -40,7 +41,7 @@ export const getReviewsByBooking = async (bookingId) => {
 export const getDriverReviews = async (driverId) => {
   const res = await fetch(`${API_URL}/reviews/driver/${driverId}`);
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Không thể lấy đánh giá tài xế");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Unable to load driver reviews"));
   return data; // { success, data: [], average_rating, total_reviews }
 };
 
@@ -56,7 +57,7 @@ export const getAllDriverReviews = async ({ page = 1, limit = 12, search = "", m
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Không thể lấy danh sách đánh giá");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Unable to load review list"));
   return data; // { success, data, page, pages, total }
 };
 
@@ -66,7 +67,7 @@ export const getReviewById = async (reviewId) => {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Không thể lấy chi tiết review");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Unable to load review details"));
   return data; // { success, data }
 };
 
@@ -81,6 +82,6 @@ export const updateReview = async (reviewId, rating, comment) => {
     body: JSON.stringify({ rating, comment }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Không thể sửa đánh giá");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Unable to update review"));
   return data;
 };

@@ -1,4 +1,5 @@
 import apiClient, { getToken } from "./api";
+import { toEnglishError } from "../utils/errorMessages";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -16,7 +17,7 @@ export const getHandovers = async (params = {}) => {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to fetch handovers");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to fetch handovers"));
   return data;
 };
 
@@ -30,7 +31,7 @@ export const createDeliveryHandover = async (payload) => {
     body: JSON.stringify(payload),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to create delivery handover");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to create delivery handover"));
   return data;
 };
 
@@ -44,7 +45,7 @@ export const createReturnHandover = async (payload) => {
     body: JSON.stringify(payload),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to create return handover");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to create return handover"));
   return data;
 };
 
@@ -53,7 +54,7 @@ export const getHandoversByBookingId = async (bookingId) => {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to fetch booking handovers");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to fetch booking handovers"));
   return data;
 };
 
@@ -66,6 +67,6 @@ export const confirmDeliveryReceipt = async (handoverId) => {
     },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to confirm vehicle receipt");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to confirm vehicle receipt"));
   return data;
 };

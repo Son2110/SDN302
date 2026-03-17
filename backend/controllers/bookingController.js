@@ -1,14 +1,87 @@
 import { Booking } from "../models/booking.model.js";
-import { Vehicle } from "../models/vehicle.model.js";
+import { Vehicle, VehicleType } from "../models/vehicle.model.js";
 import { Customer, Staff } from "../models/user.model.js";
 import { Payment } from "../models/finance.model.js";
 import { sendNotification } from "../utils/notificationSender.js";
 
 export const getAvailableVehicles = async (req, res) => {
   try {
-    // Return ALL vehicles regardless of status or dates
-    // The calendar on detail page will handle availability checking
-    const vehicles = await Vehicle.find().populate("vehicle_type");
+    const {
+      category,
+      seats,
+      min_price,
+      max_price,
+      price_range,
+      sort = "recommended",
+    } = req.query;
+
+    const vehicleFilter = {
+      status: "available",
+    };
+
+    const vehicleTypeFilter = {};
+    if (category) {
+      vehicleTypeFilter.category = category;
+    }
+
+    if (seats) {
+      const seatNumber = Number(seats);
+      if (!Number.isNaN(seatNumber)) {
+        vehicleTypeFilter.seat_capacity = seatNumber;
+      }
+    }
+
+    if (Object.keys(vehicleTypeFilter).length > 0) {
+      const matchedTypes = await VehicleType.find(vehicleTypeFilter).select("_id");
+      if (matchedTypes.length === 0) {
+        return res.status(200).json({
+          success: true,
+          count: 0,
+          data: [],
+        });
+      }
+      vehicleFilter.vehicle_type = { $in: matchedTypes.map((type) => type._id) };
+    }
+
+    const priceFilter = {};
+
+    if (min_price != null && min_price !== "") {
+      const minPrice = Number(min_price);
+      if (!Number.isNaN(minPrice)) {
+        priceFilter.$gte = minPrice;
+      }
+    }
+
+    if (max_price != null && max_price !== "") {
+      const maxPrice = Number(max_price);
+      if (!Number.isNaN(maxPrice)) {
+        priceFilter.$lte = maxPrice;
+      }
+    }
+
+    if (price_range === "0-1") {
+      priceFilter.$lt = 1000000;
+    } else if (price_range === "1-2") {
+      priceFilter.$gte = 1000000;
+      priceFilter.$lte = 2000000;
+    } else if (price_range === "2+") {
+      priceFilter.$gt = 2000000;
+    }
+
+    if (Object.keys(priceFilter).length > 0) {
+      vehicleFilter.daily_rate = priceFilter;
+    }
+
+    let sortOption = { _id: -1 };
+    if (sort === "price-low") {
+      sortOption = { daily_rate: 1 };
+    } else if (sort === "price-high") {
+      sortOption = { daily_rate: -1 };
+    }
+
+    const vehicles = await Vehicle.find(vehicleFilter)
+      .populate("vehicle_type")
+      .sort(sortOption);
 
     return res.status(200).json({
       success: true,
@@ -49,28 +122,6 @@ export const createBooking = async (req, res) => {
       return res.status(400).json({
         message:
           "You haven't updated your driver's license. Please update it in your Profile before renting a self-drive vehicle!",
-      });
-    }
-
-    //1.5 Check if customer has ONGOING bookings (confirmed, in_progress, vehicle_delivered, vehicle_returned)
-    // "vehicle_returned" means they returned the car but maybe haven't paid final amount yet.
-    // Basically, block if they haven't finished a previous trip completely.
-    const ongoingBooking = await Booking.findOne({
-      customer: customer._id,
-      status: {
-        $in: [
-          "confirmed",
-          "in_progress",
-          "vehicle_delivered",
-          "vehicle_returned",
-        ],
-      },
-    });
-
-    if (ongoingBooking) {
-      return res.status(400).json({
-        message:
-          "You have an ongoing booking. Please complete the current booking before creating a new one.",
       });
     }
 

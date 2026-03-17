@@ -450,12 +450,6 @@ export const confirmDeliveryReceipt = async (req, res) => {
       return res.status(404).json({ message: "Handover record not found." });
     }
 
-    if (handover.handover_type !== "delivery") {
-      return res.status(400).json({
-        message: "Only delivery handover records can be confirmed for receipt.",
-      });
-    }
-
     const booking = handover.booking;
     if (!booking) {
       return res.status(404).json({ message: "Related booking not found." });
@@ -470,7 +464,7 @@ export const confirmDeliveryReceipt = async (req, res) => {
     if (handover.confirmed_by_customer) {
       return res.status(200).json({
         success: true,
-        message: "Record has already been confirmed.",
+        message: `${handover.handover_type === "delivery" ? "Vehicle pickup" : "Vehicle return"} record has already been confirmed.`,
         data: handover,
       });
     }
@@ -485,7 +479,10 @@ export const confirmDeliveryReceipt = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Vehicle receipt confirmed successfully.",
+      message:
+        handover.handover_type === "delivery"
+          ? "Vehicle pickup confirmed successfully."
+          : "Vehicle return confirmed successfully.",
       data: handover,
     });
   } catch (error) {

@@ -89,9 +89,11 @@ const ExtendBooking = () => {
   const calculateExtensionCost = () => {
     const days = calculateExtensionDays();
     if (days <= 0 || !booking) return 0;
+
     const dailyRate = booking.vehicle?.daily_rate || 0;
-    const surchargeRate = dailyRate * 1.1; // Extension fee: +10% per day
-    let cost = days * surchargeRate;
+    const isDuringRental = booking.status === "in_progress";
+    const extensionDailyRate = isDuringRental ? dailyRate * 1.1 : dailyRate;
+    let cost = days * extensionDailyRate;
 
     // Add driver fee if with_driver
     if (booking.rental_type === "with_driver") {
@@ -306,14 +308,18 @@ const ExtendBooking = () => {
                       {formatCurrency(calculateExtensionCost())}
                     </span>
                   </div>
-                  {booking.rental_type === "with_driver" && (
+                  {booking.status === "in_progress" ? (
                     <p className="text-xs text-gray-600 italic">
-                      * Includes extension surcharge (+10%/day) and driver fee (500k/day)
+                      * Surcharge is applied (+10%/day) because the booking is currently in progress.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-600 italic">
+                      * Standard daily rate is applied because the trip has not started yet.
                     </p>
                   )}
-                  {booking.rental_type !== "with_driver" && (
+                  {booking.rental_type === "with_driver" && (
                     <p className="text-xs text-gray-600 italic">
-                      * Includes extension surcharge (+10%/day)
+                      * Includes driver fee (500,000 VND/day).
                     </p>
                   )}
                 </div>

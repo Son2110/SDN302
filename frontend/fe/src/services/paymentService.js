@@ -242,33 +242,62 @@ export const processPayment = async (id, transactionId) => {
 };
 
 /**
- * Verify payment
- * @param {string} id - Payment ID
- * @param {Object} vnpayParams - VNPay callback params (optional)
- * @returns {Promise} Payment status
+ * Create VNPay payment URL (deposit or rental_fee).
+ * @param {string} bookingId - Booking ID
+ * @param {string} paymentType - 'deposit' | 'rental_fee'
+ * @param {string} [returnUrl] - Frontend return URL (backend uses its own redirect URL)
+ * @returns {Promise<{ paymentUrl: string, payment_id: string, txn_ref: string }>}
  */
-export const verifyPayment = async (id, vnpayParams = null) => {
+export const createVnpayPayment = async (bookingId, paymentType, returnUrl) => {
   const token = getToken();
-  try {
-    const response = await fetch(`${API_URL}/payments/${id}/verify`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(vnpayParams || {}),
-    });
+  const response = await fetch(`${API_URL}/payments/vnpay/create`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ booking_id: bookingId, payment_type: paymentType }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Failed to create VNPay payment');
+  return data;
+};
 
-    const data = await response.json();
+/**
+ * Get payment by VNPay txnRef (Payment._id).
+ * @param {string} txnRef - vnp_TxnRef from VNPay callback
+ * @returns {Promise<{ success: boolean, payment: object }>}
+ */
+export const getPaymentByTxnRef = async (txnRef) => {
+  const token = getToken();
+  const response = await fetch(`${API_URL}/payments/by-txn/${encodeURIComponent(txnRef)}`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Payment not found');
+  return data;
+};
 
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to verify payment');
-    }
-
-    return data;
-  } catch (error) {
-    throw error;
-  }
+/**
+ * Verify VNPay callback from frontend (re-verify signature and idempotent update).
+ * @param {string} txnRef - vnp_TxnRef (Payment._id)
+ * @param {Object} vnpayParams - All vnp_* params from URL
+ * @returns {Promise<{ success: boolean, payment: object }>}
+ */
+export const verifyPayment = async (txnRef, vnpayParams = null) => {
+  const token = getToken();
+  const response = await fetch(`${API_URL}/payments/vnpay/verify`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ txnRef, vnpayParams: vnpayParams || {} }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Failed to verify payment');
+  return data;
 };
 
 /**
