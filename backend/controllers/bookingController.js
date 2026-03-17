@@ -6,62 +6,14 @@ import { sendNotification } from "../utils/notificationSender.js";
 
 export const getAvailableVehicles = async (req, res) => {
   try {
-    const { start_date, end_date } = req.query;
+    // Return ALL vehicles regardless of status or dates
+    // The calendar on detail page will handle availability checking
+    const vehicles = await Vehicle.find().populate("vehicle_type");
 
-    // If NO dates provided: Return ALL vehicles with status="available" (for Fleet page)
-    if (!start_date || !end_date) {
-      const allVehicles = await Vehicle.find({
-        status: "available",
-      }).populate("vehicle_type");
-
-      return res.status(200).json({
-        success: true,
-        count: allVehicles.length,
-        data: allVehicles,
-      });
-    }
-
-    //1. validate dates
-    const checkIn = new Date(start_date);
-    const checkOut = new Date(end_date);
-    const today = new Date();
-
-    // Reset to start of day for date-only comparison
-    today.setHours(0, 0, 0, 0);
-    checkIn.setHours(0, 0, 0, 0);
-    checkOut.setHours(0, 0, 0, 0);
-
-    if (checkIn.getTime() >= checkOut.getTime())
-      return res
-        .status(400)
-        .json({ message: "Start date must be before end date" });
-
-    // Allow today and future dates only
-    if (checkIn.getTime() < today.getTime())
-      return res
-        .status(400)
-        .json({ message: "Ngày bắt đầu không được là ngày trong quá khứ" });
-
-    //2. find busy car (chỉ check booking đã confirmed - đã thanh toán cọc)
-    const busyBookings = await Booking.find({
-      status: {
-        $in: ["confirmed", "in_progress"],
-      },
-      $and: [{ start_date: { $lt: checkOut } }, { end_date: { $gt: checkIn } }],
-    }).select("vehicle");
-
-    const busyVehiclesIds = busyBookings.map((booking) => booking.vehicle);
-
-    //3. find available car (status="available" AND không có trong busyVehiclesIds)
-    const availableVehicles = await Vehicle.find({
-      status: "available",
-      _id: { $nin: busyVehiclesIds },
-    }).populate("vehicle_type");
-
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      count: availableVehicles.length,
-      data: availableVehicles,
+      count: vehicles.length,
+      data: vehicles,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -97,6 +49,28 @@ export const createBooking = async (req, res) => {
       return res.status(400).json({
         message:
           "You haven't updated your driver's license. Please update it in your Profile before renting a self-drive vehicle!",
+      });
+    }
+
+    //1.5 Check if customer has ONGOING bookings (confirmed, in_progress, vehicle_delivered, vehicle_returned)
+    // "vehicle_returned" means they returned the car but maybe haven't paid final amount yet.
+    // Basically, block if they haven't finished a previous trip completely.
+    const ongoingBooking = await Booking.findOne({
+      customer: customer._id,
+      status: {
+        $in: [
+          "confirmed",
+          "in_progress",
+          "vehicle_delivered",
+          "vehicle_returned",
+        ],
+      },
+    });
+
+    if (ongoingBooking) {
+      return res.status(400).json({
+        message:
+          "Bạn đang có một đơn đặt xe chưa hoàn tất. Vui lòng hoàn thành đơn hiện tại trước khi đặt mới.",
       });
     }
 
