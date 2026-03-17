@@ -113,11 +113,9 @@ export const createBooking = async (req, res) => {
     //4. check status vehicle
     const vehicle = await Vehicle.findById(vehicle_id);
     if (!vehicle)
-      return res
-        .status(404)
-        .json({
-          message: "Vehicle not found",
-        });
+      return res.status(404).json({
+        message: "Vehicle not found",
+      });
 
     if (vehicle.status === "maintenance") {
       return res.status(400).json({
@@ -221,18 +219,14 @@ export const cancelBooking = async (req, res) => {
 
     if (customer) {
       if (booking.customer.toString() !== customer._id.toString()) {
-        return res
-          .status(403)
-          .json({
-            message: "You do not have permission to cancel this booking.",
-          });
+        return res.status(403).json({
+          message: "You do not have permission to cancel this booking.",
+        });
       }
     } else if (!staff) {
-      return res
-        .status(403)
-        .json({
-          message: "You do not have permission to perform this action.",
-        });
+      return res.status(403).json({
+        message: "You do not have permission to perform this action.",
+      });
     }
 
     const previousStatus = booking.status;
