@@ -43,7 +43,7 @@ const AssignmentDetail = () => {
         }
       }
     } catch (error) {
-      toast.error(error.message || "Không thể tải chi tiết phân công.");
+      toast.error(error.message || "Failed to load assignment details.");
     } finally {
       setLoading(false);
     }
@@ -68,12 +68,12 @@ const AssignmentDetail = () => {
         response_note: note 
       });
       if (response.success) {
-        toast.success(response.message || `Đã gửi phản hồi thành công!`);
+        toast.success(response.message || `Response sent successfully!`);
         setResponseModal({ isOpen: false, type: null });
         fetchDetail();
       }
     } catch (error) {
-      toast.error(error.message || `Từ chối/Nhận chuyến thất bại.`);
+      toast.error(error.message || `Failed to respond to assignment.`);
     } finally {
       setSubmitting(false);
     }
@@ -90,8 +90,8 @@ const AssignmentDetail = () => {
   if (!detail) {
     return (
       <div className="min-h-screen bg-gray-50 pt-24 px-4 text-center">
-        <h2 className="text-xl font-bold text-gray-800">Không tìm thấy phân công</h2>
-        <button onClick={() => navigate(-1)} className="mt-4 text-emerald-600 underline">Quay lại</button>
+        <h2 className="text-xl font-bold text-gray-800">Assignment not found</h2>
+        <button onClick={() => navigate(-1)} className="mt-4 text-emerald-600 underline">Go back</button>
       </div>
     );
   }
@@ -110,20 +110,20 @@ const AssignmentDetail = () => {
           <button onClick={() => navigate(-1)} className="p-2.5 bg-white rounded-xl shadow-sm hover:bg-gray-50 text-gray-600 border border-gray-100 transition-all">
             <ChevronLeft size={20} />
           </button>
-          <h1 className="text-xl font-bold text-gray-900">Chi tiết phân công</h1>
+          <h1 className="text-xl font-bold text-gray-900">Assignment Details</h1>
         </div>
 
         {/* Status Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-gray-400 font-bold uppercase tracking-wider">Trạng thái chuyến:</span>
-            {status === "pending" && <span className="px-4 py-1 rounded-full bg-yellow-50 text-yellow-700 text-xs font-bold uppercase border border-yellow-100 shadow-sm transition-all duration-300">Chờ phản hồi</span>}
-            {status === "accepted" && <span className="px-4 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold uppercase border border-emerald-100 shadow-sm transition-all duration-300">Đã nhận</span>}
-            {status === "rejected" && <span className="px-4 py-1 rounded-full bg-red-50 text-red-700 text-xs font-bold uppercase border border-red-100 shadow-sm transition-all duration-300">Đã từ chối</span>}
+            <span className="text-sm text-gray-400 font-bold uppercase tracking-wider">Trip Status:</span>
+            {status === "pending" && <span className="px-4 py-1 rounded-full bg-yellow-50 text-yellow-700 text-xs font-bold uppercase border border-yellow-100 shadow-sm transition-all duration-300">Pending</span>}
+            {status === "accepted" && <span className="px-4 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold uppercase border border-emerald-100 shadow-sm transition-all duration-300">Accepted</span>}
+            {status === "rejected" && <span className="px-4 py-1 rounded-full bg-red-50 text-red-700 text-xs font-bold uppercase border border-red-100 shadow-sm transition-all duration-300">Rejected</span>}
           </div>
           {response_note && (
              <div className="mt-4 p-4 bg-gray-50 rounded-xl text-sm text-gray-700 italic border border-gray-100">
-               <span className="font-bold not-italic text-gray-500 mr-2">Ghi chú:</span> {response_note}
+               <span className="font-bold not-italic text-gray-500 mr-2">Note:</span> {response_note}
              </div>
           )}
         </div>
@@ -135,7 +135,7 @@ const AssignmentDetail = () => {
               <div className="flex items-center gap-4 bg-red-50 border border-red-100 text-red-700 px-5 py-3 rounded-2xl shadow-sm">
                 <WifiOff className="text-red-400 shrink-0" size={20} />
                 <p className="text-xs font-bold leading-tight">
-                  Bạn đang Nghỉ ca. Hãy kích hoạt trạng thái Hoạt động trong hồ sơ để có thể nhận chuyến này.
+                  You are currently Off Duty. Please activate On Duty status in your profile to accept this trip.
                 </p>
               </div>
             )}
@@ -144,14 +144,14 @@ const AssignmentDetail = () => {
                   onClick={() => openResponseModal("rejected")}
                   className="flex-1 py-3.5 flex items-center justify-center gap-2 rounded-2xl bg-white border-2 border-red-100 text-red-500 font-bold hover:bg-red-50 hover:border-red-200 transition-all uppercase tracking-wider shadow-sm shadow-red-50"
               >
-                  <XCircle size={20} /> TỪ CHỐI
+                  <XCircle size={20} /> REJECT
               </button>
               <button 
                   onClick={() => openResponseModal("accepted")}
                   disabled={driverStatus === "offline"}
                   className="flex-1 py-3.5 flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition-all uppercase tracking-wider shadow-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:grayscale"
               >
-                  <CheckCircle size={20} /> NHẬN CHUYẾN
+                  <CheckCircle size={20} /> ACCEPT TRIP
               </button>
             </div>
           </div>
@@ -159,19 +159,19 @@ const AssignmentDetail = () => {
 
         {/* Info Cards */}
         <div className="space-y-6">
-          {/* Lịch trình */}
+          {/* Detailed Schedule */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
              <div className="bg-emerald-50 px-5 py-4 border-b border-emerald-100/50 flex items-center gap-2.5 font-bold text-emerald-800">
-                <Calendar size={18} /> Lịch trình chi tiết
+                <Calendar size={18} /> Detailed Schedule
              </div>
              <div className="p-5 space-y-5">
                 <div className="grid grid-cols-2 gap-6">
                    <div>
-                     <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1.5">Thời gian đón</p>
+                     <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1.5">Pickup Time</p>
                      <p className="font-bold text-gray-800 text-sm whitespace-nowrap">{startStr}</p>
                    </div>
                    <div className="text-right">
-                     <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1.5 font-inter">Thời gian kết thúc</p>
+                     <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1.5 font-inter">End Time</p>
                      <p className="font-bold text-gray-800 text-sm whitespace-nowrap">{endStr}</p>
                    </div>
                 </div>
@@ -179,14 +179,14 @@ const AssignmentDetail = () => {
                    <div className="flex items-start gap-4">
                       <div className="mt-1 p-2 bg-emerald-50 rounded-lg"><MapPin size={18} className="text-emerald-500"/></div>
                       <div>
-                        <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Điểm đón khách</p>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Pickup Location</p>
                         <p className="text-sm text-gray-800 leading-relaxed font-bold">{booking.pickup_location}</p>
                       </div>
                    </div>
                    <div className="flex items-start gap-4 pt-2">
                        <div className="mt-1 p-2 bg-red-50 rounded-lg"><MapPin size={18} className="text-red-400"/></div>
                       <div>
-                        <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Điểm đến (Dự kiến)</p>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Destination (Estimated)</p>
                         <p className="text-sm text-gray-800 leading-relaxed font-bold">{booking.return_location || booking.pickup_location}</p>
                       </div>
                    </div>
@@ -197,7 +197,7 @@ const AssignmentDetail = () => {
           {/* Contact Info */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
              <div className="bg-gray-50/50 px-5 py-4 border-b border-gray-100 flex items-center gap-2.5 font-bold text-gray-800">
-                <User size={18} /> Thông tin khách hàng
+                <User size={18} /> Customer Information
              </div>
              <div className="p-5">
                 <p className="font-bold text-xl text-gray-900 mb-5">{booking.customer?.user?.full_name}</p>
@@ -220,7 +220,7 @@ const AssignmentDetail = () => {
           {/* Vehicle Info */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
              <div className="bg-gray-50/50 px-5 py-4 border-b border-gray-100 flex items-center gap-2.5 font-bold text-gray-800">
-                <Car size={18} /> Thông tin xe
+                <Car size={18} /> Vehicle Information
              </div>
              <div className="p-5">
                 <div className="flex items-center justify-between mb-4">
@@ -230,7 +230,7 @@ const AssignmentDetail = () => {
                 <div className="text-sm text-gray-600 flex gap-2 items-center">
                     <span className="px-3 py-1 bg-gray-100 rounded-full text-[10px] font-bold uppercase tracking-wider text-gray-500 border border-gray-200">{booking.vehicle?.vehicle_type?.type_name}</span>
                     <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 rounded-full text-[10px] font-bold uppercase tracking-wider text-emerald-600 border border-emerald-100">
-                       <ShieldCheck size={12} /> Sẵn sàng
+                       <ShieldCheck size={12} /> Ready
                     </span>
                  </div>
              </div>
@@ -241,69 +241,69 @@ const AssignmentDetail = () => {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                <div className="bg-gray-50/50 px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                   <div className="flex items-center gap-2.5 font-bold text-gray-800">
-                    <FileText size={18} /> Biên bản bàn giao
+                    <FileText size={18} /> Handover Records
                   </div>
                   {handover && handover.delivery && (
-                     <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 uppercase tracking-widest">Đã giao xe</span>
+                     <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 uppercase tracking-widest">Handed Over</span>
                   )}
                </div>
                
                <div className="p-5">
                   {!handover ? (
-                     <p className="text-sm text-gray-400 italic text-center py-6 font-medium">Chưa có thông tin nhận xe từ điều hành.</p>
+                     <p className="text-sm text-gray-400 italic text-center py-6 font-medium">No handover information available yet.</p>
                   ) : (
                      <div className="space-y-4">
                         {/* Delivery */}
                         {handover.delivery && (
                            <div className="p-4 border border-gray-100 bg-gray-50/50 rounded-2xl">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Thông tin nhận xe:</p>
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Delivery Information:</p>
                               <div className="grid grid-cols-2 gap-5 mb-2">
                                 <div className="flex flex-col">
-                                   <span className="text-[10px] font-bold text-gray-400 uppercase">Người giao</span>
+                                   <span className="text-[10px] font-bold text-gray-400 uppercase">Provider</span>
                                    <span className="font-bold text-sm text-gray-800">{handover.delivery.staff?.user?.full_name || "N/A"}</span>
                                 </div>
                                 <div className="flex flex-col">
-                                   <span className="text-[10px] font-bold text-gray-400 uppercase">Thời gian</span>
+                                   <span className="text-[10px] font-bold text-gray-400 uppercase">Time</span>
                                    <span className="font-bold text-sm text-gray-800">{dayjs(handover.delivery.handover_time).format("DD/MM HH:mm")}</span>
                                 </div>
                                 <div className="flex flex-col">
-                                   <span className="text-[10px] font-bold text-gray-400 uppercase">Số KM ban đầu</span>
+                                   <span className="text-[10px] font-bold text-gray-400 uppercase">Initial KM</span>
                                    <span className="font-bold text-sm text-emerald-600">{handover.delivery.mileage?.toLocaleString()} km</span>
                                 </div>
                                 <div className="flex flex-col">
-                                   <span className="text-[10px] font-bold text-gray-400 uppercase">Pin / Xăng</span>
+                                   <span className="text-[10px] font-bold text-gray-400 uppercase">Battery / Fuel</span>
                                    <span className="font-bold text-sm text-emerald-600">{handover.delivery.battery_level_percentage}%</span>
                                 </div>
                               </div>
                               {handover.delivery.notes && (
                                 <div className="mt-3 pt-3 border-t border-gray-200/50">
-                                   <p className="text-xs text-gray-600 leading-relaxed font-medium"><span className="font-bold text-gray-400 uppercase text-[9px] mr-2">Ghi chú:</span> {handover.delivery.notes}</p>
+                                   <p className="text-xs text-gray-600 leading-relaxed font-medium"><span className="font-bold text-gray-400 uppercase text-[9px] mr-2">Note:</span> {handover.delivery.notes}</p>
                                 </div>
                               )}
                            </div>
                         )}
 
                         {/* Return */}
-                        {handover.return && (
+                         {handover.return && (
                           <div className="p-4 border border-emerald-100/50 bg-emerald-50/30 rounded-2xl ring-1 ring-emerald-100/50 ring-inset">
-                              <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest mb-3">Thông tin trả xe:</p>
+                              <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest mb-3">Return Information:</p>
                               <div className="grid grid-cols-2 gap-5">
                                 <div className="flex flex-col">
-                                   <span className="text-[10px] font-bold text-gray-400 uppercase">Người nhận</span>
+                                   <span className="text-[10px] font-bold text-gray-400 uppercase">Receiver</span>
                                    <span className="font-bold text-sm text-gray-800">{handover.return.staff?.user?.full_name || "N/A"}</span>
                                 </div>
                                 <div className="flex flex-col">
-                                   <span className="text-[10px] font-bold text-gray-400 uppercase">Thời gian trả</span>
+                                   <span className="text-[10px] font-bold text-gray-400 uppercase">Return Time</span>
                                    <span className="font-bold text-sm text-gray-800">{dayjs(handover.return.handover_time).format("DD/MM HH:mm")}</span>
                                 </div>
                                 <div className="flex flex-col">
-                                   <span className="text-[10px] font-bold text-gray-400 uppercase">Số KM cuối</span>
+                                   <span className="text-[10px] font-bold text-gray-400 uppercase">Final KM</span>
                                    <span className="font-bold text-sm text-emerald-600">{handover.return.mileage?.toLocaleString()} km</span>
-                                </div>
-                                <div className="flex flex-col">
-                                   <span className="text-[10px] font-bold text-gray-400 uppercase">Pin / Xăng</span>
-                                   <span className="font-bold text-sm text-emerald-600">{handover.return.battery_level_percentage}%</span>
-                                </div>
+                                 </div>
+                                 <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase">Battery / Fuel</span>
+                                    <span className="font-bold text-sm text-emerald-600">{handover.return.battery_level_percentage}%</span>
+                                 </div>
                               </div>
                           </div>
                         )}
@@ -311,7 +311,7 @@ const AssignmentDetail = () => {
                         {/* Summary */}
                         {handover.km_driven && (
                            <div className="flex items-center justify-between p-4 bg-emerald-600 rounded-2xl text-white shadow-lg shadow-emerald-100">
-                              <span className="text-sm font-bold flex items-center gap-2"><Activity size={18}/> Quãng đường đã di chuyển</span>
+                              <span className="text-sm font-bold flex items-center gap-2"><Activity size={18}/> Distance Travelled</span>
                               <span className="text-lg font-bold">{handover.km_driven.toLocaleString()} km</span>
                            </div>
                         )}

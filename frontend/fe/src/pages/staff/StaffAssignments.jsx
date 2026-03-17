@@ -7,7 +7,7 @@ export default function StaffAssignments() {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   const [statusFilter, setStatusFilter] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -143,7 +143,7 @@ export default function StaffAssignments() {
                   <p className="text-xs text-gray-500 mt-1">Note: Booking must be 'with_driver' and 'confirmed'.</p>
                 </div>
               )}
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Driver ID</label>
                 <input

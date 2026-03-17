@@ -133,7 +133,7 @@ const Navbar = () => {
                 >
                   {item.title}
                 </a>
-              ),
+              )
             )}
           </div>
 
@@ -316,7 +316,7 @@ const Navbar = () => {
           </div>
         )}
       </div>
-    </nav>
+    </nav >
   );
 };
 

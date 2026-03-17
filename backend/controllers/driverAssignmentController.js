@@ -11,22 +11,22 @@ export const assignDriverToBooking = async (req, res) => {
     if (!staff) {
       return res
         .status(403)
-        .json({ message: "Chỉ nhân viên mới có quyền thực hiện thao tác này" });
+        .json({ message: "Only staff can perform this action" });
     }
 
     //2. check booking
     const booking = await Booking.findById(booking_id);
     if (!booking)
-      return res.status(404).json({ message: "Không tìm thấy đơn đặt xe" });
+      return res.status(404).json({ message: "Booking not found" });
 
     if (booking.rental_type !== "with_driver")
       return res.status(400).json({
-        message: "Đơn này là khách tự lái, không cần phân công tài xế.",
+        message: "This booking is self-drive, no driver assignment needed.",
       });
 
     if (booking.status !== "confirmed") {
       return res.status(400).json({
-        message: `Chỉ phân công tài xế cho đơn đã cọc. Trạng thái hiện tại: ${booking.status}`,
+        message: `Only assign drivers to confirmed bookings. Current status: ${booking.status}`,
       });
     }
 
@@ -38,7 +38,7 @@ export const assignDriverToBooking = async (req, res) => {
     if (existingAssignment) {
       return res.status(400).json({
         message:
-          "Đơn này đã được phân công cho một tài xế khác (đang chờ xác nhận hoặc đã nhận).",
+          "This booking has already been assigned to another driver (pending or accepted).",
       });
     }
 
@@ -47,7 +47,7 @@ export const assignDriverToBooking = async (req, res) => {
     if (!driver || driver.status !== "available") {
       return res
         .status(400)
-        .json({ message: "Tài xế không tồn tại hoặc đang không sẵn sàng." });
+        .json({ message: "Driver does not exist or is not available." });
     }
 
     //4. create assignment
@@ -61,10 +61,10 @@ export const assignDriverToBooking = async (req, res) => {
     // Notify Driver
     await sendNotification({
       recipientId: driver.user,
-      title: "Có chuyến xe mới",
-      message: `Bạn được phân công cho đơn #${booking._id
+      title: "New Job Assignment",
+      message: `You have been assigned to booking #${booking._id
         .toString()
-        .slice(-6)}. Vui lòng xác nhận`,
+        .slice(-6)}. Please confirm`,
       type: "driver_assigned",
       relatedId: newAssignment._id,
       relatedModel: "DriverAssignment",
@@ -72,7 +72,7 @@ export const assignDriverToBooking = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Đã gửi yêu cầu phân công đến tài xế. Đang chờ tài xế xác nhận.",
+      message: "Assignment request sent to driver. Waiting for confirmation.",
       data: newAssignment,
     });
   } catch (error) {
@@ -89,13 +89,13 @@ export const respondToAssignment = async (req, res) => {
     if (!driver) {
       return res
         .status(403)
-        .json({ message: "Chỉ tài xế mới có quyền thao tác." });
+        .json({ message: "Only drivers can perform this action." });
     }
 
     if (!["accepted", "rejected"].includes(status)) {
       return res
         .status(400)
-        .json({ message: "Trạng thái phản hồi không hợp lệ." });
+        .json({ message: "Invalid response status." });
     }
 
     const assignment = await DriverAssignment.findById(assignmentId);
@@ -107,13 +107,13 @@ export const respondToAssignment = async (req, res) => {
 
     if (assignment.driver.toString() !== driver._id.toString()) {
       return res.status(403).json({
-        message: "Bạn không có quyền phản hồi yêu cầu của người khác.",
+        message: "You do not have permission to respond to other people's requests.",
       });
     }
 
     if (assignment.status !== "pending") {
       return res.status(400).json({
-        message: `Yêu cầu này đã được xử lý (Hiện tại: ${assignment.status}).`,
+        message: `This request has already been processed (Current status: ${assignment.status}).`,
       });
     }
     assignment.status = status;
@@ -130,10 +130,10 @@ export const respondToAssignment = async (req, res) => {
         // Đơn đã bị huỷ hoặc thay đổi trạng thái → rollback assignment
         assignment.status = "rejected";
         assignment.response_note =
-          "Đơn đặt xe không còn ở trạng thái chờ phân công.";
+          "Booking is no longer in pending assignment status.";
         await assignment.save();
         return res.status(400).json({
-          message: "Đơn này đã bị huỷ hoặc thay đổi, không thể nhận.",
+          message: "This booking has been cancelled or modified and cannot be accepted.",
         });
       }
 
@@ -147,8 +147,8 @@ export const respondToAssignment = async (req, res) => {
       if (booking.customer && booking.customer.user) {
         await sendNotification({
           recipientId: booking.customer.user,
-          title: "Tài xế đã nhận chuyến",
-          message: `Tài xế đã được phân công cho đơn #${booking._id
+          title: "Driver Accepted Trip",
+          message: `The driver has been assigned to booking #${booking._id
             .toString()
             .slice(-6)}.`,
           type: "driver_assigned",
@@ -163,8 +163,8 @@ export const respondToAssignment = async (req, res) => {
     for (const staffMember of allStaff) {
       await sendNotification({
         recipientId: staffMember.user,
-        title: status === "accepted" ? "Tài xế nhận chuyến" : "Tài xế từ chối chuyến",
-        message: `Tài xế ${driver.user.full_name || "vừa"} đã ${status === "accepted" ? "đồng ý kết nối" : "từ chối"} phân công cho đơn #${assignment.booking.toString().slice(-6)}.`,
+        title: status === "accepted" ? "Driver Accepted Trip" : "Driver Rejected Trip",
+        message: `Driver ${driver.user.full_name || "just"} has ${status === "accepted" ? "accepted" : "rejected"} assignment for booking #${assignment.booking.toString().slice(-6)}.`,
         type: "driver_assigned",
         relatedId: assignment.booking,
         relatedModel: "Booking",
@@ -175,8 +175,8 @@ export const respondToAssignment = async (req, res) => {
       success: true,
       message:
         status === "accepted"
-          ? "Nhận chuyến thành công!"
-          : "Đã từ chối chuyến đi.",
+          ? "Accepted trip successfully!"
+          : "Rejected trip successfully.",
       data: assignment,
     });
   } catch (error) {
@@ -268,7 +268,7 @@ export const getAssignmentById = async (req, res) => {
     const driver = await Driver.findOne({ user: req.user._id });
     if (driver && assignment.driver._id.toString() !== driver._id.toString()) {
       return res.status(403).json({
-        message: "Bạn không có quyền xem phân công của người khác.",
+        message: "You do not have permission to view other people's assignments.",
       });
     }
 
@@ -306,7 +306,7 @@ export const updateAssignment = async (req, res) => {
     if (assignment.status === "accepted") {
       return res.status(400).json({
         message:
-          "Không thể sửa phân công đã được tài xế nhận. Hãy huỷ trước rồi tạo mới.",
+          "Cannot modify assignment already accepted by driver. Cancel it first then create new.",
       });
     }
 
@@ -314,7 +314,7 @@ export const updateAssignment = async (req, res) => {
       const newDriver = await Driver.findById(driver_id);
       if (!newDriver || newDriver.status !== "available") {
         return res.status(400).json({
-          message: "Tài xế mới không tồn tại hoặc đang không sẵn sàng.",
+          message: "New driver does not exist or is not available.",
         });
       }
       assignment.driver = newDriver._id;
@@ -328,7 +328,7 @@ export const updateAssignment = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Đã cập nhật phân công. Tài xế mới sẽ nhận yêu cầu.",
+      message: "Assignment updated. New driver will receive request.",
       data: assignment,
     });
   } catch (error) {
@@ -374,7 +374,7 @@ export const deleteAssignment = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Đã huỷ phân công thành công.",
+      message: "Assignment cancelled successfully.",
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -390,7 +390,7 @@ export const getMyAssignments = async (req, res) => {
     if (!driver) {
       return res
         .status(403)
-        .json({ message: "Chỉ tài xế mới xem được danh sách chuyến." });
+        .json({ message: "Only drivers can view trip list." });
     }
 
     const { status } = req.query;
