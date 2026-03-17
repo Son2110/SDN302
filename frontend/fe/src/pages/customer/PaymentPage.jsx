@@ -97,8 +97,25 @@ const PaymentPage = ({ type = "deposit" }) => {
   const handlePayment = async () => {
     setError("");
 
-    // For demo: all methods open the QR payment modal.
-    // In production, each method can be integrated directly.
+    if (selectedMethod === "vnpay") {
+      try {
+        const base = window.location.origin;
+        const paymentType = type === "final" ? "rental_fee" : "deposit";
+        const res = await createVnpayPayment(
+          id,
+          paymentType,
+          `${base}/payment/success`,
+        );
+        if (res.paymentUrl) {
+          window.location.href = res.paymentUrl;
+          return;
+        }
+      } catch (err) {
+        setError(err.message || "Failed to create VNPay payment URL");
+        return;
+      }
+    }
+
     setShowQRModal(true);
   };
 
