@@ -4,7 +4,7 @@ import { Staff, Customer, Driver } from "../models/user.model.js";
 import { sendNotification } from "../utils/notificationSender.js";
 
 // @route POST /api/handovers/delivery
-// @access Private (Chỉ Staff)
+// @access Private (Staff only)
 export const createDeliveryHandover = async (req, res) => {
   try {
     const {
@@ -15,7 +15,7 @@ export const createDeliveryHandover = async (req, res) => {
       customer_signature,
     } = req.body;
 
-    // 1. Xác thực Staff đang làm biên bản
+    // 1. Verify Staff creating the record
     const staff = await Staff.findOne({ user: req.user._id });
     if (!staff) {
       return res
@@ -23,19 +23,19 @@ export const createDeliveryHandover = async (req, res) => {
         .json({ message: "Only staff can create handover records." });
     }
 
-    // 2. Tìm Booking
+    // 2. Find Booking
     const booking = await Booking.findById(booking_id);
     if (!booking)
-      return res.status(404).json({ message: "Không tìm thấy đơn đặt xe." });
+      return res.status(404).json({ message: "Booking not found." });
 
-    // 3. Kiểm tra trạng thái Booking (Chỉ giao xe khi đơn đã confirmed)
+    // 3. Check Booking status (Only deliver when booking is confirmed)
     if (booking.status !== "confirmed") {
       return res.status(400).json({
         message: `Booking is in status ${booking.status}, cannot handover vehicle.`,
       });
     }
 
-    // 3.5. Kiểm tra đã có biên bản giao xe chưa (tránh tạo trùng)
+    // 3.5. Check if delivery handover already exists (prevent duplicates)
     const existingHandover = await VehicleHandover.findOne({
       booking: booking._id,
       handover_type: "delivery",
@@ -46,32 +46,32 @@ export const createDeliveryHandover = async (req, res) => {
       });
     }
 
-    // 4. Lấy thông tin xe hiện tại
+    // 4. Get current vehicle information
     const vehicle = await Vehicle.findById(booking.vehicle);
     if (!vehicle)
       return res
         .status(404)
-        .json({ message: "Lỗi: Không tìm thấy dữ liệu xe." });
+        .json({ message: "Error: Vehicle data not found." });
 
-    // 5. 🟢 TẠO BIÊN BẢN BÀN GIAO (GIAO XE CHO KHÁCH)
+    // 5. 🟢 CREATE HANDOVER RECORD (DELIVERY TO CUSTOMER)
     const newHandover = await VehicleHandover.create({
       booking: booking._id,
       vehicle: vehicle._id,
       staff: staff._id,
-      handover_type: "delivery", // Loại biên bản: Giao đi
-      mileage: mileage || vehicle.current_mileage, // Số km lúc giao
-      battery_level_percentage: battery_level_percentage ?? 100, // % pin lúc giao
+      handover_type: "delivery", // Record type: Delivery
+      mileage: mileage || vehicle.current_mileage, // Mileage at delivery
+      battery_level_percentage: battery_level_percentage ?? 100, // Battery % at delivery
       notes: notes || "Vehicle in normal condition, full battery, all documents provided.",
       confirmed_by_customer: !!customer_signature,
       customer_signature: customer_signature || null,
     });
 
-    // 6. 🟢 CẬP NHẬT TRẠNG THÁI BOOKING & VEHICLE
-    // Booking chuyển sang đang trong chuyến đi
+    // 6. 🟢 UPDATE BOOKING & VEHICLE STATUS
+    // Booking transitions to in-progress
     booking.updateStatus("in_progress");
     await booking.save();
 
-    // Xe chuyển sang trạng thái đang cho thuê (Để hệ thống khác không lấy được xe này)
+    // Vehicle transitions to rented status (so other processes can't use this vehicle)
     vehicle.status = "rented";
     await vehicle.save();
 
@@ -103,7 +103,7 @@ export const createDeliveryHandover = async (req, res) => {
 };
 
 // @route POST /api/handovers/return
-// @access Private (Chỉ Staff)
+// @access Private (Staff only)
 export const createReturnHandover = async (req, res) => {
   try {
     const {
@@ -115,17 +115,17 @@ export const createReturnHandover = async (req, res) => {
       customer_signature,
     } = req.body;
 
-    // 1. Xác thực Staff
+    // 1. Verify Staff
     const staff = await Staff.findOne({ user: req.user._id });
     if (!staff)
       return res
         .status(403)
         .json({ message: "Only staff can create return handover records." });
 
-    // 2. Tìm Booking
+    // 2. Find Booking
     const booking = await Booking.findById(booking_id);
     if (!booking)
-      return res.status(404).json({ message: "Không tìm thấy đơn đặt xe." });
+      return res.status(404).json({ message: "Booking not found." });
 
     if (booking.status !== "in_progress") {
       return res.status(400).json({
@@ -133,14 +133,14 @@ export const createReturnHandover = async (req, res) => {
       });
     }
 
-    // 3. Tìm chiếc xe đang cho thuê
+    // 3. Find the rented vehicle
     const vehicle = await Vehicle.findById(booking.vehicle);
     if (!vehicle)
       return res
         .status(404)
-        .json({ message: "Lỗi: Không tìm thấy dữ liệu xe." });
+        .json({ message: "Error: Vehicle data not found." });
 
-    // 3.5. Kiểm tra đã có biên bản trả xe chưa (tránh tạo trùng)
+    // 3.5. Check if return handover already exists (prevent duplicates)
     const existingReturn = await VehicleHandover.findOne({
       booking: booking._id,
       handover_type: "return",
@@ -151,14 +151,14 @@ export const createReturnHandover = async (req, res) => {
       });
     }
 
-    // 3.6. Validate số Km trả xe
+    // 3.6. Validate return mileage
     if (return_mileage == null || return_mileage < 0) {
       return res.status(400).json({
         message: "Please enter a valid return mileage.",
       });
     }
 
-    // (Optional) Tìm biên bản lúc Giao xe để đối chiếu số Km
+    // (Optional) Find delivery handover to compare mileage
     const deliveryHandover = await VehicleHandover.findOne({
       booking: booking._id,
       handover_type: "delivery",
@@ -170,12 +170,12 @@ export const createReturnHandover = async (req, res) => {
       });
     }
 
-    // 4. TẠO BIÊN BẢN NHẬN LẠI XE (RETURN)
+    // 4. CREATE RETURN HANDOVER RECORD
     const newHandover = await VehicleHandover.create({
       booking: booking._id,
       vehicle: vehicle._id,
       staff: staff._id,
-      handover_type: "return", // Loại biên bản: Nhận về
+      handover_type: "return", // Record type: Return
       mileage: return_mileage,
       battery_level_percentage: battery_level_percentage,
       notes: notes || "Vehicle returned on time, normal condition.",
@@ -183,38 +183,38 @@ export const createReturnHandover = async (req, res) => {
       customer_signature: customer_signature || null,
     });
 
-    // 4.5 TÍNH PHÍ SẠC PIN (CHARGING FEE)
+    // 4.5 CALCULATE CHARGING FEE
     let charging_fee = 0;
     if (deliveryHandover && battery_level_percentage != null) {
       const batteryUsed =
         deliveryHandover.battery_level_percentage - battery_level_percentage;
       if (batteryUsed > 0) {
-        // Lấy thông tin loại xe để tính dung lượng pin & giá sạc
+        // Get vehicle type info to calculate battery capacity & charging cost
         const vehicleType = await VehicleType.findById(vehicle.vehicle_type);
         if (vehicleType && vehicleType.battery_capacity_kwh) {
           const kwhUsed =
             (batteryUsed / 100) * vehicleType.battery_capacity_kwh;
-          const costPerKwh = vehicleType.charging_cost_per_kwh || 3500; // Mặc định 3,500 VND/kWh
+          const costPerKwh = vehicleType.charging_cost_per_kwh || 3500; // Default 3,500 VND/kWh
           charging_fee = Math.round(kwhUsed * costPerKwh);
         }
       }
     }
 
-    // 5. TÍNH TIỀN CHỐT SỔ (FINAL AMOUNT)
-    // final_amount = Tổng tiền thuê + Phí sạc + Phạt (nếu có) - Tiền đã cọc
+    // 5. CALCULATE FINAL AMOUNT
+    // final_amount = Total rental + Charging fee + Penalty (if any) - Deposit paid
     const penalty = penalty_amount || 0;
     const final_amount =
       booking.total_amount + charging_fee + penalty - booking.deposit_amount;
 
-    // 6. CẬP NHẬT TRẠNG THÁI BOOKING & VEHICLE
-    booking.actual_return_date = new Date(); // Lưu lại thời gian trả xe thực tế
-    booking.final_amount = final_amount > 0 ? final_amount : 0; // Số tiền khách còn phải trả thêm
-    booking.updateStatus("vehicle_returned"); // Đổi trạng thái: Đã trả xe (Chờ thanh toán nốt)
+    // 6. UPDATE BOOKING & VEHICLE STATUS
+    booking.actual_return_date = new Date(); // Record actual return time
+    booking.final_amount = final_amount > 0 ? final_amount : 0; // Remaining amount customer needs to pay
+    booking.updateStatus("vehicle_returned"); // Update status: Vehicle returned (Awaiting final payment)
     await booking.save();
 
-    // Xe được thu hồi về bãi -> Rảnh rỗi đón khách mới
+    // Vehicle recovered to lot -> Available for next customer
     vehicle.status = "available";
-    vehicle.current_mileage = return_mileage; // Cập nhật ODO mới nhất cho xe
+    vehicle.current_mileage = return_mileage; // Update latest odometer for vehicle
     await vehicle.save();
 
     // Populate customer to get User ID
@@ -230,19 +230,19 @@ export const createReturnHandover = async (req, res) => {
       });
     }
 
-    // 7.NẾU ĐƠN CÓ TÀI XẾ -> GIẢI PHÓNG TÀI XẾ
+    // 7. IF BOOKING HAS DRIVER -> RELEASE DRIVER
     if (booking.driver) {
       const driver = await Driver.findById(booking.driver);
       if (driver) {
-        // Nếu driver đang bận (busy) thì mới chuyển về sẵn sàng (available)
-        // Tránh trường hợp driver đang offline mà bị chuyển thành available
+        // Only switch to available if driver is currently busy
+        // Avoid changing offline driver to available
         if (driver.status === "busy") {
           driver.status = "available";
         }
         driver.total_trips += 1;
         await driver.save();
 
-        // Cập nhật bản ghi phân công thành "completed" để hiện trong tab Hoàn thành của Driver
+        // Update assignment record to "completed" so it appears in Driver's Completed tab
         await DriverAssignment.findOneAndUpdate(
           { booking: booking._id, driver: driver._id, status: "accepted" },
           { status: "completed" }
@@ -268,7 +268,7 @@ export const createReturnHandover = async (req, res) => {
   }
 };
 
-// ==================== STAFF: XEM TẤT CẢ BIÊN BẢN BÀN GIAO ====================
+// ==================== STAFF: VIEW ALL HANDOVER RECORDS ====================
 // @route GET /api/handovers
 // @access Private (Staff)
 export const getAllHandovers = async (req, res) => {
@@ -322,7 +322,7 @@ export const getAllHandovers = async (req, res) => {
   }
 };
 
-// ==================== XEM CHI TIẾT 1 BIÊN BẢN ====================
+// ==================== VIEW HANDOVER DETAILS ====================
 // @route GET /api/handovers/:id
 // @access Private (Staff)
 export const getHandoverById = async (req, res) => {
@@ -367,20 +367,20 @@ export const getHandoverById = async (req, res) => {
   }
 };
 
-// ==================== XEM BIÊN BẢN THEO ĐƠN ĐẶT XE ====================
+// ==================== VIEW HANDOVER BY BOOKING ====================
 // @route GET /api/handovers/booking/:bookingId
-// @access Private (Staff / Customer chủ đơn)
+// @access Private (Staff / Customer who owns the booking)
 export const getHandoversByBooking = async (req, res) => {
   try {
     const { bookingId } = req.params;
 
-    // Tìm booking trước để kiểm tra quyền
+    // Find booking first to check permissions
     const booking = await Booking.findById(bookingId);
     if (!booking) {
-      return res.status(404).json({ message: "Không tìm thấy đơn đặt xe." });
+      return res.status(404).json({ message: "Booking not found." });
     }
 
-    // Kiểm tra quyền: Staff xem bất kỳ, Customer chỉ xem đơn của mình
+    // Check permissions: Staff can view any, Customer can only view their own bookings
     const staff = await Staff.findOne({ user: req.user._id });
     const customer = await Customer.findOne({ user: req.user._id });
 
@@ -403,9 +403,9 @@ export const getHandoversByBooking = async (req, res) => {
         path: "staff",
         populate: { path: "user", select: "full_name" },
       })
-      .sort({ handover_time: 1 }); // Sắp xếp theo thời gian: delivery trước, return sau
+      .sort({ handover_time: 1 }); // Sort by time: delivery first, return after
 
-    // Tách delivery và return cho dễ hiểu
+    // Separate delivery and return for clarity
     const delivery =
       handovers.find((h) => h.handover_type === "delivery") || null;
     const returnHandover =
@@ -418,7 +418,7 @@ export const getHandoversByBooking = async (req, res) => {
         booking_status: booking.status,
         delivery,
         return: returnHandover,
-        // Nếu cả 2 đều có → tính km đã chạy
+        // If both exist → calculate km driven
         km_driven:
           delivery && returnHandover
             ? returnHandover.mileage - delivery.mileage
@@ -430,9 +430,9 @@ export const getHandoversByBooking = async (req, res) => {
   }
 };
 
-// ==================== CUSTOMER: XÁC NHẬN ĐÃ NHẬN XE ====================
+// ==================== CUSTOMER: CONFIRM VEHICLE RECEIPT ====================
 // @route PUT /api/handovers/:id/confirm-receipt
-// @access Private (Customer chủ đơn)
+// @access Private (Customer who owns the booking)
 export const confirmDeliveryReceipt = async (req, res) => {
   try {
     const { id } = req.params;

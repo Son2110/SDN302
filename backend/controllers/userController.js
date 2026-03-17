@@ -124,7 +124,7 @@ export const updateCustomer = async (req, res) => {
     if (!customer) {
       return res.status(404).json({
         success: false,
-        message: "Không tìm thấy khách hàng",
+        message: "Customer not found",
       });
     }
 
@@ -321,7 +321,7 @@ export const updateDriver = async (req, res) => {
     if (!driver) {
       return res.status(404).json({
         success: false,
-        message: "Không tìm thấy tài xế",
+        message: "Driver not found",
       });
     }
 
@@ -332,7 +332,7 @@ export const updateDriver = async (req, res) => {
     if (!isOwnProfile && !isStaff) {
       return res.status(403).json({
         success: false,
-        message: "Bạn không có quyền cập nhật thông tin này",
+        message: "You do not have permission to update this information",
       });
     }
 
@@ -446,7 +446,7 @@ export const registerAsDriver = async (req, res) => {
       license_type,
       license_expiry: expiryDate,
       experience_years: parseInt(experience_years),
-      status: "pending", // Chờ staff duyệt
+      status: "pending", // Awaiting staff approval
     });
 
     // Auto-update customer's driver_license field
@@ -503,7 +503,7 @@ export const reapplyAsDriver = async (req, res) => {
     if (!existingDriver) {
       return res.status(400).json({
         success: false,
-        message: "Bạn chưa đăng ký làm tài xế",
+        message: "You have not registered as a driver yet",
       });
     }
     if (existingDriver.status !== "rejected") {
@@ -577,7 +577,7 @@ export const getMyDriverStatus = async (req, res) => {
     if (!driver) {
       return res.status(200).json({
         success: true,
-        data: null, // Chưa đăng ký
+        data: null, // Not registered yet
       });
     }
 
@@ -746,7 +746,7 @@ export const rejectDriver = async (req, res) => {
 
     // Update driver status to rejected
     driver.status = "rejected";
-    driver.rejection_reason = rejection_reason || "Không đáp ứng yêu cầu";
+    driver.rejection_reason = rejection_reason || "Does not meet requirements";
     await driver.save();
 
     // Populate user info
