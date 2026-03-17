@@ -112,16 +112,16 @@ const DriverDashboard = () => {
               { label: "Total Trips", value: stats.totalTrips, icon: Car, color: "emerald", sub: "Trips" },
               { label: "Rating", value: stats.rating.toFixed(1), icon: Star, color: "yellow", sub: "/ 5.0" },
               { label: "Pending Requests", value: stats.pendingAssignments, icon: Clock, color: "orange", sub: "Requests" },
-              { 
-                label: "Status", 
-                value: stats.status === 'available' ? 'On Duty' : stats.status === 'busy' ? 'Busy' : 'Off Duty', 
-                icon: Power, 
-                color: stats.status === 'available' ? 'emerald' : stats.status === 'busy' ? 'amber' : 'gray', 
+              {
+                label: "Status",
+                value: stats.status === 'available' ? 'On Duty' : stats.status === 'busy' ? 'Busy' : 'Off Duty',
+                icon: Power,
+                color: stats.status === 'available' ? 'emerald' : stats.status === 'busy' ? 'amber' : 'gray',
                 sub: "Current",
                 isStatus: true
               }
             ].map((card, idx) => (
-              <div 
+              <div
                 key={idx}
                 className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:-translate-y-1 hover:shadow-md transition-all duration-300 group"
               >
@@ -177,7 +177,7 @@ const DriverDashboard = () => {
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 <div className="w-1 h-5 bg-emerald-500 rounded-full" />
-                Latest Assignments
+                All Assignments
               </h2>
               <Link
                 to="/driver/assignments"
@@ -210,23 +210,23 @@ const DriverDashboard = () => {
                           {asn.booking?.vehicle?.brand} {asn.booking?.vehicle?.model}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
-                           <div className="flex items-center gap-1 text-[9px] text-gray-400 font-bold uppercase tracking-wider">
-                             <Clock size={10} className="text-emerald-500" />
-                             {dayjs(asn.booking?.start_date).format("DD/MM/YYYY")}
-                           </div>
-                           <span className="text-gray-200 text-[9px]">•</span>
-                           <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">
-                             Awaiting Confirmation
-                           </span>
+                          <div className="flex items-center gap-1 text-[9px] text-gray-400 font-bold uppercase tracking-wider">
+                            <Clock size={10} className="text-emerald-500" />
+                            {dayjs(asn.booking?.start_date).format("DD/MM/YYYY")}
+                          </div>
+                          <span className="text-gray-200 text-[9px]">•</span>
+                          <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">
+                            Awaiting Confirmation
+                          </span>
                         </div>
                       </div>
                     </div>
-                    <Link 
+                    <Link
                       to={`/driver/assignments/${asn._id}`}
                       className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-emerald-600 transition-colors"
-                     >
-                        <ArrowRight size={20} />
-                     </Link>
+                    >
+                      <ArrowRight size={20} />
+                    </Link>
                   </div>
                 ))}
               </div>
