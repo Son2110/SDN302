@@ -304,19 +304,17 @@ export default function StaffAssignDriver() {
                       <button
                         key={driver._id}
                         onClick={() => setSelectedDriverId(driver._id)}
-                        className={`flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all w-full ${
-                          isSelected
+                        className={`flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all w-full ${isSelected
                             ? "border-blue-500 bg-blue-50 shadow-md shadow-blue-100"
                             : "border-gray-100 hover:border-gray-300 hover:shadow-sm"
-                        }`}
+                          }`}
                       >
                         {/* Avatar */}
                         <div
-                          className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg shrink-0 transition-colors ${
-                            isSelected
+                          className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg shrink-0 transition-colors ${isSelected
                               ? "bg-blue-600 text-white"
                               : "bg-gray-100 text-gray-600"
-                          }`}
+                            }`}
                         >
                           {initials}
                         </div>
@@ -324,9 +322,8 @@ export default function StaffAssignDriver() {
                         {/* Info */}
                         <div className="flex-1 min-w-0">
                           <p
-                            className={`font-semibold text-sm truncate ${
-                              isSelected ? "text-blue-900" : "text-gray-800"
-                            }`}
+                            className={`font-semibold text-sm truncate ${isSelected ? "text-blue-900" : "text-gray-800"
+                              }`}
                           >
                             {driver.user?.full_name || "Không rõ tên"}
                           </p>

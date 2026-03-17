@@ -158,6 +158,19 @@ export const respondToAssignment = async (req, res) => {
       }
     }
 
+    // Notify all Staff about Driver's response
+    const allStaff = await Staff.find();
+    for (const staffMember of allStaff) {
+      await sendNotification({
+        recipientId: staffMember.user,
+        title: status === "accepted" ? "Tài xế nhận chuyến" : "Tài xế từ chối chuyến",
+        message: `Tài xế ${driver.user.full_name || "vừa"} đã ${status === "accepted" ? "đồng ý kết nối" : "từ chối"} phân công cho đơn #${assignment.booking.toString().slice(-6)}.`,
+        type: "driver_assigned",
+        relatedId: assignment.booking,
+        relatedModel: "Booking",
+      });
+    }
+
     res.status(200).json({
       success: true,
       message:

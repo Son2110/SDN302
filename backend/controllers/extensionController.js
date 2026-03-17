@@ -118,6 +118,19 @@ export const requestExtension = async (req, res) => {
       relatedModel: "ExtensionRequest",
     });
 
+    // Notify all Staff
+    const allStaff = await Staff.find();
+    for (const staffMember of allStaff) {
+      await sendNotification({
+        recipientId: staffMember.user,
+        title: "Yêu cầu gia hạn mới",
+        message: `Khách hàng vừa gửi yêu cầu gia hạn cho đơn #${booking._id.toString().slice(-6)}. Vui lòng kiểm tra và duyệt.`,
+        type: "extension_status",
+        relatedId: extensionRequest._id,
+        relatedModel: "ExtensionRequest",
+      });
+    }
+
     res.status(201).json({
       success: true,
       message: "Đã gửi yêu cầu gia hạn. Vui lòng chờ nhân viên xác nhận.",

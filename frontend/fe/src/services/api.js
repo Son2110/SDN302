@@ -223,3 +223,52 @@ export const updateCustomerProfile = async (customerId, customerData) => {
     throw error;
   }
 };
+
+// Update Driver Profile
+export const updateDriverProfile = async (driverId, driverData) => {
+  try {
+    const token = getToken();
+    const response = await fetch(`${API_URL}/users/drivers/${driverId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(driverData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to update driver profile");
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Toggle Driver Duty Status (available <-> offline)
+export const toggleDriverDuty = async () => {
+  try {
+    const token = getToken();
+    const response = await fetch(`${API_URL}/users/drivers/toggle-duty`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to toggle duty status");
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};

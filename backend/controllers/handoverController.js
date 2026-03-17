@@ -1,6 +1,6 @@
-import { Booking, VehicleHandover } from "../models/booking.model.js";
+import { Booking, VehicleHandover, DriverAssignment } from "../models/booking.model.js";
 import { Vehicle, VehicleType } from "../models/vehicle.model.js";
-import { Staff, Customer } from "../models/user.model.js";
+import { Staff, Customer, Driver } from "../models/user.model.js";
 import { sendNotification } from "../utils/notificationSender.js";
 
 // @route POST /api/handovers/delivery
@@ -228,6 +228,26 @@ export const createReturnHandover = async (req, res) => {
         relatedId: newHandover._id,
         relatedModel: "VehicleHandover",
       });
+    }
+
+    // 7.NẾU ĐƠN CÓ TÀI XẾ -> GIẢI PHÓNG TÀI XẾ
+    if (booking.driver) {
+      const driver = await Driver.findById(booking.driver);
+      if (driver) {
+        // Nếu driver đang bận (busy) thì mới chuyển về sẵn sàng (available)
+        // Tránh trường hợp driver đang offline mà bị chuyển thành available
+        if (driver.status === "busy") {
+          driver.status = "available";
+        }
+        driver.total_trips += 1;
+        await driver.save();
+
+        // Cập nhật bản ghi phân công thành "completed" để hiện trong tab Hoàn thành của Driver
+        await DriverAssignment.findOneAndUpdate(
+          { booking: booking._id, driver: driver._id, status: "accepted" },
+          { status: "completed" }
+        );
+      }
     }
 
     res.status(201).json({

@@ -185,6 +185,19 @@ export const createBooking = async (req, res) => {
       relatedModel: "Booking",
     });
 
+    // Notify all Staff
+    const allStaff = await Staff.find();
+    for (const staffMember of allStaff) {
+      await sendNotification({
+        recipientId: staffMember.user,
+        title: "Đơn đặt xe mới",
+        message: `Hệ thống vừa nhận đơn đặt xe mới #${newBooking._id.toString().slice(-6)}. Vui lòng kiểm tra và hỗ trợ khách hàng.`,
+        type: "booking_created",
+        relatedId: newBooking._id,
+        relatedModel: "Booking",
+      });
+    }
+
     res.status(201).json({
       success: true,
       message:
@@ -253,6 +266,21 @@ export const cancelBooking = async (req, res) => {
 
     booking.updateStatus("cancelled");
     await booking.save();
+
+    // Notify all Staff if customer cancels
+    if (customer) {
+      const allStaff = await Staff.find();
+      for (const staffMember of allStaff) {
+        await sendNotification({
+          recipientId: staffMember.user,
+          title: "Đơn bị huỷ",
+          message: `Khách hàng vừa huỷ đơn đặt xe #${booking._id.toString().slice(-6)}.`,
+          type: "general",
+          relatedId: booking._id,
+          relatedModel: "Booking",
+        });
+      }
+    }
 
     res.status(200).json({
       success: true,

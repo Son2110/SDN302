@@ -7,6 +7,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { logout } from "../../services/api";
+import NotificationDropdown from "./NotificationDropdown";
 
 const AdminLayout = () => {
   const navigate = useNavigate();
@@ -79,11 +80,27 @@ const AdminLayout = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="p-6 md:p-8">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        {/* Top Header */}
+        <header className="bg-white border-b border-gray-200 h-16 flex items-center px-4 md:px-8 justify-between">
+          <div className="flex items-center gap-2 md:hidden">
+            <ShieldCheck className="w-5 h-5 text-gray-800" />
+            <h2 className="text-lg font-bold text-gray-900">Admin Panel</h2>
+          </div>
+          <div className="hidden md:block"></div>
+          <div className="flex items-center gap-4">
+            <NotificationDropdown isNavbar={false} />
+            <button onClick={handleLogout} className="text-red-500 md:hidden">
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
+        </header>
+        <main className="flex-1 overflow-x-hidden overflow-y-auto">
+          <div className="p-6 md:p-8">
           <Outlet />
-        </div>
-      </main>
+          </div>
+        </main>
+      </div>
     </div>
   );
 };

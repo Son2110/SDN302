@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Users,
   Search,
@@ -11,10 +11,7 @@ import {
   AlertCircle,
   Check,
   X,
-  WifiOff,
-  Wifi,
   Clock,
-  Loader2,
 } from "lucide-react";
 import * as userApi from "../../services/userApi";
 
@@ -32,9 +29,7 @@ const StatusBadge = ({ status }) => {
     cls: "bg-gray-100 text-gray-600",
   };
   return (
-    <span
-      className={`px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.cls}`}
-    >
+    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.cls}`}>
       {cfg.label}
     </span>
   );
@@ -47,11 +42,8 @@ const DriverCard = ({
   driver,
   onApprove,
   onReject,
-  onToggleStatus,
-  statusLoading,
 }) => {
   const licenseExpired = new Date(driver.license_expiry) < new Date();
-  const isActive = ["available", "busy", "offline"].includes(driver.status);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition">
@@ -134,36 +126,6 @@ const DriverCard = ({
             </button>
           </div>
         )}
-
-        {/* Active: toggle online/offline */}
-        {isActive && (
-          <div className="pt-2 border-t border-gray-100">
-            <button
-              onClick={() => onToggleStatus(driver)}
-              disabled={statusLoading[driver._id] || driver.status === "busy"}
-              className={`w-full py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 transition disabled:opacity-50 disabled:cursor-not-allowed ${
-                driver.status === "offline"
-                  ? "bg-green-50 hover:bg-green-100 text-green-700 border border-green-200"
-                  : "bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200"
-              }`}
-            >
-              {statusLoading[driver._id] ? (
-                <Loader2 size={15} className="animate-spin" />
-              ) : driver.status === "offline" ? (
-                <>
-                  <Wifi size={15} /> Kích hoạt
-                </>
-              ) : (
-                <>
-                  <WifiOff size={15} /> Chuyển Offline
-                </>
-              )}
-              {driver.status === "busy" && (
-                <span className="text-xs">(đang có chuyến)</span>
-              )}
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -181,7 +143,6 @@ const StaffDrivers = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
-  const [statusLoading, setStatusLoading] = useState({});
 
   // Pending tab
   const [pendingDrivers, setPendingDrivers] = useState([]);
@@ -206,7 +167,7 @@ const StaffDrivers = () => {
   const loadStats = async () => {
     try {
       setStats(await userApi.getDriverStats());
-    } catch {}
+    } catch { }
   };
 
   const loadDrivers = async () => {
@@ -282,29 +243,6 @@ const StaffDrivers = () => {
     }
   };
 
-  const handleToggleStatus = async (driver) => {
-    const newStatus = driver.status === "offline" ? "available" : "offline";
-    const label = newStatus === "offline" ? "chuyển Offline" : "kích hoạt";
-    if (
-      !window.confirm(`Bạn muốn ${label} tài xế "${driver.user?.full_name}"?`)
-    )
-      return;
-    setStatusLoading((p) => ({ ...p, [driver._id]: true }));
-    try {
-      await userApi.updateDriverStatus(driver._id, newStatus);
-      setDrivers((prev) =>
-        prev.map((d) =>
-          d._id === driver._id ? { ...d, status: newStatus } : d,
-        ),
-      );
-      loadStats();
-    } catch (err) {
-      alert("Lỗi: " + err.message);
-    } finally {
-      setStatusLoading((p) => ({ ...p, [driver._id]: false }));
-    }
-  };
-
   const Pagination = ({ state, setPage }) =>
     state.pages > 1 ? (
       <div className="flex justify-center items-center gap-4 mt-8">
@@ -374,11 +312,10 @@ const StaffDrivers = () => {
       <div className="flex border-b border-gray-200">
         <button
           onClick={() => setActiveTab("list")}
-          className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition -mb-px ${
-            activeTab === "list"
-              ? "border-gray-900 text-gray-900"
-              : "border-transparent text-gray-500 hover:text-gray-700"
-          }`}
+          className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition -mb-px ${activeTab === "list"
+            ? "border-gray-900 text-gray-900"
+            : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
         >
           Danh sách tài xế
           {stats && (
@@ -389,11 +326,10 @@ const StaffDrivers = () => {
         </button>
         <button
           onClick={() => setActiveTab("pending")}
-          className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition -mb-px flex items-center gap-2 ${
-            activeTab === "pending"
-              ? "border-gray-900 text-gray-900"
-              : "border-transparent text-gray-500 hover:text-gray-700"
-          }`}
+          className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition -mb-px flex items-center gap-2 ${activeTab === "pending"
+            ? "border-gray-900 text-gray-900"
+            : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
         >
           <Clock size={14} /> Chờ duyệt
           {stats?.pending > 0 && (
@@ -471,8 +407,6 @@ const StaffDrivers = () => {
                   driver={d}
                   onApprove={handleApprove}
                   onReject={handleReject}
-                  onToggleStatus={handleToggleStatus}
-                  statusLoading={statusLoading}
                 />
               ))}
             </div>
@@ -511,8 +445,6 @@ const StaffDrivers = () => {
                     driver={d}
                     onApprove={handleApprove}
                     onReject={handleReject}
-                    onToggleStatus={handleToggleStatus}
-                    statusLoading={statusLoading}
                   />
                 ))}
               </div>
