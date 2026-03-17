@@ -101,16 +101,38 @@ const PaymentSuccess = () => {
       // Call backend to verify and update payment with ALL params
       await paymentService.verifyPayment(vnpTxnRef, allVnpayParams);
 
-      // Reload payment after verification
+      // Reload payment by txnRef (customer endpoint)
       if (vnpTxnRef) {
-        await loadPaymentById(vnpTxnRef);
+        await loadPaymentByTxnRef(vnpTxnRef);
       }
     } catch (err) {
       console.error("[PaymentSuccess] Error verifying payment:", err);
-      // Still try to load payment
       if (vnpTxnRef) {
-        await loadPaymentById(vnpTxnRef);
+        await loadPaymentByTxnRef(vnpTxnRef);
       }
+    }
+  };
+
+  const loadPaymentByTxnRef = async (txnRef) => {
+    try {
+      const paymentData = await paymentService.getPaymentByTxnRef(txnRef);
+      setPayment(paymentData.payment);
+
+      if (paymentData.payment?.booking) {
+        const bookingId =
+          typeof paymentData.payment.booking === "string"
+            ? paymentData.payment.booking
+            : paymentData.payment.booking._id?.toString?.() || paymentData.payment.booking.toString?.();
+        if (bookingId) {
+          const response = await getBookingById(bookingId);
+          setBooking(response.data);
+        }
+      }
+      setLoading(false);
+      // No need to poll: after VNPay return, backend has already set status in vnpayReturn.
+    } catch (err) {
+      console.error("[PaymentSuccess] Error loading payment by txnRef:", err);
+      setLoading(false);
     }
   };
 

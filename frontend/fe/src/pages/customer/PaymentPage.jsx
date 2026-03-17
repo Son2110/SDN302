@@ -12,6 +12,7 @@ import { getBookingById } from "../../services/bookingApi";
 import {
   processDepositPayment,
   processFinalPayment,
+  createVnpayPayment,
 } from "../../services/paymentService";
 import { getToken } from "../../services/api";
 import QRPaymentModal from "../../components/payment/QRPaymentModal";
