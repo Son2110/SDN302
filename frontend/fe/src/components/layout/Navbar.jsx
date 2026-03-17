@@ -14,7 +14,7 @@ import {
   X,
 } from "lucide-react";
 import {
-  getMyNotifications,
+  getNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
 } from "../../services/notificationApi";
@@ -83,7 +83,7 @@ const Navbar = () => {
 
     try {
       setLoadingNotifications(true);
-      const data = await getMyNotifications();
+      const data = await getNotifications();
       setNotifications(data);
     } catch (error) {
       console.error("Failed to load notifications", error);
@@ -259,7 +259,7 @@ const Navbar = () => {
                 >
                   {item.title}
                 </a>
-              ),
+              )
             )}
 
             {/* User Menu or Auth Buttons */}
@@ -410,6 +410,7 @@ const Navbar = () => {
                       </button>
                     </div>
                   )}
+                </div>
                 </div>
               </div>
             ) : (
