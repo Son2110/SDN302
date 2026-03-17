@@ -66,9 +66,8 @@ export default function AssignmentTable({ assignments, onEdit, onDelete }) {
                 </td>
                 <td className="px-5 py-4">
                   <span
-                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                      STATUS_BADGES[a.status] || "bg-gray-100 text-gray-800"
-                    }`}
+                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_BADGES[a.status] || "bg-gray-100 text-gray-800"
+                      }`}
                   >
                     {STATUS_LABELS[a.status] || a.status}
                   </span>

@@ -16,7 +16,7 @@ const DriverReviews = () => {
       try {
         const driverInfo = await getMyDriverStatus();
         if (!driverInfo || !driverInfo._id) {
-          toast.error("Không tìm thấy thông tin tài xế.");
+          toast.error("Driver information not found.");
           setLoading(false);
           return;
         }
@@ -30,7 +30,7 @@ const DriverReviews = () => {
           });
         }
       } catch (error) {
-        toast.error(error.message || "Không thể tải đánh giá.");
+        toast.error(error.message || "Failed to load reviews.");
       } finally {
         setLoading(false);
       }
@@ -87,10 +87,10 @@ const DriverReviews = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-                Đánh giá của tôi
+                My Reviews
               </h1>
               <p className="text-gray-400 text-xs font-medium mt-0.5">
-                Phản hồi chân thực từ khách hàng sau mỗi hành trình
+                Genuine feedback from customers after every journey
               </p>
             </div>
           </div>
@@ -114,12 +114,12 @@ const DriverReviews = () => {
             </div>
 
             <div className="bg-emerald-600 p-4 rounded-2xl shadow-lg shadow-emerald-50 flex flex-col justify-center min-w-[130px] hover:-translate-y-1 transition-transform duration-300">
-              <p className="text-[9px] text-emerald-100 uppercase font-bold tracking-wider mb-0.5 opacity-70">Tổng cộng</p>
+              <p className="text-[9px] text-emerald-100 uppercase font-bold tracking-wider mb-0.5 opacity-70">Total</p>
               <div className="flex items-center gap-2">
                 <span className="text-3xl font-bold text-white leading-none tracking-tighter">
                   {stats.total_reviews}
                 </span>
-                <span className="text-[9px] font-bold text-emerald-100 uppercase tracking-wider opacity-70">Đánh giá</span>
+                <span className="text-[9px] font-bold text-emerald-100 uppercase tracking-wider opacity-70">Reviews</span>
               </div>
             </div>
           </div>
@@ -131,7 +131,7 @@ const DriverReviews = () => {
           <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
             <MessageSquare className="text-gray-200 w-10 h-10" />
           </div>
-          <p className="text-gray-400 font-bold text-lg">Hòm thư trống</p>
+          <p className="text-gray-400 font-bold text-lg">Inbox is empty</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -156,7 +156,7 @@ const DriverReviews = () => {
                     </div>
                     <div>
                       <p className="font-bold text-gray-900 text-lg tracking-tight">
-                        {review.customer?.user?.full_name || "Nhà du hành ẩn danh"}
+                        {review.customer?.user?.full_name || "Anonymous Traveler"}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
                         {renderStars(review.rating)}
@@ -172,14 +172,14 @@ const DriverReviews = () => {
 
                 <div className="bg-gray-50/50 p-5 rounded-2xl border border-gray-100 mb-5 group-hover:bg-white transition-colors duration-200">
                   <p className="text-gray-700 leading-relaxed text-sm font-medium italic">
-                    "{review.comment || "Bác tài rất nhiệt tình và vui vẻ, chuyến đi tuyệt vời!"}"
+                    "{review.comment || "The driver was very enthusiastic and friendly, great trip!"}"
                   </p>
                 </div>
 
                 {review.booking && (
                   <div className="flex flex-wrap items-center gap-4 p-3 rounded-xl border border-dotted border-gray-200 group-hover:bg-emerald-50/20 transition-all">
                     <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-wider text-emerald-600">
-                      Chuyến đi: {dayjs(review.booking.start_date).format("DD/MM/YYYY")} - {dayjs(review.booking.end_date).format("DD/MM/YYYY")}
+                      Trip: {dayjs(review.booking.start_date).format("DD/MM/YYYY")} - {dayjs(review.booking.end_date).format("DD/MM/YYYY")}
                     </div>
                     {review.booking.pickup_location && (
                       <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-gray-400">

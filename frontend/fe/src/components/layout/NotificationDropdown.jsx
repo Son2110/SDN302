@@ -1,20 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Bell,
-  CheckCircle,
-  Trash2,
-  CalendarClock,
-  CreditCard,
-  AlertTriangle,
-  ShieldCheck,
-  CheckCheck,
-  Loader2,
-} from "lucide-react";
+import { Bell, CheckCircle, Trash2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import "dayjs/locale/vi";
+import "dayjs/locale/en";
 import {
   getNotifications,
   markNotificationAsRead,
@@ -24,20 +14,18 @@ import {
 } from "../../services/notificationApi";
 
 dayjs.extend(relativeTime);
-dayjs.locale("vi");
+dayjs.locale("en");
 
 const NotificationDropdown = ({ isNavbar = true }) => {
   const [notifications, setNotifications] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
   const { user } = useAuth();
 
   const fetchNotifications = async () => {
     try {
-      setIsLoading(true);
       const response = await getNotifications();
       // The backend returns { success: true, data: notifications }
       const data = response?.data || response || [];
@@ -46,8 +34,6 @@ const NotificationDropdown = ({ isNavbar = true }) => {
       setUnreadCount(notificationsArray.filter((n) => !n.is_read).length);
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -143,24 +129,6 @@ const NotificationDropdown = ({ isNavbar = true }) => {
     return dayjs(dateStr).fromNow();
   };
 
-  const getNotificationIcon = (type) => {
-    if (
-      ["booking_created", "booking_approved", "pickup_reminder"].includes(type)
-    ) {
-      return <CalendarClock size={16} className="text-blue-600" />;
-    }
-    if (["payment_success"].includes(type)) {
-      return <CreditCard size={16} className="text-blue-600" />;
-    }
-    if (["payment_overdue", "return_overdue"].includes(type)) {
-      return <AlertTriangle size={16} className="text-red-600" />;
-    }
-    if (["return_reminder"].includes(type)) {
-      return <AlertTriangle size={16} className="text-blue-600" />;
-    }
-    return <ShieldCheck size={16} className="text-blue-600" />;
-  };
-
   return (
     <div className="relative" ref={dropdownRef}>
       <button
@@ -212,17 +180,11 @@ const NotificationDropdown = ({ isNavbar = true }) => {
             </div>
           </div>
 
-          <div className="max-h-[450px] overflow-y-auto custom-scrollbar">
-            {isLoading && notifications.length === 0 ? (
-              <div className="p-12 text-center text-gray-400">
-                <Loader2 className="mx-auto h-8 w-8 mb-3 animate-spin text-blue-500" />
-                <p className="text-sm font-medium">Loading notifications...</p>
-              </div>
-            ) : notifications.length === 0 ? (
-              <div className="p-12 text-center text-gray-400">
-                <Bell className="mx-auto h-10 w-10 mb-3 opacity-10" />
-                <p className="text-sm font-medium">No notifications yet</p>
-                <p className="text-xs mt-1">We'll notify you when something happens</p>
+          <div className="max-h-[400px] overflow-y-auto">
+            {notifications.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                <Bell className="mx-auto h-8 w-8 mb-2 opacity-20" />
+                <p className="text-sm">No notifications yet</p>
               </div>
             ) : (
               <ul className="divide-y divide-gray-50">
@@ -230,34 +192,24 @@ const NotificationDropdown = ({ isNavbar = true }) => {
                   <li
                     key={notification._id}
                     onClick={() => handleNotificationClick(notification)}
-                    className={`group flex items-start gap-4 p-4 transition-all cursor-pointer hover:bg-gray-50 border-l-4 ${
-                      !notification.is_read 
-                        ? "bg-blue-50/40 border-l-blue-600" 
-                        : "bg-white border-l-transparent"
+                    className={`group flex items-start gap-3 p-4 transition-colors cursor-pointer hover:bg-gray-50 ${
+                      !notification.is_read ? "bg-blue-50/30" : "bg-white"
                     }`}
                   >
-                    <div className="flex-shrink-0 mt-1 p-2 rounded-full bg-white shadow-sm border border-gray-50">
-                      {getNotificationIcon(notification.type)}
-                    </div>
-                    
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <p className={`text-sm ${
-                            !notification.is_read
-                              ? "font-bold text-gray-900"
-                              : "font-semibold text-gray-800"
-                          }`}
-                        >
-                          {notification.title}
-                        </p>
-                        {!notification.is_read && (
-                          <span className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-600" />
-                        )}
-                      </div>
-                      
-                      <p className={`text-xs leading-relaxed line-clamp-2 ${
+                      <p
+                        className={`text-sm ${
                           !notification.is_read
-                            ? "text-gray-700 font-medium"
+                            ? "font-semibold text-gray-900"
+                            : "font-medium text-gray-800"
+                        }`}
+                      >
+                        {notification.title}
+                      </p>
+                      <p
+                        className={`text-xs mt-1 line-clamp-2 ${
+                          !notification.is_read
+                            ? "text-gray-700"
                             : "text-gray-500"
                         }`}
                       >

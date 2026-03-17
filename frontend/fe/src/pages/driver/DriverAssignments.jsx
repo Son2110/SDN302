@@ -38,10 +38,10 @@ const DriverAssignments = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const tabs = [
-    { id: "pending", label: "Chờ phản hồi", icon: Clock },
-    { id: "accepted", label: "Đã nhận", icon: CheckCircle },
-    { id: "rejected", label: "Đã từ chối", icon: XCircle },
-    { id: "completed", label: "Đã hoàn thành", icon: Award },
+    { id: "pending", label: "Pending", icon: Clock },
+    { id: "accepted", label: "Accepted", icon: CheckCircle },
+    { id: "rejected", label: "Rejected", icon: XCircle },
+    { id: "completed", label: "Completed", icon: Award },
   ];
 
   const fetchData = async () => {
@@ -52,7 +52,7 @@ const DriverAssignments = () => {
         setAssignments(response.data);
       }
     } catch (error) {
-      toast.error("Không thể tải danh sách chuyến đi.");
+      toast.error("Failed to load assignments list.");
       setAssignments([]);
     } finally {
       setLoading(false);
@@ -82,12 +82,12 @@ const DriverAssignments = () => {
         response_note: note,
       });
       if (response.success) {
-        toast.success(response.message || `Đã gửi phản hồi thành công!`);
+        toast.success(response.message || `Response sent successfully!`);
         setResponseModal({ isOpen: false, assignmentId: null, type: null });
         fetchData();
       }
     } catch (error) {
-      toast.error(error.message || `Từ chối/Nhận chuyến thất bại.`);
+      toast.error(error.message || `Failed to respond to assignment.`);
     } finally {
       setSubmitting(false);
     }
@@ -98,25 +98,25 @@ const DriverAssignments = () => {
       case "pending":
         return (
           <span className="px-3 py-1 rounded-full bg-yellow-50 text-yellow-700 text-[10px] font-bold uppercase tracking-wider border border-yellow-100 italic">
-            Chờ phản hồi
+            Pending
           </span>
         );
       case "accepted":
         return (
           <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider border border-emerald-100">
-            Đã nhận
+            Accepted
           </span>
         );
       case "rejected":
         return (
           <span className="px-3 py-1 rounded-full bg-red-50 text-red-700 text-[10px] font-bold uppercase tracking-wider border border-red-100">
-            Đã từ chối
+            Rejected
           </span>
         );
       case "completed":
         return (
           <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase tracking-wider border border-emerald-200">
-            Hoàn thành
+            Completed
           </span>
         );
       default:
@@ -135,10 +135,10 @@ const DriverAssignments = () => {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-              Phân công của tôi
+              My Assignments
             </h1>
             <p className="text-gray-400 text-xs font-medium mt-0.5">
-              Quản lý và phản hồi các yêu cầu phân công từ hệ thống
+              Manage and respond to system assignment requests
             </p>
           </div>
         </div>
@@ -151,9 +151,9 @@ const DriverAssignments = () => {
             <WifiOff size={20} />
           </div>
           <div>
-            <p className="font-bold text-gray-800 text-sm">Bạn đang nghỉ ca</p>
+            <p className="font-bold text-gray-800 text-sm">You are currently Off Duty</p>
             <p className="text-[11px] text-gray-400 font-medium">
-              Vui lòng chuyển sang "Hoạt động" để nhận chuyến mới.
+              Please switch to "On Duty" to receive new trips.
             </p>
           </div>
         </div>
@@ -189,7 +189,7 @@ const DriverAssignments = () => {
           <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
             <ClipboardList className="text-gray-200 w-10 h-10" />
           </div>
-          <p className="text-gray-400 font-bold text-lg">Chưa có dữ liệu</p>
+          <p className="text-gray-400 font-bold text-lg">No data found</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6">
@@ -204,7 +204,7 @@ const DriverAssignments = () => {
               <div key={assignment._id} className="relative bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group">
                 <div className="bg-gray-50/30 px-6 py-3 border-b border-gray-50 flex justify-between items-center group-hover:bg-white transition-colors">
                   <div className="flex items-center gap-2 bg-indigo-50/30 px-3 py-1.5 rounded-xl border border-indigo-100/50">
-                    <span className="text-[9px] font-semibold text-indigo-400 uppercase tracking-tight">Mã đơn</span>
+                    <span className="text-[9px] font-semibold text-indigo-400 uppercase tracking-tight">Booking ID</span>
                     <span className="text-[10px] font-black text-indigo-600 tracking-wider">
                       {assignment._id?.slice(-8).toUpperCase()}
                     </span>
@@ -215,14 +215,14 @@ const DriverAssignments = () => {
                 <Link to={`/driver/assignments/${assignment._id}`} className="block p-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
-                      <p className="text-[9px] text-gray-400 uppercase font-bold tracking-wider mb-2">Thông tin khách hàng</p>
+                      <p className="text-[9px] text-gray-400 uppercase font-bold tracking-wider mb-2">Customer Information</p>
                       <div className="flex items-center gap-4">
                         <div className="w-14 h-14 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100 group-hover:scale-105 transition-transform duration-300">
                           <User size={28} />
                         </div>
                         <div>
                           <p className="font-bold text-gray-900 text-lg">
-                            {booking.customer?.user?.full_name || "Bí mật"}
+                            {booking.customer?.user?.full_name || "Private"}
                           </p>
                           <div className="flex items-center text-emerald-600 text-xs mt-1 font-bold">
                             <Phone size={12} className="mr-1.5" />
@@ -233,7 +233,7 @@ const DriverAssignments = () => {
                     </div>
 
                     <div className="md:text-right flex flex-col items-start md:items-end justify-center">
-                      <p className="text-[9px] text-gray-400 uppercase font-bold tracking-wider mb-2">Thông tin xe</p>
+                      <p className="text-[9px] text-gray-400 uppercase font-bold tracking-wider mb-2">Vehicle Information</p>
                       <div className="text-base font-bold text-gray-800 px-4 py-2 bg-gray-50 rounded-xl border border-gray-100 inline-flex items-center gap-2 group-hover:bg-emerald-600 group-hover:text-white group-hover:border-emerald-600 transition-all">
                         <Car size={18} />
                         {booking.vehicle?.brand} {booking.vehicle?.model}
@@ -250,7 +250,7 @@ const DriverAssignments = () => {
                         <Calendar size={16} />
                       </div>
                       <div>
-                        <p className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Thời gian</p>
+                        <p className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Schedule</p>
                         <p className="text-gray-800 text-xs font-bold">{startStr} - {endStr}</p>
                       </div>
                     </div>
@@ -260,7 +260,7 @@ const DriverAssignments = () => {
                         <MapPin size={16} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Điểm đón</p>
+                        <p className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Pickup Point</p>
                         <p className="text-gray-800 text-xs font-bold">
                           {booking.pickup_location}
                         </p>
@@ -276,14 +276,14 @@ const DriverAssignments = () => {
                       onClick={(e) => { e.preventDefault(); openResponseModal(assignment._id, "rejected"); }}
                       className="flex-1 py-3 text-[10px] flex items-center justify-center gap-2 rounded-xl border border-red-100 text-red-500 font-bold hover:bg-red-500 hover:text-white transition-all uppercase tracking-wider"
                     >
-                      <XCircle size={16} /> Từ chối
+                      <XCircle size={16} /> REJECT
                     </button>
                     <button
                       onClick={(e) => { e.preventDefault(); openResponseModal(assignment._id, "accepted"); }}
                       disabled={driverStatus === "offline"}
                       className="flex-1 py-3 text-[10px] flex items-center justify-center gap-2 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed uppercase tracking-wider"
                     >
-                      <CheckCircle size={16} /> Chấp nhận
+                      <CheckCircle size={16} /> ACCEPT
                     </button>
                   </div>
                 )}

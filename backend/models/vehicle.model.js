@@ -44,31 +44,5 @@ const vehicleSchema = new mongoose.Schema({
   image_urls: [{ type: String }], // Array string thay vì json thuần
 });
 
-// --- Charging Station Schema ---
-const chargingStationSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true },
-    address: { type: String, required: true },
-    location: {
-      // GeoJSON cho tọa độ (dễ tìm trạm gần nhất)
-      lat: { type: Number },
-      lng: { type: Number },
-    },
-    total_slots: { type: Number, required: true },
-    available_slots: { type: Number, required: true },
-    charging_rate: { type: Number }, // VND per kWh
-    status: {
-      type: String,
-      enum: ["active", "maintenance", "closed"],
-      default: "active",
-    },
-  },
-  { timestamps: true },
-); // Tự động có updatedAt
-
 export const VehicleType = mongoose.model("VehicleType", vehicleTypeSchema);
 export const Vehicle = mongoose.model("Vehicle", vehicleSchema);
-export const ChargingStation = mongoose.model(
-  "ChargingStation",
-  chargingStationSchema,
-);

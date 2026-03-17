@@ -61,19 +61,19 @@ const DriverDashboard = () => {
 
   const quickLinks = [
     {
-      label: "Phân công mới",
+      label: "New Assignments",
       to: "/driver/assignments",
       icon: ClipboardList,
       color: "bg-emerald-50 text-emerald-600 hover:bg-emerald-100",
     },
     {
-      label: "Đánh giá",
+      label: "Reviews",
       to: "/driver/reviews",
       icon: Star,
       color: "bg-yellow-50 text-yellow-600 hover:bg-yellow-100",
     },
     {
-      label: "Hồ sơ cá nhân",
+      label: "My Profile",
       to: "/profile",
       icon: User,
       color: "bg-blue-50 text-blue-600 hover:bg-blue-100",
@@ -91,10 +91,10 @@ const DriverDashboard = () => {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-              Tổng quan
+              Dashboard Overview
             </h1>
             <p className="text-gray-400 text-xs font-medium mt-0.5">
-              Chào ngày mới, bác tài! Cùng kiểm tra lộ trình hôm nay nhé.
+              Good morning, driver! Let's check your schedule for today.
             </p>
           </div>
         </div>
@@ -109,19 +109,19 @@ const DriverDashboard = () => {
           {/* Stats Cards - Elegant slim cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: "Tổng chuyến", value: stats.totalTrips, icon: Car, color: "emerald", sub: "Chuyến" },
-              { label: "Đánh giá", value: stats.rating.toFixed(1), icon: Star, color: "yellow", sub: "/ 5.0" },
-              { label: "Chờ phản hồi", value: stats.pendingAssignments, icon: Clock, color: "orange", sub: "Yêu cầu" },
-              { 
-                label: "Trạng thái", 
-                value: stats.status === 'available' ? 'Hoạt động' : stats.status === 'busy' ? 'Đang bận' : 'Đang nghỉ', 
-                icon: Power, 
-                color: stats.status === 'available' ? 'emerald' : stats.status === 'busy' ? 'amber' : 'gray', 
-                sub: "Hiện tại",
+              { label: "Total Trips", value: stats.totalTrips, icon: Car, color: "emerald", sub: "Trips" },
+              { label: "Rating", value: stats.rating.toFixed(1), icon: Star, color: "yellow", sub: "/ 5.0" },
+              { label: "Pending Requests", value: stats.pendingAssignments, icon: Clock, color: "orange", sub: "Requests" },
+              {
+                label: "Status",
+                value: stats.status === 'available' ? 'On Duty' : stats.status === 'busy' ? 'Busy' : 'Off Duty',
+                icon: Power,
+                color: stats.status === 'available' ? 'emerald' : stats.status === 'busy' ? 'amber' : 'gray',
+                sub: "Current",
                 isStatus: true
               }
             ].map((card, idx) => (
-              <div 
+              <div
                 key={idx}
                 className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:-translate-y-1 hover:shadow-md transition-all duration-300 group"
               >
@@ -147,13 +147,13 @@ const DriverDashboard = () => {
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
               <TrendingUp size={18} className="text-emerald-500" />
-              Thao tác nhanh
+              Quick Actions
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { label: "Phân công mới", to: "/driver/assignments", icon: ClipboardList, gradient: "from-emerald-500 to-teal-600" },
-                { label: "Đánh giá", to: "/driver/reviews", icon: Star, gradient: "from-yellow-400 to-orange-500" },
-                { label: "Hồ sơ cá nhân", to: "/profile", icon: User, gradient: "from-blue-500 to-indigo-600" }
+                { label: "New Assignments", to: "/driver/assignments", icon: ClipboardList, gradient: "from-emerald-500 to-teal-600" },
+                { label: "Reviews", to: "/driver/reviews", icon: Star, gradient: "from-yellow-400 to-orange-500" },
+                { label: "My Profile", to: "/profile", icon: User, gradient: "from-blue-500 to-indigo-600" }
               ].map((link, idx) => (
                 <Link
                   key={idx}
@@ -177,13 +177,13 @@ const DriverDashboard = () => {
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 <div className="w-1 h-5 bg-emerald-500 rounded-full" />
-                Phân công mới nhất
+                All Assignments
               </h2>
               <Link
                 to="/driver/assignments"
                 className="text-emerald-600 text-xs font-semibold hover:underline flex items-center gap-1"
               >
-                Xem tất cả <ArrowRight className="w-3 h-3" />
+                View All <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
 
@@ -192,7 +192,7 @@ const DriverDashboard = () => {
                 <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mb-3">
                   <ClipboardList className="w-7 h-7 text-gray-200" />
                 </div>
-                <p className="text-gray-400 font-semibold text-base">Hệ thống đang trống</p>
+                <p className="text-gray-400 font-semibold text-base">No pending assignments</p>
               </div>
             ) : (
               <div className="p-2 space-y-1">
@@ -210,23 +210,23 @@ const DriverDashboard = () => {
                           {asn.booking?.vehicle?.brand} {asn.booking?.vehicle?.model}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
-                           <div className="flex items-center gap-1 text-[9px] text-gray-400 font-bold uppercase tracking-wider">
-                             <Clock size={10} className="text-emerald-500" />
-                             {dayjs(asn.booking?.start_date).format("DD/MM/YYYY")}
-                           </div>
-                           <span className="text-gray-200 text-[9px]">•</span>
-                           <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">
-                             Chờ xác nhận
-                           </span>
+                          <div className="flex items-center gap-1 text-[9px] text-gray-400 font-bold uppercase tracking-wider">
+                            <Clock size={10} className="text-emerald-500" />
+                            {dayjs(asn.booking?.start_date).format("DD/MM/YYYY")}
+                          </div>
+                          <span className="text-gray-200 text-[9px]">•</span>
+                          <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">
+                            Awaiting Confirmation
+                          </span>
                         </div>
                       </div>
                     </div>
-                    <Link 
+                    <Link
                       to={`/driver/assignments/${asn._id}`}
                       className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-emerald-600 transition-colors"
-                     >
-                        <ArrowRight size={20} />
-                     </Link>
+                    >
+                      <ArrowRight size={20} />
+                    </Link>
                   </div>
                 ))}
               </div>

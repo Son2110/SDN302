@@ -6,8 +6,8 @@ export default function DriverResponseModal({ type, onClose, onConfirm, loading 
   const [error, setError] = useState("");
 
   const isReject = type === "rejected";
-  const title = isReject ? "Từ chối chuyến đi" : "Xác nhận nhận chuyến";
-  const confirmText = isReject ? "Xác nhận từ chối" : "Xác nhận nhận chuyến";
+  const title = isReject ? "Reject Trip" : "Confirm Acceptance";
+  const confirmText = isReject ? "Confirm Reject" : "Confirm Acceptance";
   const colorClass = isReject ? "text-red-600 bg-red-50 border-red-100" : "text-emerald-600 bg-emerald-50 border-emerald-100";
   const btnClass = isReject ? "bg-red-600 hover:bg-red-700" : "bg-emerald-600 hover:bg-emerald-700";
   const icon = isReject ? <XCircle className="w-6 h-6 text-red-600" /> : <CheckCircle className="w-6 h-6 text-emerald-600" />;
@@ -15,7 +15,7 @@ export default function DriverResponseModal({ type, onClose, onConfirm, loading 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!note.trim()) {
-      setError("Vui lòng nhập ghi chú bắt buộc.");
+      setError("Please provide a note (required).");
       return;
     }
     onConfirm(note);
@@ -52,14 +52,14 @@ export default function DriverResponseModal({ type, onClose, onConfirm, loading 
           <div className="space-y-2">
             <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
               <MessageSquare size={16} className="text-gray-400" />
-              Ghi chú của bạn <span className="text-red-500">*</span>
+              Your Note <span className="text-red-500">*</span>
             </label>
             <textarea
               autoFocus
               className={`w-full h-32 p-4 rounded-2xl border-2 transition-all outline-none text-sm font-medium ${
                 error ? "border-red-200 focus:border-red-400 bg-red-50/10" : "border-gray-100 focus:border-emerald-500 focus:bg-emerald-50/5"
               }`}
-              placeholder={isReject ? "Vui lòng nhập lý do từ chối chuyến đi này..." : "Vui lòng nhập ghi chú khi nhận chuyến..."}
+              placeholder={isReject ? "Please enter reason for rejection..." : "Please enter a note for acceptance..."}
               value={note}
               onChange={(e) => {
                 setNote(e.target.value);
@@ -75,7 +75,7 @@ export default function DriverResponseModal({ type, onClose, onConfirm, loading 
 
           <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
              <p className="text-xs text-gray-500 leading-relaxed italic">
-               * Thông tin ghi chú này sẽ được gửi đến bộ phận điều hành để xác nhận trạng thái chuyến đi.
+               * This note will be sent to the operations department to confirm trip status.
              </p>
           </div>
 
@@ -85,7 +85,7 @@ export default function DriverResponseModal({ type, onClose, onConfirm, loading 
               onClick={onClose}
               className="flex-1 py-3.5 rounded-2xl border-2 border-gray-100 text-gray-600 font-bold hover:bg-gray-50 transition-all text-sm uppercase tracking-wider"
             >
-              Hủy bỏ
+              Cancel
             </button>
             <button
               type="submit"

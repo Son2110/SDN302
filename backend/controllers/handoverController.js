@@ -20,7 +20,7 @@ export const createDeliveryHandover = async (req, res) => {
     if (!staff) {
       return res
         .status(403)
-        .json({ message: "Chỉ nhân viên mới được làm biên bản bàn giao." });
+        .json({ message: "Only staff can create handover records." });
     }
 
     // 2. Tìm Booking
@@ -31,7 +31,7 @@ export const createDeliveryHandover = async (req, res) => {
     // 3. Kiểm tra trạng thái Booking (Chỉ giao xe khi đơn đã confirmed)
     if (booking.status !== "confirmed") {
       return res.status(400).json({
-        message: `Đơn hàng đang ở trạng thái ${booking.status}, không thể bàn giao xe.`,
+        message: `Booking is in status ${booking.status}, cannot handover vehicle.`,
       });
     }
 
@@ -42,7 +42,7 @@ export const createDeliveryHandover = async (req, res) => {
     });
     if (existingHandover) {
       return res.status(400).json({
-        message: "Đơn này đã có biên bản giao xe rồi.",
+        message: "This booking already has a delivery handover record.",
       });
     }
 
@@ -61,7 +61,7 @@ export const createDeliveryHandover = async (req, res) => {
       handover_type: "delivery", // Loại biên bản: Giao đi
       mileage: mileage || vehicle.current_mileage, // Số km lúc giao
       battery_level_percentage: battery_level_percentage ?? 100, // % pin lúc giao
-      notes: notes || "Xe tình trạng bình thường, pin đầy, đủ giấy tờ.",
+      notes: notes || "Vehicle in normal condition, full battery, all documents provided.",
       confirmed_by_customer: !!customer_signature,
       customer_signature: customer_signature || null,
     });
@@ -80,8 +80,8 @@ export const createDeliveryHandover = async (req, res) => {
     if (booking.customer && booking.customer.user) {
       await sendNotification({
         recipientId: booking.customer.user,
-        title: "Giao xe thành công",
-        message: `Xe ${vehicle.license_plate} đã được bàn giao. Chúc quý khách thượng lộ bình an!`,
+        title: "Vehicle Handover Successful",
+        message: `Vehicle ${vehicle.license_plate} has been handed over. Have a safe trip!`,
         type: "vehicle_handover",
         relatedId: newHandover._id,
         relatedModel: "VehicleHandover",
@@ -90,7 +90,7 @@ export const createDeliveryHandover = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Lập biên bản giao xe thành công! Chuyến đi đã bắt đầu.",
+      message: "Delivery handover record created successfully! Trip has started.",
       data: {
         handover: newHandover,
         booking_status: booking.status,
@@ -120,7 +120,7 @@ export const createReturnHandover = async (req, res) => {
     if (!staff)
       return res
         .status(403)
-        .json({ message: "Chỉ nhân viên mới được làm biên bản nhận xe." });
+        .json({ message: "Only staff can create return handover records." });
 
     // 2. Tìm Booking
     const booking = await Booking.findById(booking_id);
@@ -129,7 +129,7 @@ export const createReturnHandover = async (req, res) => {
 
     if (booking.status !== "in_progress") {
       return res.status(400).json({
-        message: `Đơn hàng đang ở trạng thái ${booking.status}. Chỉ nhận lại xe khi đơn đang in_progress.`,
+        message: `Booking is in status ${booking.status}. Only receive vehicle when status is in_progress.`,
       });
     }
 
@@ -147,14 +147,14 @@ export const createReturnHandover = async (req, res) => {
     });
     if (existingReturn) {
       return res.status(400).json({
-        message: "Đơn này đã có biên bản trả xe rồi.",
+        message: "This booking already has a return handover record.",
       });
     }
 
     // 3.6. Validate số Km trả xe
     if (return_mileage == null || return_mileage < 0) {
       return res.status(400).json({
-        message: "Vui lòng nhập số Km lúc trả xe hợp lệ.",
+        message: "Please enter a valid return mileage.",
       });
     }
 
@@ -166,7 +166,7 @@ export const createReturnHandover = async (req, res) => {
 
     if (deliveryHandover && return_mileage < deliveryHandover.mileage) {
       return res.status(400).json({
-        message: `Số Km lúc trả (${return_mileage}) không thể nhỏ hơn số Km lúc nhận (${deliveryHandover.mileage}) được! Tua đồng hồ à?`,
+        message: `Return mileage (${return_mileage}) cannot be less than delivery mileage (${deliveryHandover.mileage})!`,
       });
     }
 
@@ -178,7 +178,7 @@ export const createReturnHandover = async (req, res) => {
       handover_type: "return", // Loại biên bản: Nhận về
       mileage: return_mileage,
       battery_level_percentage: battery_level_percentage,
-      notes: notes || "Khách trả xe đúng giờ, tình trạng bình thường.",
+      notes: notes || "Vehicle returned on time, normal condition.",
       confirmed_by_customer: !!customer_signature,
       customer_signature: customer_signature || null,
     });
@@ -222,8 +222,8 @@ export const createReturnHandover = async (req, res) => {
     if (booking.customer && booking.customer.user) {
       await sendNotification({
         recipientId: booking.customer.user,
-        title: "Trả xe thành công",
-        message: `Đã nhận xe ${vehicle.license_plate}. Vui lòng thanh toán số dư còn lại (nếu có).`,
+        title: "Vehicle Returned Successfully",
+        message: `Received vehicle ${vehicle.license_plate}. Please pay any remaining balance.`,
         type: "vehicle_return",
         relatedId: newHandover._id,
         relatedModel: "VehicleHandover",
@@ -253,7 +253,7 @@ export const createReturnHandover = async (req, res) => {
     res.status(201).json({
       success: true,
       message:
-        "Nhận lại xe thành công! Vui lòng hướng dẫn khách thanh toán phần còn lại.",
+        "Vehicle returned successfully! Please guide the customer to pay the remaining balance.",
       data: {
         handover: newHandover,
         charging_fee,
@@ -279,7 +279,7 @@ export const getAllHandovers = async (req, res) => {
     if (handover_type) {
       if (!["delivery", "return"].includes(handover_type)) {
         return res.status(400).json({
-          message: 'handover_type phải là "delivery" hoặc "return".',
+          message: 'handover_type must be "delivery" or "return".',
         });
       }
       filter.handover_type = handover_type;
@@ -355,7 +355,7 @@ export const getHandoverById = async (req, res) => {
     if (!handover) {
       return res
         .status(404)
-        .json({ message: "Không tìm thấy biên bản bàn giao." });
+        .json({ message: "Handover record not found." });
     }
 
     res.status(200).json({
@@ -391,7 +391,7 @@ export const getHandoversByBooking = async (req, res) => {
     ) {
       return res
         .status(403)
-        .json({ message: "Bạn không có quyền xem biên bản của đơn này." });
+        .json({ message: "You do not have permission to view handover records for this booking." });
     }
 
     const handovers = await VehicleHandover.find({ booking: bookingId })
@@ -440,37 +440,37 @@ export const confirmDeliveryReceipt = async (req, res) => {
 
     if (!customer) {
       return res.status(403).json({
-        message: "Chỉ khách hàng mới có thể xác nhận nhận xe.",
+        message: "Only customers can confirm vehicle receipt.",
       });
     }
 
     const handover = await VehicleHandover.findById(id).populate("booking");
 
     if (!handover) {
-      return res.status(404).json({ message: "Không tìm thấy biên bản bàn giao." });
+      return res.status(404).json({ message: "Handover record not found." });
     }
 
     if (handover.handover_type !== "delivery") {
       return res.status(400).json({
-        message: "Chỉ biên bản giao xe mới có thể xác nhận nhận xe.",
+        message: "Only delivery handover records can be confirmed for receipt.",
       });
     }
 
     const booking = handover.booking;
     if (!booking) {
-      return res.status(404).json({ message: "Không tìm thấy đơn đặt xe liên quan." });
+      return res.status(404).json({ message: "Related booking not found." });
     }
 
     if (booking.customer.toString() !== customer._id.toString()) {
       return res.status(403).json({
-        message: "Bạn không có quyền xác nhận biên bản này.",
+        message: "You do not have permission to confirm this record.",
       });
     }
 
     if (handover.confirmed_by_customer) {
       return res.status(200).json({
         success: true,
-        message: "Biên bản đã được xác nhận trước đó.",
+        message: "Record has already been confirmed.",
         data: handover,
       });
     }
@@ -485,7 +485,7 @@ export const confirmDeliveryReceipt = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Xác nhận nhận xe thành công.",
+      message: "Vehicle receipt confirmed successfully.",
       data: handover,
     });
   } catch (error) {

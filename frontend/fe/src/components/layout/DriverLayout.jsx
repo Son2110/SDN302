@@ -12,9 +12,9 @@ const DriverLayout = () => {
   };
 
   const navItems = [
-    { label: "Bảng điều khiển", icon: <LayoutDashboard className="w-5 h-5" />, path: "/driver/dashboard" },
-    { label: "Phân công của tôi", icon: <Truck className="w-5 h-5" />, path: "/driver/assignments" },
-    { label: "Đánh giá của tôi", icon: <MessageSquare className="w-5 h-5" />, path: "/driver/reviews" },
+    { label: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" />, path: "/driver/dashboard" },
+    { label: "My Assignments", icon: <Truck className="w-5 h-5" />, path: "/driver/assignments" },
+    { label: "My Reviews", icon: <MessageSquare className="w-5 h-5" />, path: "/driver/reviews" },
   ];
 
   return (
@@ -49,14 +49,14 @@ const DriverLayout = () => {
             className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 w-full px-4 py-3 rounded-xl transition-colors font-medium border border-gray-200"
           >
             <HomeIcon className="w-5 h-5" />
-            <span>Trở về Trang chủ</span>
+            <span>Back to Home</span>
           </NavLink>
           <button
             onClick={handleLogout}
             className="flex items-center space-x-3 text-red-600 hover:bg-red-50 w-full px-4 py-3 rounded-xl transition-colors font-medium"
           >
             <LogOut className="w-5 h-5" />
-            <span>Đăng xuất</span>
+            <span>Logout</span>
           </button>
         </div>
       </aside>

@@ -17,6 +17,12 @@ import {
   Award,
   Hourglass,
   Power,
+  IdCard,
+  Clock,
+  Activity,
+  Shield as ShieldIcon,
+  Star,
+  CheckCircle,
 } from "lucide-react";
 import {
   getMyProfile,
@@ -28,16 +34,8 @@ import {
   saveUser,
   getUser,
 } from "../../services/api";
-import {
-  Wifi,
-  WifiOff,
-  IdCard,
-  Clock,
-  Activity,
-  Shield as ShieldIcon,
-} from "lucide-react";
-
 import { getMyBookings } from "../../services/bookingApi";
+import { getMyAssignments } from "../../services/driverAssignmentApi";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -53,6 +51,9 @@ const Profile = () => {
   const [stats, setStats] = useState({
     totalBookings: 0,
     totalSpent: 0,
+    completedAssignments: 0,
+    pendingAssignments: 0,
+    acceptedAssignments: 0,
   });
   const [togglingDuty, setTogglingDuty] = useState(false);
 
@@ -87,47 +88,78 @@ const Profile = () => {
       return;
     }
     fetchProfile();
-    fetchRealtimeStats();
   }, [navigate]);
+
+  useEffect(() => {
+    if (profile) {
+      fetchRealtimeStats();
+    }
+  }, [profile]);
 
   const fetchRealtimeStats = async () => {
     try {
-      // Total bookings placed
-      const allBookingsRes = await getMyBookings({ page: 1, limit: 1 });
-      const totalBookingsPlaced = allBookingsRes.total || 0;
+      // Customer Stats
+      let totalBookingsPlaced = 0;
+      let totalSpentFromCompleted = 0;
 
-      // Total spent from completed trips
-      const completedRes = await getMyBookings({
-        status: "completed",
-        page: 1,
-        limit: 200,
-      });
+      if (profile?.customer) {
+        const allBookingsRes = await getMyBookings({ page: 1, limit: 1 });
+        totalBookingsPlaced = allBookingsRes.total || 0;
 
-      let completedBookings = completedRes.data || [];
-      const totalPages = completedRes.totalPages || 1;
-
-      if (totalPages > 1) {
-        const pagePromises = [];
-        for (let page = 2; page <= totalPages; page += 1) {
-          pagePromises.push(getMyBookings({ status: "completed", page, limit: 200 }));
-        }
-        const pageResults = await Promise.all(pagePromises);
-        pageResults.forEach((res) => {
-          completedBookings = completedBookings.concat(res.data || []);
+        const completedRes = await getMyBookings({
+          status: "completed",
+          page: 1,
+          limit: 200,
         });
+
+        let completedBookings = completedRes.data || [];
+        const totalPages = completedRes.totalPages || 1;
+
+        if (totalPages > 1) {
+          const pagePromises = [];
+          for (let page = 2; page <= totalPages; page += 1) {
+            pagePromises.push(getMyBookings({ status: "completed", page, limit: 200 }));
+          }
+          const pageResults = await Promise.all(pagePromises);
+          pageResults.forEach((res) => {
+            completedBookings = completedBookings.concat(res.data || []);
+          });
+        }
+
+        totalSpentFromCompleted = completedBookings.reduce(
+          (sum, booking) => sum + (booking.total_amount || 0),
+          0,
+        );
       }
 
-      const totalSpentFromCompleted = completedBookings.reduce(
-        (sum, booking) => sum + (booking.total_amount || 0),
-        0,
-      );
+      // Driver Stats
+      let driverDetails = {
+        completedAssignments: 0,
+        pendingAssignments: 0,
+        acceptedAssignments: 0,
+      };
+
+      if (profile?.driver || (profile?.roles && profile.roles.includes("driver"))) {
+        try {
+          const assignments = await getMyAssignments();
+          const data = assignments.data || assignments || [];
+          if (Array.isArray(data)) {
+            driverDetails.completedAssignments = data.filter(a => a.status === 'completed').length;
+            driverDetails.pendingAssignments = data.filter(a => a.status === 'pending').length;
+            driverDetails.acceptedAssignments = data.filter(a => a.status === 'accepted').length;
+          }
+        } catch (e) {
+          console.error("Failed to fetch driver assignments", e);
+        }
+      }
 
       setStats({
         totalBookings: totalBookingsPlaced,
         totalSpent: totalSpentFromCompleted,
+        ...driverDetails,
       });
-    } catch {
-      // Fallback to profile.customer values if realtime fetch fails
+    } catch (err) {
+      console.error("Failed to fetch realtime stats", err);
     }
   };
 
@@ -458,7 +490,7 @@ const Profile = () => {
                 : "text-gray-500 hover:text-gray-700"
                 }`}
             >
-              Thống kê Thuê xe
+              Rental Statistics
               {activeTab === "customer-stats" && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"></div>
               )}
@@ -472,7 +504,7 @@ const Profile = () => {
                 : "text-gray-500 hover:text-gray-700"
                 }`}
             >
-              Thống kê Tài xế
+              Driver Statistics
               {activeTab === "driver-stats" && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"></div>
               )}
@@ -519,7 +551,7 @@ const Profile = () => {
                   <p className="text-gray-500 text-sm bg-gray-50 px-4 py-3 rounded-lg">
                     {profile.user.email || "-"}
                   </p>
-                  <span className="text-xs text-gray-400 mt-1 block">
+                  <span className="text-xs text-red-500 mt-1 block">
                     Email cannot be changed
                   </span>
                 </div>
@@ -559,7 +591,7 @@ const Profile = () => {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                       <CreditCard className="w-4 h-4" />
-                      CMND/CCCD
+                      ID Card Number
                     </label>
                     <p className="text-gray-500 text-sm bg-gray-50 px-4 py-3 rounded-lg">
                       {profile.customer.id_card || "-"}
@@ -616,7 +648,7 @@ const Profile = () => {
                         {customerData.date_of_birth
                           ? new Date(
                             customerData.date_of_birth,
-                          ).toLocaleDateString("vi-VN")
+                          ).toLocaleDateString("en-US")
                           : "Not updated"}
                       </p>
                     )}
@@ -655,13 +687,13 @@ const Profile = () => {
               <div className="bg-white rounded-xl shadow-lg p-8">
                 <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
                   <Car className="w-6 h-6 text-blue-600" />
-                  Thông tin tài xế
+                  Driver Information
                 </h2>
 
                 <div className="space-y-5">
                   <div className="flex items-center justify-between py-2 border-b border-gray-50">
                     <label className="text-sm font-semibold text-gray-700">
-                      Trạng thái hoạt động
+                      Operational Status
                     </label>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${profile.driver.status === 'available' ? 'bg-green-100 text-green-700' :
                       profile.driver.status === 'busy' ? 'bg-yellow-100 text-yellow-700' :
@@ -669,12 +701,32 @@ const Profile = () => {
                           profile.driver.status === 'rejected' ? 'bg-red-100 text-red-700' :
                             'bg-gray-100 text-gray-700'
                       }`}>
-                      {profile.driver.status === 'available' ? 'Sẵn sàng' :
-                        profile.driver.status === 'busy' ? 'Đang bận' :
-                          profile.driver.status === 'pending' ? 'Chờ duyệt' :
-                            profile.driver.status === 'rejected' ? 'Bị từ chối' : 'Ngoại tuyến'}
+                      {profile.driver.status === 'available' ? 'Available' :
+                        profile.driver.status === 'busy' ? 'Busy' :
+                          profile.driver.status === 'pending' ? 'Pending Review' :
+                            profile.driver.status === 'rejected' ? 'Rejected' : 'Offline'}
                     </span>
                   </div>
+
+                  {/* System Status Badge */}
+                  {(['available', 'busy', 'offline'].includes(profile.driver.status) || profile.driver.approved_at) ? (
+                    <div className="flex items-center gap-3 p-4 bg-blue-600 rounded-xl text-white shadow-md">
+                      <ShieldIcon className="w-6 h-6 opacity-90" />
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest opacity-80 leading-tight">System Status</p>
+                        <p className="text-sm font-bold">Verified Professional Driver</p>
+                      </div>
+                    </div>
+                  ) : profile.driver.status === 'pending' ? (
+                    <div className="flex items-center gap-3 p-4 bg-amber-500 rounded-xl text-white shadow-md">
+                      <Hourglass className="w-6 h-6 opacity-90" />
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest opacity-80 leading-tight">System Status</p>
+                        <p className="text-sm font-bold">Verification Pending</p>
+                      </div>
+                    </div>
+                  ) : null}
+
 
                   {/* Toggle Duty Button */}
                   {['available', 'offline'].includes(profile.driver.status) && (
@@ -694,15 +746,15 @@ const Profile = () => {
                           </div>
                           <div>
                             <p className="font-bold text-gray-800 text-base">
-                              Ca làm việc
+                              Duty Shift
                             </p>
                             <p className={`text-sm font-semibold ${profile.driver.status === 'available'
                               ? 'text-green-600'
                               : 'text-gray-500'
                               }`}>
                               {profile.driver.status === 'available'
-                                ? '🟢 Đang hoạt động'
-                                : '⚫ Nghỉ ca'}
+                                ? '🟢 Active'
+                                : '⚫ Off Duty'}
                             </p>
                           </div>
                         </div>
@@ -718,7 +770,7 @@ const Profile = () => {
                               setSuccess(res.message);
                               await fetchProfile();
                             } catch (err) {
-                              setError(err.message || "Không thể chuyển đổi ca làm việc");
+                              setError(err.message || "Failed to toggle duty shift");
                             } finally {
                               setTogglingDuty(false);
                             }
@@ -744,8 +796,8 @@ const Profile = () => {
 
                       <p className="text-xs text-gray-500 mt-3 leading-relaxed">
                         {profile.driver.status === 'available'
-                          ? 'Bạn đang trong ca làm việc (Staff có thể phân công cho bạn).'
-                          : 'Bạn đang nghỉ ca (Bạn có thể sử dụng dịch vụ đặt xe).'}
+                          ? 'You are currently on duty (Staff can assign trips for you).'
+                          : 'You are currently off duty (You can still use booking services).'}
                       </p>
                     </div>
                   )}
@@ -753,7 +805,7 @@ const Profile = () => {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                       <IdCard className="w-4 h-4" />
-                      Giấy phép lái xe
+                      Driving License
                     </label>
                     {editMode ? (
                       <input
@@ -775,7 +827,7 @@ const Profile = () => {
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                         <Award className="w-4 h-4" />
-                        Hạng GPLX
+                        License Class
                       </label>
                       {editMode ? (
                         <input
@@ -795,7 +847,7 @@ const Profile = () => {
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                         <TrendingUp className="w-4 h-4" />
-                        Kinh nghiệm
+                        Experience
                       </label>
                       {editMode ? (
                         <input
@@ -808,7 +860,7 @@ const Profile = () => {
                         />
                       ) : (
                         <p className="text-gray-900 text-lg bg-gray-50 px-4 py-3 rounded-lg text-center font-bold">
-                          {driverData.experience_years} năm
+                          {driverData.experience_years} years
                         </p>
                       )}
                     </div>
@@ -817,7 +869,7 @@ const Profile = () => {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                       <Clock className="w-4 h-4" />
-                      Ngày hết hạn GPLX
+                      License Expiry Date
                     </label>
                     {editMode ? (
                       <input
@@ -831,8 +883,8 @@ const Profile = () => {
                     ) : (
                       <p className="text-gray-900 text-lg bg-gray-50 px-4 py-3 rounded-lg">
                         {driverData.license_expiry
-                          ? new Date(driverData.license_expiry).toLocaleDateString("vi-VN")
-                          : "Chưa cập nhật"}
+                          ? new Date(driverData.license_expiry).toLocaleDateString("en-US")
+                          : "Not updated"}
                       </p>
                     )}
                   </div>
@@ -933,45 +985,97 @@ const Profile = () => {
 
         {/* Driver Statistics Tab */}
         {activeTab === "driver-stats" && profile.driver && (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg p-6 text-white">
-              <div className="flex items-center justify-between mb-4">
-                <Car className="w-10 h-10 opacity-80" />
-                <TrendingUp className="w-6 h-6 opacity-60" />
+          <div className="space-y-8">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform">
+                <div className="flex items-center justify-between mb-4">
+                  <Car className="w-10 h-10 opacity-80" />
+                  <div className="p-2 bg-white/20 rounded-lg">
+                    <TrendingUp className="w-6 h-6" />
+                  </div>
+                </div>
+                <h3 className="text-3xl font-bold mb-1">
+                  {profile.driver.total_trips || 0}
+                </h3>
+                <p className="text-blue-100 text-sm font-medium">
+                  Total Managed Trips
+                </p>
+                <div className="mt-4 text-[11px] text-blue-200 border-t border-white/10 pt-2">
+                  Total lifetime trips as a driver
+                </div>
               </div>
-              <h3 className="text-3xl font-bold mb-2">
-                {profile.driver.total_trips || 0}
-              </h3>
-              <p className="text-blue-100 text-sm font-medium">
-                Tổng số chuyến đi
-              </p>
-            </div>
 
-            <div className="bg-gradient-to-br from-yellow-500 to-orange-600 rounded-xl shadow-lg p-6 text-white">
-              <div className="flex items-center justify-between mb-4">
-                <Star className="w-10 h-10 opacity-80" />
-                <TrendingUp className="w-6 h-6 opacity-60" />
+              <div className="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform">
+                <div className="flex items-center justify-between mb-4">
+                  <Star className="w-10 h-10 opacity-80" />
+                  <div className="p-2 bg-white/20 rounded-lg">
+                    <Award className="w-6 h-6" />
+                  </div>
+                </div>
+                <h3 className="text-3xl font-bold mb-1">
+                  {profile.driver.rating
+                    ? profile.driver.rating.toFixed(1)
+                    : "0.0"}
+                  <span className="text-xl ml-1 text-yellow-200">★</span>
+                </h3>
+                <p className="text-orange-50 text-sm font-medium">
+                  Average Rating
+                </p>
+                <div className="mt-4 text-[11px] text-orange-100 border-t border-white/10 pt-2">
+                  Calculated from customer reviews
+                </div>
               </div>
-              <h3 className="text-3xl font-bold mb-2">
-                {profile.driver.rating
-                  ? profile.driver.rating.toFixed(1)
-                  : "0.0"}
-                <span className="text-xl ml-1">⭐</span>
-              </h3>
-              <p className="text-yellow-100 text-sm font-medium">
-                Đánh giá trung bình
-              </p>
-            </div>
 
-            <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl shadow-lg p-6 text-white">
-              <div className="flex items-center justify-between mb-4">
-                <Award className="w-10 h-10 opacity-80" />
-                <TrendingUp className="w-6 h-6 opacity-60" />
+              <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform">
+                <div className="flex items-center justify-between mb-4">
+                  <Activity className="w-10 h-10 opacity-80" />
+                  <div className="p-2 bg-white/20 rounded-lg">
+                    <CheckCircle className="w-6 h-6" />
+                  </div>
+                </div>
+                <h3 className="text-3xl font-bold mb-1">
+                  {stats.completedAssignments || 0}
+                </h3>
+                <p className="text-emerald-50 text-sm font-medium">Completed Assignments</p>
+                <div className="mt-4 text-[11px] text-emerald-100 border-t border-white/10 pt-2">
+                  Successfully completed trips in this system
+                </div>
               </div>
-              <h3 className="text-3xl font-bold mb-2">
-                {profile.driver.experience_years || 0}
-              </h3>
-              <p className="text-purple-100 text-sm font-medium">Năm kinh nghiệm</p>
+            </div>
+            <div className="grid grid-cols-1">
+              <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
+                <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                  <Activity className="w-6 h-6 text-indigo-500" />
+                  Recent Assignment Summary
+                </h3>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="flex items-center justify-between p-4 bg-blue-50 rounded-xl border border-blue-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white">
+                        <Clock className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-blue-900">Pending Requests</p>
+                        <p className="text-xs text-blue-700">Need your response</p>
+                      </div>
+                    </div>
+                    <span className="text-2xl font-black text-blue-600">{stats.pendingAssignments || 0}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-indigo-500 rounded-lg flex items-center justify-center text-white">
+                        <Car className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-indigo-900">In Progress</p>
+                        <p className="text-xs text-indigo-700">Accepted assignments</p>
+                      </div>
+                    </div>
+                    <span className="text-2xl font-black text-indigo-600">{stats.acceptedAssignments || 0}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
