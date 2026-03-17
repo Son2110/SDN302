@@ -18,17 +18,17 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const ROLE_CONFIG = {
   customer: {
-    label: "Khách hàng",
+    label: "Customer",
     color: "bg-blue-50 text-blue-700 border-blue-200",
     icon: User,
   },
   driver: {
-    label: "Tài xế",
+    label: "Driver",
     color: "bg-green-50 text-green-700 border-green-200",
     icon: Truck,
   },
   staff: {
-    label: "Nhân viên",
+    label: "Staff",
     color: "bg-orange-50 text-orange-700 border-orange-200",
     icon: UserCheck,
   },
@@ -63,7 +63,7 @@ const ConfirmModal = ({ message, onConfirm, onCancel, loading }) => (
           disabled={loading}
           className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors text-sm font-medium"
         >
-          Hủy
+          Cancel
         </button>
         <button
           onClick={onConfirm}
@@ -71,7 +71,7 @@ const ConfirmModal = ({ message, onConfirm, onCancel, loading }) => (
           className="flex-1 py-2.5 bg-gray-900 hover:bg-gray-700 rounded-xl text-white transition-colors text-sm font-medium flex items-center justify-center gap-2"
         >
           {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-          Xác nhận
+          Confirm
         </button>
       </div>
     </div>
@@ -104,8 +104,7 @@ const AdminUsers = () => {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       const json = await res.json();
-      if (!res.ok)
-        throw new Error(json.message || "Không thể tải danh sách người dùng");
+      if (!res.ok) throw new Error(json.message || "Unable to load user list");
       setUsers(json.data || []);
       setTotal(json.total || 0);
       setTotalPages(json.totalPages || 1);
@@ -139,12 +138,12 @@ const AdminUsers = () => {
         body: JSON.stringify({ role, action }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.message || "Thao tác thất bại");
+      if (!res.ok) throw new Error(json.message || "Operation failed");
       // Update locally
       setUsers((prev) =>
         prev.map((u) => (u._id === userId ? { ...u, roles: json.roles } : u)),
       );
-      toast.success(json.message || "Cập nhật role thành công");
+      toast.success(json.message || "Role updated successfully");
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -162,13 +161,13 @@ const AdminUsers = () => {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.message || "Thao tác thất bại");
+      if (!res.ok) throw new Error(json.message || "Operation failed");
       setUsers((prev) =>
         prev.map((u) =>
           u._id === userId ? { ...u, is_active: json.is_active } : u,
         ),
       );
-      toast.success(json.message || "Cập nhật trạng thái thành công");
+      toast.success(json.message || "Status updated successfully");
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -186,11 +185,9 @@ const AdminUsers = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Quản lý người dùng
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
           <p className="text-gray-500 text-sm mt-1">
-            Xem và chỉnh sửa role • {total} người dùng
+            View and edit roles • {total} users
           </p>
         </div>
 
@@ -201,7 +198,7 @@ const AdminUsers = () => {
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Tìm tên, email, SĐT..."
+              placeholder="Search name, email, phone..."
               className="bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 w-64"
             />
             {searchInput && (
@@ -222,7 +219,7 @@ const AdminUsers = () => {
             type="submit"
             className="bg-gray-900 hover:bg-gray-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors"
           >
-            Tìm
+            Search
           </button>
         </form>
       </div>
@@ -240,7 +237,7 @@ const AdminUsers = () => {
       ) : users.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-2xl p-16 text-center">
           <User className="mx-auto mb-4 text-gray-300" size={48} />
-          <p className="text-gray-500">Không tìm thấy người dùng nào</p>
+          <p className="text-gray-500">No users found</p>
         </div>
       ) : (
         <>
@@ -249,11 +246,11 @@ const AdminUsers = () => {
               <table className="w-full text-sm text-left">
                 <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
                   <tr>
-                    <th className="px-5 py-4">Người dùng</th>
+                    <th className="px-5 py-4">User</th>
                     <th className="px-5 py-4">Roles</th>
-                    <th className="px-5 py-4">Ngày tạo</th>
-                    <th className="px-5 py-4">Trạng thái</th>
-                    <th className="px-5 py-4">Hành động</th>
+                    <th className="px-5 py-4">Created At</th>
+                    <th className="px-5 py-4">Status</th>
+                    <th className="px-5 py-4">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -299,7 +296,7 @@ const AdminUsers = () => {
                               u.roles.map((r) => <RoleBadge key={r} role={r} />)
                             ) : (
                               <span className="text-xs text-gray-400">
-                                — không có role
+                                — no roles
                               </span>
                             )}
                           </div>
@@ -315,7 +312,7 @@ const AdminUsers = () => {
                           <button
                             onClick={() =>
                               askConfirm(
-                                `${u.is_active ? "Vô hiệu hóa" : "Kích hoạt"} tài khoản "${u.full_name}"?`,
+                                `${u.is_active ? "Deactivate" : "Activate"} account "${u.full_name}"?`,
                                 () => toggleStatus(u._id),
                               )
                             }
@@ -327,14 +324,12 @@ const AdminUsers = () => {
                             ) : u.is_active ? (
                               <>
                                 <ToggleRight className="w-5 h-5 text-green-500" />
-                                <span className="text-green-600">
-                                  Hoạt động
-                                </span>
+                                <span className="text-green-600">Active</span>
                               </>
                             ) : (
                               <>
                                 <ToggleLeft className="w-5 h-5 text-gray-300" />
-                                <span className="text-gray-400">Vô hiệu</span>
+                                <span className="text-gray-400">Inactive</span>
                               </>
                             )}
                           </button>
@@ -348,7 +343,7 @@ const AdminUsers = () => {
                               <button
                                 onClick={() =>
                                   askConfirm(
-                                    `Xóa role Staff của "${u.full_name}"?`,
+                                    `Remove Staff role from "${u.full_name}"?`,
                                     () => updateRole(u._id, "staff", "remove"),
                                   )
                                 }
@@ -366,7 +361,7 @@ const AdminUsers = () => {
                               <button
                                 onClick={() =>
                                   askConfirm(
-                                    `Thêm role Staff cho "${u.full_name}"?`,
+                                    `Add Staff role to "${u.full_name}"?`,
                                     () => updateRole(u._id, "staff", "add"),
                                   )
                                 }
@@ -385,7 +380,7 @@ const AdminUsers = () => {
                               <button
                                 onClick={() =>
                                   askConfirm(
-                                    `Xóa role Admin của "${u.full_name}"?`,
+                                    `Remove Admin role from "${u.full_name}"?`,
                                     () => updateRole(u._id, "admin", "remove"),
                                   )
                                 }
@@ -403,7 +398,7 @@ const AdminUsers = () => {
                               <button
                                 onClick={() =>
                                   askConfirm(
-                                    `Cấp quyền Admin cho "${u.full_name}"?`,
+                                    `Grant Admin role to "${u.full_name}"?`,
                                     () => updateRole(u._id, "admin", "add"),
                                   )
                                 }
@@ -434,17 +429,17 @@ const AdminUsers = () => {
                 onClick={() => setPage((p) => p - 1)}
                 className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition-colors"
               >
-                Trước
+                Previous
               </button>
               <span className="text-sm text-gray-500 font-medium">
-                Trang {page} / {totalPages}
+                Page {page} / {totalPages}
               </span>
               <button
                 disabled={page === totalPages}
                 onClick={() => setPage((p) => p + 1)}
                 className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition-colors"
               >
-                Sau
+                Next
               </button>
             </div>
           )}

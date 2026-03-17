@@ -9,6 +9,8 @@ const userSchema = new mongoose.Schema(
     full_name: { type: String, required: true },
     avatar_url: { type: String, default: "" },
     is_active: { type: Boolean, default: true },
+    reset_password_otp: { type: String },
+    reset_password_otp_expires: { type: Date },
   },
   { timestamps: true },
 );
