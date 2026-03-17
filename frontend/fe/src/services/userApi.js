@@ -1,5 +1,6 @@
 const API_URL = import.meta.env.VITE_API_URL;
 import { getToken } from "./api";
+import { toEnglishError } from "../utils/errorMessages";
 
 // ==================== DRIVER REGISTRATION ====================
 
@@ -13,7 +14,7 @@ export const getMyDriverStatus = async () => {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to fetch driver status");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to fetch driver status"));
   return data.data; // null nếu chưa đăng ký
 };
 
@@ -32,7 +33,7 @@ export const registerAsDriver = async (driverData) => {
     body: JSON.stringify(driverData),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to register as driver");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to register as driver"));
   return data;
 };
 
@@ -51,7 +52,7 @@ export const reapplyAsDriver = async (driverData) => {
     body: JSON.stringify(driverData),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to re-apply");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to re-apply"));
   return data;
 };
 
@@ -73,7 +74,7 @@ export const getAllDrivers = async (params = {}) => {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to fetch drivers");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to fetch drivers"));
   return data;
 };
 
@@ -95,7 +96,7 @@ export const getPendingDrivers = async (params = {}) => {
   );
   const data = await res.json();
   if (!res.ok)
-    throw new Error(data.message || "Failed to fetch pending drivers");
+    throw new Error(toEnglishError(data.message, "Failed to fetch pending drivers"));
   return data;
 };
 
@@ -108,7 +109,7 @@ export const getDriverStats = async () => {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to fetch driver stats");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to fetch driver stats"));
   return data.data;
 };
 
@@ -122,7 +123,7 @@ export const getDriverById = async (id) => {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to fetch driver");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to fetch driver"));
   return data.data;
 };
 
@@ -142,7 +143,7 @@ export const updateDriver = async (id, driverData) => {
     body: JSON.stringify(driverData),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to update driver");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to update driver"));
   return data;
 };
 
@@ -159,7 +160,7 @@ export const approveDriver = async (id) => {
     },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to approve driver");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to approve driver"));
   return data;
 };
 
@@ -179,7 +180,7 @@ export const rejectDriver = async (id, rejection_reason) => {
     body: JSON.stringify({ rejection_reason }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to reject driver");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to reject driver"));
   return data;
 };
 

@@ -1,8 +1,22 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getAllVehicles } from "../services/vehicleApi";
 import FleetHeader from "../components/fleet/FleetHeader";
 import FleetGrid from "../components/fleet/FleetGrid";
 import FleetFilters from "../components/fleet/FleetFilters";
+
+const CATEGORY_LABELS = {
+  sedan: "Sedan",
+  suv: "SUV",
+  van: "Van",
+  luxury: "Luxury",
+};
+
+const FUEL_LABELS = {
+  electric: "Electric",
+  hybrid: "Hybrid",
+  diesel: "Diesel",
+  gasoline: "Gasoline",
+};
 
 const FleetPage = () => {
   // 1. Filter state
@@ -14,97 +28,80 @@ const FleetPage = () => {
   // 2. Vehicles state from API
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isFiltering, setIsFiltering] = useState(false);
   const [error, setError] = useState(null);
+  const requestIdRef = useRef(0);
 
-  // 3. Fetch vehicles when component mounts
+  // 3. Fetch vehicles from API whenever filter/sort changes (debounced + race-safe)
   useEffect(() => {
-    const fetchVehicles = async () => {
+    const currentRequestId = ++requestIdRef.current;
+    const isInitialLoad = vehicles.length === 0;
+    const debounceTimer = setTimeout(async () => {
       try {
-        setLoading(true);
-        const data = await getAllVehicles();
+        if (isInitialLoad) {
+          setLoading(true);
+        } else {
+          setIsFiltering(true);
+        }
+
+        const apiFilters = {
+          sort,
+        };
+
+        if (type) apiFilters.category = type;
+        if (seats) apiFilters.seats = seats;
+        if (price) apiFilters.price_range = price;
+
+        const data = await getAllVehicles(apiFilters);
+        if (currentRequestId !== requestIdRef.current) return;
+
         // Transform backend data to FleetCard format
-        const transformed = data.map((vehicle) => ({
-          id: vehicle._id,
-          name: `${vehicle.brand} ${vehicle.model}`,
-          image: vehicle.image_urls?.[0] || "/placeholder-car.jpg",
-          price: vehicle.daily_rate.toLocaleString("vi-VN"),
-          type:
-            vehicle.vehicle_type?.type_name ||
-            vehicle.vehicle_type?.category ||
-            "sedan",
-          category: vehicle.vehicle_type?.category || "sedan",
-          seats: vehicle.vehicle_type?.seat_capacity || 4,
-          transmission:
-            vehicle.vehicle_type?.transmission === "auto"
-              ? "Automatic"
-              : "Manual",
-          fuel:
-            vehicle.vehicle_type?.fuel_type === "electric"
-              ? "Electric"
-              : vehicle.vehicle_type?.fuel_type === "hybrid"
-                ? "Hybrid"
-                : vehicle.vehicle_type?.fuel_type === "diesel"
-                  ? "Diesel"
-                  : "Gasoline",
-          rating: 4.5,
-          status: vehicle.status,
-        }));
+        const transformed = data.map((vehicle) => {
+          const category = vehicle.vehicle_type?.category || "sedan";
+          const fuelType = vehicle.vehicle_type?.fuel_type || "gasoline";
+          const seatCapacity = vehicle.vehicle_type?.seat_capacity || 4;
+          const categoryLabel = CATEGORY_LABELS[category] || "Sedan";
+          const fuelLabel = FUEL_LABELS[fuelType] || "Gasoline";
+
+          return {
+            id: vehicle._id,
+            name: `${vehicle.brand} ${vehicle.model}`,
+            image: vehicle.image_urls?.[0] || "/placeholder-car.jpg",
+            price: vehicle.daily_rate.toLocaleString("vi-VN"),
+            type: `${fuelLabel} ${categoryLabel} ${seatCapacity} Seats`.toUpperCase(),
+            category,
+            seats: seatCapacity,
+            transmission:
+              vehicle.vehicle_type?.transmission === "auto"
+                ? "Automatic"
+                : "Manual",
+            fuel: fuelLabel,
+            rating: 4.5,
+            status: vehicle.status,
+          };
+        });
         setVehicles(transformed);
         setError(null);
       } catch (err) {
+        if (currentRequestId !== requestIdRef.current) return;
         console.error("Failed to fetch vehicles:", err);
         setError("Unable to load vehicle list. Please try again later.");
       } finally {
+        if (currentRequestId !== requestIdRef.current) return;
         setLoading(false);
+        setIsFiltering(false);
       }
-    };
-    fetchVehicles();
-  }, []);
+    }, 220);
 
-  // 4. Filtering logic
-  const filteredVehicles = useMemo(() => {
-    let result = [...vehicles];
+    return () => clearTimeout(debounceTimer);
+  }, [type, seats, price, sort]);
 
-    // Filter by type
-    if (type) {
-      result = result.filter((car) => car.category === type);
-    }
-
-    // Filter by seats
-    if (seats) {
-      result = result.filter((car) => car.seats === parseInt(seats));
-    }
-
-    // Filter by price range
-    if (price) {
-      result = result.filter((car) => {
-        const priceNum = parseInt(car.price.replace(/\./g, ""));
-        if (price === "0-1") return priceNum < 1000000;
-        if (price === "1-2") return priceNum >= 1000000 && priceNum <= 2000000;
-        if (price === "2+") return priceNum > 2000000;
-        return true;
-      });
-    }
-
-    // Sort logic
-    if (sort === "price-low") {
-      result.sort(
-        (a, b) =>
-          parseInt(a.price.replace(/\./g, "")) -
-          parseInt(b.price.replace(/\./g, "")),
-      );
-    } else if (sort === "price-high") {
-      result.sort(
-        (a, b) =>
-          parseInt(b.price.replace(/\./g, "")) -
-          parseInt(a.price.replace(/\./g, "")),
-      );
-    } else if (sort === "rating") {
-      result.sort((a, b) => b.rating - a.rating);
-    }
-
-    return result;
-  }, [vehicles, type, seats, price, sort]);
+  const resetFilters = () => {
+    setType("");
+    setSeats("");
+    setPrice("");
+    setSort("recommended");
+  };
 
   // Loading state
   if (loading) {
@@ -127,10 +124,10 @@ const FleetPage = () => {
         <div className="max-w-7xl mx-auto px-6 text-center">
           <p className="text-red-500 font-medium">{error}</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={resetFilters}
             className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            Retry
+            Reset filters
           </button>
         </div>
       </main>
@@ -144,14 +141,27 @@ const FleetPage = () => {
 
         {/* Pass setters so filters can update parent state */}
         <FleetFilters
-          setType={setType}
-          setSeats={setSeats}
-          setPrice={setPrice}
-          setSort={setSort}
+          type={type}
+          seats={seats}
+          price={price}
+          sort={sort}
+          onTypeChange={setType}
+          onSeatsChange={setSeats}
+          onPriceChange={setPrice}
+          onSortChange={setSort}
+          onReset={resetFilters}
         />
 
-        {/* Pass filtered vehicles to grid */}
-        <FleetGrid data={filteredVehicles} />
+        {isFiltering && (
+          <div className="mb-4 flex items-center justify-center" aria-live="polite">
+            <div
+              className="h-6 w-6 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600"
+              aria-label="Loading"
+            />
+          </div>
+        )}
+
+        <FleetGrid data={vehicles} onReset={resetFilters} />
       </div>
     </main>
   );

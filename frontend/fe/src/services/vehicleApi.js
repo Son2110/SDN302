@@ -1,21 +1,29 @@
 const API_URL = import.meta.env.VITE_API_URL;
 import { getToken } from "./api";
+import { toEnglishError } from "../utils/errorMessages";
 
 /**
- * Get available vehicles for a date range
- * @param {string} start_date - YYYY-MM-DD
- * @param {string} end_date - YYYY-MM-DD
+ * Get available vehicles with optional filters
+ * @param {Object} filters - { category, seats, min_price, max_price, price_range, sort }
  * @returns {Promise} Available vehicles list
  */
-export const getAvailableVehicles = async (start_date, end_date) => {
+export const getAvailableVehicles = async (filters = {}) => {
   const params = new URLSearchParams();
-  if (start_date) params.append("start_date", start_date);
-  if (end_date) params.append("end_date", end_date);
+
+  if (typeof filters === "string") {
+    params.append("start_date", filters);
+  } else {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        params.append(key, value);
+      }
+    });
+  }
 
   const res = await fetch(`${API_URL}/bookings/available?${params.toString()}`);
   const response = await res.json();
   if (!res.ok)
-    throw new Error(response.message || "Failed to fetch available vehicles");
+    throw new Error(toEnglishError(response.message, "Failed to fetch available vehicles"));
   return response.data; // Return array of vehicles directly
 };
 
@@ -32,7 +40,7 @@ export const getVehicleBookedDates = async (vehicleId) => {
     },
   );
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to fetch booked dates");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to fetch booked dates"));
   return data;
 };
 
@@ -40,8 +48,8 @@ export const getVehicleBookedDates = async (vehicleId) => {
  * Get all vehicles (for Fleet page - no date filter)
  * @returns {Promise} All available vehicles
  */
-export const getAllVehicles = async () => {
-  return getAvailableVehicles(); // No params = get all available
+export const getAllVehicles = async (filters = {}) => {
+  return getAvailableVehicles(filters); // Supports optional filters from Fleet page
 };
 
 /**
@@ -54,7 +62,7 @@ export const getVehicleById = async (id) => {
   // Then filter by ID or fetch from vehicles endpoint if user is authenticated
   const res = await fetch(`${API_URL}/bookings/available`);
   const response = await res.json();
-  if (!res.ok) throw new Error(response.message || "Failed to fetch vehicle");
+  if (!res.ok) throw new Error(toEnglishError(response.message, "Failed to fetch vehicle"));
 
   // Find vehicle by ID from the list
   const vehicle = response.data.find((v) => v._id === id);
@@ -81,7 +89,7 @@ export const getVehiclesForStaff = async (params = {}) => {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to fetch vehicles");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to fetch vehicles"));
   return data;
 };
 
@@ -95,7 +103,7 @@ export const getVehicleByIdForStaff = async (id) => {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to fetch vehicle");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to fetch vehicle"));
   return data.data;
 };
 
@@ -117,7 +125,7 @@ export const createVehicle = async (vehicleData) => {
     body: isFormData ? vehicleData : JSON.stringify(vehicleData),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to create vehicle");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to create vehicle"));
   return data;
 };
 
@@ -140,7 +148,7 @@ export const updateVehicle = async (id, vehicleData) => {
     body: isFormData ? vehicleData : JSON.stringify(vehicleData),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to update vehicle");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to update vehicle"));
   return data;
 };
 
@@ -155,7 +163,7 @@ export const deleteVehicle = async (id) => {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to delete vehicle");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to delete vehicle"));
   return data;
 };
 
@@ -176,7 +184,7 @@ export const updateVehicleStatus = async (id, status, maintenance_note) => {
     body: JSON.stringify({ status, maintenance_note }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to update status");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to update status"));
   return data;
 };
 
@@ -189,7 +197,7 @@ export const getVehicleTypes = async () => {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to fetch vehicle types");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to fetch vehicle types"));
   return data.data;
 };
 
@@ -208,6 +216,6 @@ export const createVehicleType = async (typeData) => {
     body: JSON.stringify(typeData),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to create vehicle type");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to create vehicle type"));
   return data;
 };

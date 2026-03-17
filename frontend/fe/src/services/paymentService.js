@@ -1,4 +1,5 @@
 import { getToken } from "./api";
+import { toEnglishError } from "../utils/errorMessages";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -26,7 +27,7 @@ export const createPayment = async (paymentData) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || 'Failed to create payment');
+      throw new Error(toEnglishError(data.message, 'Failed to create payment'));
     }
 
     return data;
@@ -53,7 +54,7 @@ export const getPaymentById = async (id) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || 'Failed to fetch payment');
+      throw new Error(toEnglishError(data.message, 'Failed to fetch payment'));
     }
 
     return data;
@@ -90,7 +91,7 @@ export const getPayments = async (params = {}) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || 'Failed to fetch payments');
+      throw new Error(toEnglishError(data.message, 'Failed to fetch payments'));
     }
 
     return data;
@@ -119,7 +120,7 @@ export const processDepositPayment = async (paymentData) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || 'Failed to process deposit payment');
+      throw new Error(toEnglishError(data.message, 'Failed to process deposit payment'));
     }
 
     return data;
@@ -148,7 +149,7 @@ export const processFinalPayment = async (paymentData) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || 'Failed to process final payment');
+      throw new Error(toEnglishError(data.message, 'Failed to process final payment'));
     }
 
     return data;
@@ -175,7 +176,7 @@ export const getBookingPayments = async (bookingId) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || 'Failed to fetch booking payments');
+      throw new Error(toEnglishError(data.message, 'Failed to fetch booking payments'));
     }
 
     return data;
@@ -202,7 +203,7 @@ export const getPaymentSummary = async (bookingId) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || 'Failed to fetch payment summary');
+      throw new Error(toEnglishError(data.message, 'Failed to fetch payment summary'));
     }
 
     return data;
@@ -232,7 +233,7 @@ export const processPayment = async (id, transactionId) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || 'Failed to process payment');
+      throw new Error(toEnglishError(data.message, 'Failed to process payment'));
     }
 
     return data;
@@ -287,17 +288,26 @@ export const getPaymentByTxnRef = async (txnRef) => {
  */
 export const verifyPayment = async (txnRef, vnpayParams = null) => {
   const token = getToken();
-  const response = await fetch(`${API_URL}/payments/vnpay/verify`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ txnRef, vnpayParams: vnpayParams || {} }),
-  });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message || 'Failed to verify payment');
-  return data;
+  try {
+    const response = await fetch(`${API_URL}/payments/vnpay/verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ txnRef, vnpayParams: vnpayParams || {} }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(toEnglishError(data.message, 'Failed to verify payment'));
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
 };
 
 /**
@@ -318,7 +328,7 @@ export const cancelPayment = async (id) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || 'Failed to cancel payment');
+      throw new Error(toEnglishError(data.message, 'Failed to cancel payment'));
     }
 
     return data;
@@ -348,7 +358,7 @@ export const createPaymentUrl = async (id, returnUrl) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || 'Failed to create payment URL');
+      throw new Error(toEnglishError(data.message, 'Failed to create payment URL'));
     }
 
     return data;
@@ -375,7 +385,7 @@ export const checkPaymentStatus = async (id) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || 'Failed to check payment status');
+      throw new Error(toEnglishError(data.message, 'Failed to check payment status'));
     }
 
     return data;
@@ -405,7 +415,7 @@ export const createRefund = async (id, data) => {
     const responseData = await response.json();
 
     if (!response.ok) {
-      throw new Error(responseData.message || 'Failed to create refund');
+      throw new Error(toEnglishError(responseData.message, 'Failed to create refund'));
     }
 
     return responseData;
@@ -432,7 +442,7 @@ export const getRefunds = async (id) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || 'Failed to fetch refunds');
+      throw new Error(toEnglishError(data.message, 'Failed to fetch refunds'));
     }
 
     return data;

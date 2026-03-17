@@ -1,5 +1,6 @@
 const API_URL = import.meta.env.VITE_API_URL;
 import { getToken } from "./api";
+import { toEnglishError } from "../utils/errorMessages";
 
 export const getAllBookings = async (params = {}) => {
   const cleanParams = Object.fromEntries(
@@ -10,7 +11,7 @@ export const getAllBookings = async (params = {}) => {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to fetch bookings");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to fetch bookings"));
   return data;
 };
 
@@ -20,7 +21,7 @@ export const getBookingDetail = async (id) => {
   });
   const data = await res.json();
   if (!res.ok)
-    throw new Error(data.message || "Failed to fetch booking detail");
+    throw new Error(toEnglishError(data.message, "Failed to fetch booking detail"));
   return data;
 };
 
@@ -42,7 +43,7 @@ export const getMyBookings = async (params = {}) => {
     },
   );
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to fetch my bookings");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to fetch my bookings"));
   return data;
 };
 
@@ -56,7 +57,7 @@ export const cancelBooking = async (id) => {
     },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to cancel booking");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to cancel booking"));
   return data;
 };
 
@@ -70,7 +71,7 @@ export const updateBooking = async (id, updateData) => {
     body: JSON.stringify(updateData),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to update booking");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to update booking"));
   return data;
 };
 
@@ -80,7 +81,7 @@ export const deleteBooking = async (id) => {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to delete booking");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to delete booking"));
   return data;
 };
 
@@ -95,6 +96,6 @@ export const createBooking = async (bookingData) => {
     body: JSON.stringify(bookingData),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to create booking");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to create booking"));
   return data;
 };

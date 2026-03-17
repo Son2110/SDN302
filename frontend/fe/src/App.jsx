@@ -25,6 +25,7 @@ import Unauthorized from "./pages/shared/Unauthorized";
 // Customer Pages
 import MyBookings from "./pages/customer/MyBookings";
 import BookingDetail from "./pages/customer/BookingDetail";
+import HandoverReceipt from "./pages/customer/HandoverReceipt";
 import MyPayments from "./pages/customer/MyPayments";
 import DepositPayment from "./pages/customer/DepositPayment";
 import PaymentPage from "./pages/customer/PaymentPage";
@@ -126,6 +127,10 @@ function App() {
             <Route path="/my-bookings" element={<MyBookings />} />
             <Route path="/my-payments" element={<MyPayments />} />
             <Route path="/bookings/:id" element={<BookingDetail />} />
+            <Route
+              path="/bookings/:id/handover-receipt"
+              element={<HandoverReceipt />}
+            />
             <Route path="/payment/success" element={<PaymentSuccess />} />
             <Route
               path="/payment/deposit/:id"

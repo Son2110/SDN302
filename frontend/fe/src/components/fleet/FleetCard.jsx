@@ -9,7 +9,7 @@ const FleetCard = ({ car }) => {
         <img
           src={car.image}
           alt={car.name}
-          className="h-full w-full object-contain p-4 group-hover:scale-110 transition duration-500"
+          className="h-full w-full object-cover group-hover:scale-110 transition duration-500"
         />
         <span className="absolute top-4 left-4 rounded-lg bg-blue-600 px-3 py-1 text-[10px] font-bold text-white uppercase tracking-wider">
           {car.type}

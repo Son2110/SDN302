@@ -82,7 +82,7 @@ const Fleet = () => {
                 <img
                   src={car.image_urls?.[0] || "/placeholder-car.jpg"}
                   alt={`${car.brand} ${car.model}`}
-                  className="w-[90%] object-contain transition-transform duration-700 group-hover:scale-110"
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
 
                 <span className="absolute top-4 left-4 bg-blue-600 text-white text-[10px] font-bold tracking-widest px-3 py-1 rounded-full uppercase">

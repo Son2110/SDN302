@@ -25,6 +25,7 @@ import {
   getReviewsByBooking,
   updateReview,
 } from "../../services/reviewApi";
+import toast from "react-hot-toast";
 
 // ===== Module-level components — defined outside BookingDetail so React never re-mounts them on re-render =====
 
@@ -284,10 +285,10 @@ const BookingDetail = () => {
     setCancelling(true);
     try {
       await cancelBooking(id);
-      alert("Booking canceled successfully!");
+      toast.success("Booking canceled successfully!");
       navigate("/my-bookings");
     } catch (err) {
-      alert(err.message || "Unable to cancel booking. Please try again.");
+      toast.error(err.message || "Unable to cancel booking. Please try again.");
     } finally {
       setCancelling(false);
       setShowCancelModal(false);
@@ -354,6 +355,15 @@ const BookingDetail = () => {
 
   const overallReview = reviews.find((r) => r.review_type === "overall");
   const driverReview = reviews.find((r) => r.review_type === "driver");
+  const now = new Date();
+  const pickupDate = booking?.start_date ? new Date(booking.start_date) : null;
+  const canOpenHandoverReport =
+    (!!pickupDate &&
+      now >= pickupDate &&
+      !["pending", "cancelled"].includes(booking?.status)) ||
+    ["in_progress", "vehicle_returned", "completed"].includes(
+      booking?.status,
+    );
 
   if (loading) {
     return (
@@ -779,17 +789,15 @@ const BookingDetail = () => {
                   </Link>
                 )}
 
-                {(booking.status === "in_progress" ||
-                  booking.status === "vehicle_returned" ||
-                  booking.status === "completed") && (
-                    <Link
-                      to={`/bookings/${booking._id}/handover-receipt`}
-                      className="w-full bg-white text-blue-700 py-4 rounded-2xl font-bold hover:bg-blue-50 transition-all border border-blue-200 flex items-center justify-center gap-2"
-                    >
-                      <ClipboardCheck size={20} />
-                      Delivery handover receipt
-                    </Link>
-                  )}
+                {canOpenHandoverReport && (
+                  <Link
+                    to={`/bookings/${booking._id}/handover-receipt`}
+                    className="w-full bg-white text-blue-700 py-4 rounded-2xl font-bold hover:bg-blue-50 transition-all border border-blue-200 flex items-center justify-center gap-2"
+                  >
+                    <ClipboardCheck size={20} />
+                    Pickup / Return reports
+                  </Link>
+                )}
 
                 {(booking.status === "pending" ||
                   booking.status === "confirmed") && (
@@ -821,7 +829,7 @@ const BookingDetail = () => {
                   {(booking.status === "confirmed" ||
                     booking.status === "in_progress") && (
                       <span className="block mt-2 text-blue-600 font-semibold">
-                        Your deposit will be refunded.
+                        Your deposit will not be refunded.
                       </span>
                     )}
                 </p>

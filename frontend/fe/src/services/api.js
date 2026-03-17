@@ -1,4 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import { toEnglishError } from "../utils/errorMessages";
 
 // Authenticated API Client
 const apiClient = async (endpoint, options = {}) => {
@@ -17,7 +18,7 @@ const apiClient = async (endpoint, options = {}) => {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.message || "Request failed");
+    throw new Error(toEnglishError(data.message, "Request failed"));
   }
 
   return data;
@@ -39,7 +40,7 @@ export const registerUser = async (userData) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || "Registration failed");
+      throw new Error(toEnglishError(data.message, "Registration failed"));
     }
 
     return data;
@@ -62,7 +63,7 @@ export const loginUser = async (credentials) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || "Login failed");
+      throw new Error(toEnglishError(data.message, "Login failed"));
     }
 
     return data;
@@ -77,7 +78,15 @@ export const forgotPassword = async (email) => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
   });
-  return await response.json();
+  const data = await response.json();
+  if (!response.ok) {
+    return {
+      ...data,
+      success: false,
+      message: toEnglishError(data.message, "Failed to send OTP"),
+    };
+  }
+  return data;
 };
 
 export const resetPassword = async (email, otp, newPassword) => {
@@ -86,7 +95,15 @@ export const resetPassword = async (email, otp, newPassword) => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, otp, newPassword }),
   });
-  return await response.json();
+  const data = await response.json();
+  if (!response.ok) {
+    return {
+      ...data,
+      success: false,
+      message: toEnglishError(data.message, "Failed to reset password"),
+    };
+  }
+  return data;
 };
 
 // Get Current User
@@ -103,7 +120,7 @@ export const getCurrentUser = async (token) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || "Failed to get user");
+      throw new Error(toEnglishError(data.message, "Failed to get user"));
     }
 
     return data;
@@ -158,7 +175,7 @@ export const getMyProfile = async () => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || "Failed to get profile");
+      throw new Error(toEnglishError(data.message, "Failed to get profile"));
     }
 
     return data;
@@ -190,7 +207,7 @@ export const updateUserInfo = async (userData) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || "Failed to update user info");
+      throw new Error(toEnglishError(data.message, "Failed to update user info"));
     }
 
     return data;
@@ -215,7 +232,9 @@ export const updateCustomerProfile = async (customerId, customerData) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || "Failed to update customer profile");
+      throw new Error(
+        toEnglishError(data.message, "Failed to update customer profile"),
+      );
     }
 
     return data;
@@ -240,7 +259,7 @@ export const updateDriverProfile = async (driverId, driverData) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || "Failed to update driver profile");
+      throw new Error(toEnglishError(data.message, "Failed to update driver profile"));
     }
 
     return data;
@@ -264,7 +283,7 @@ export const toggleDriverDuty = async () => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || "Failed to toggle duty status");
+      throw new Error(toEnglishError(data.message, "Failed to toggle duty status"));
     }
 
     return data;

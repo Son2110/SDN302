@@ -1,5 +1,6 @@
 const API_URL = import.meta.env.VITE_API_URL;
 import { getToken } from "./api";
+import { toEnglishError } from "../utils/errorMessages";
 
 export const getExtensions = async (params = {}) => {
   const cleanParams = Object.fromEntries(
@@ -10,7 +11,7 @@ export const getExtensions = async (params = {}) => {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to fetch extensions");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to fetch extensions"));
   return data;
 };
 
@@ -20,7 +21,7 @@ export const approveExtension = async (id) => {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to approve extension");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to approve extension"));
   return data;
 };
 
@@ -34,7 +35,7 @@ export const rejectExtension = async (id, reject_reason = "") => {
     body: JSON.stringify({ reject_reason }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to reject extension");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to reject extension"));
   return data;
 };
 
@@ -51,7 +52,7 @@ export const requestExtension = async (booking_id, new_end_date) => {
     body: JSON.stringify({ booking_id, new_end_date }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to request extension");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to request extension"));
   return data;
 };
 
@@ -65,7 +66,7 @@ export const getMyExtensions = async (params = {}) => {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to fetch my extensions");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to fetch my extensions"));
   return data;
 };
 
@@ -75,6 +76,6 @@ export const getExtensionById = async (id) => {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Failed to fetch extension");
+  if (!res.ok) throw new Error(toEnglishError(data.message, "Failed to fetch extension"));
   return data;
 };
