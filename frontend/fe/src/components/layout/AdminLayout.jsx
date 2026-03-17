@@ -19,12 +19,12 @@ const AdminLayout = () => {
 
   const navItems = [
     {
-      label: "Doanh thu",
+      label: "Revenue",
       icon: <TrendingUp className="w-5 h-5" />,
       path: "/admin/revenue",
     },
     {
-      label: "Quản lý người dùng",
+      label: "User Management",
       icon: <Users className="w-5 h-5" />,
       path: "/admin/users",
     },
@@ -67,14 +67,14 @@ const AdminLayout = () => {
             className="flex items-center space-x-3 text-gray-500 hover:bg-gray-100 hover:text-gray-900 w-full px-4 py-3 rounded-lg transition-colors text-sm font-medium"
           >
             <HomeIcon className="w-5 h-5" />
-            <span>Trở về Trang chủ</span>
+            <span>Back to Home</span>
           </NavLink>
           <button
             onClick={handleLogout}
             className="flex items-center space-x-3 text-red-500 hover:bg-red-50 w-full px-4 py-3 rounded-lg transition-colors text-sm font-medium"
           >
             <LogOut className="w-5 h-5" />
-            <span>Đăng xuất</span>
+            <span>Log out</span>
           </button>
         </div>
       </aside>

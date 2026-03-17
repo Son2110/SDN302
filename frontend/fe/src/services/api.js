@@ -71,6 +71,24 @@ export const loginUser = async (credentials) => {
   }
 };
 
+export const forgotPassword = async (email) => {
+  const response = await fetch(`${API_URL}/auth/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  return await response.json();
+};
+
+export const resetPassword = async (email, otp, newPassword) => {
+  const response = await fetch(`${API_URL}/auth/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, otp, newPassword }),
+  });
+  return await response.json();
+};
+
 // Get Current User
 export const getCurrentUser = async (token) => {
   try {

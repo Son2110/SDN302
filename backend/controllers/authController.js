@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { User, Customer } from "../models/user.model.js";
 import { getUserRoles } from "../middlewares/authMiddleware.js";
+import { sendEmail } from "../utils/emailSender.js";
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -81,6 +82,68 @@ export const getMe = async (req, res) => {
         roles: req.user.roles,
       },
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "No user found with this email" });
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    user.reset_password_otp = otp;
+    user.reset_password_otp_expires = expires;
+    await user.save();
+
+    const subject = "Password Reset Request - LuxeDrive";
+    const text = `Your OTP for password reset is: ${otp}. It expires in 10 minutes.`;
+    const html = `
+      <h3>Password Reset Request</h3>
+      <p>You requested a password reset for your LuxeDrive account.</p>
+      <p>Your OTP is: <strong>${otp}</strong></p>
+      <p>This OTP expires in 10 minutes.</p>
+      <p>If you did not request this, please ignore this email.</p>
+    `;
+
+    await sendEmail(email, subject, text, html);
+
+    res.json({ success: true, message: "OTP sent to your email" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    const user = await User.findOne({
+      email,
+      reset_password_otp: otp,
+      reset_password_otp_expires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    user.password_hash = hashedPassword;
+    user.reset_password_otp = undefined;
+    user.reset_password_otp_expires = undefined;
+    await user.save();
+
+    res.json({ success: true, message: "Password reset successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
