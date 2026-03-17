@@ -296,14 +296,14 @@ const NotificationDropdown = ({ isNavbar = true }) => {
             )}
           </div>
           
-          <div className="bg-gray-50 border-t border-gray-100 py-3 px-5 text-center">
+          {/* <div className="bg-gray-50 border-t border-gray-100 py-3 px-5 text-center">
             <button 
               onClick={() => { setIsOpen(false); navigate(user?.roles?.includes('staff') ? '/staff/bookings' : '/my-bookings'); }}
               className="text-xs text-blue-600 font-bold hover:underline"
             >
               View all notifications 
             </button>
-          </div>
+          </div> */}
         </div>
       )}
     </div>
