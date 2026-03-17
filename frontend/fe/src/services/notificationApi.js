@@ -29,3 +29,11 @@ export const deleteNotification = async (id) => {
   });
   return true;
 };
+
+// Delete all notifications
+export const deleteAllNotifications = async () => {
+  await apiClient("/notifications/all", {
+    method: "DELETE",
+  });
+  return true;
+};

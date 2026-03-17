@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, CheckCircle, Trash2 } from "lucide-react";
+import { Bell, CheckCircle, Trash2, CheckCheck } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -10,6 +10,7 @@ import {
   markNotificationAsRead,
   markAllNotificationsAsRead,
   deleteNotification,
+  deleteAllNotifications,
 } from "../../services/notificationApi";
 
 dayjs.extend(relativeTime);
@@ -85,6 +86,16 @@ const NotificationDropdown = ({ isNavbar = true }) => {
     }
   };
 
+  const handleDeleteAll = async () => {
+    if (!window.confirm("Are you sure you want to delete all notifications?")) return;
+    try {
+      await deleteAllNotifications();
+      fetchNotifications();
+    } catch (error) {
+      console.error("Failed to delete all notifications:", error);
+    }
+  };
+
   const handleNotificationClick = (notification) => {
     if (!notification.is_read) {
       markNotificationAsRead(notification._id).then(() => fetchNotifications());
@@ -135,17 +146,38 @@ const NotificationDropdown = ({ isNavbar = true }) => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-xl bg-white shadow-2xl border border-gray-100 z-50 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
-            <h3 className="font-bold text-gray-800 text-sm">Notifications</h3>
-            {unreadCount > 0 && (
-              <button
-                onClick={handleMarkAllAsRead}
-                className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors"
-              >
-                Mark all as read
-              </button>
-            )}
+        <div className="absolute right-0 mt-3 w-80 sm:w-[400px] rounded-2xl bg-white shadow-2xl border border-gray-100 z-50 overflow-hidden animate-in fade-in zoom-in duration-200 origin-top-right">
+          <div className="flex items-center justify-between px-5 py-4 bg-gray-50/50 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-gray-900 text-base">Notifications</h3>
+              {unreadCount > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">
+                  {unreadCount} NEW
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              {unreadCount > 0 && (
+                <button
+                  onClick={handleMarkAllAsRead}
+                  className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors"
+                  title="Mark all as read"
+                >
+                  <CheckCheck size={14} />
+                  Mark all as read
+                </button>
+              )}
+              {notifications.length > 0 && (
+                <button
+                  onClick={handleDeleteAll}
+                  className="text-xs font-bold text-red-500 hover:text-red-700 flex items-center gap-1 transition-colors"
+                  title="Delete all notifications"
+                >
+                  <Trash2 size={14} />
+                  Delete all
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="max-h-[400px] overflow-y-auto">
@@ -183,50 +215,47 @@ const NotificationDropdown = ({ isNavbar = true }) => {
                       >
                         {notification.message}
                       </p>
-                      <span className="text-[10px] text-gray-400 mt-2 block font-medium">
-                        {formatDistanceToNow(notification.createdAt)}
-                      </span>
-                    </div>
-
-                    {/* Actions on hover */}
-                    <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {!notification.is_read && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMarkAsRead(notification._id);
-                          }}
-                          className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-100 transition-colors"
-                          title="Mark as read"
-                        >
-                          <CheckCircle size={14} />
-                        </button>
-                      )}
-                      <button
-                        onClick={(e) => handleDelete(e, notification._id)}
-                        className="text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-red-50 transition-colors"
-                        title="Delete notification"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-
-                    {/* Unread dot when not hovered */}
-                    {!notification.is_read && (
-                      <div className="ml-2 mt-1.5 flex-shrink-0 group-hover:hidden">
-                        <span className="flex h-2.5 w-2.5 rounded-full bg-blue-600 shadow-sm"></span>
+                      
+                      <div className="flex items-center gap-3 mt-2">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                          {formatDistanceToNow(notification.createdAt)}
+                        </span>
+                        
+                        {!notification.is_read && (
+                           <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMarkAsRead(notification._id);
+                            }}
+                            className="text-[10px] font-bold text-blue-600 hover:underline uppercase tracking-wider"
+                          >
+                            Mark as read
+                          </button>
+                        )}
                       </div>
-                    )}
+                    </div>
+
+                    <button
+                      onClick={(e) => handleDelete(e, notification._id)}
+                      className="flex-shrink-0 text-gray-300 hover:text-red-500 p-1 rounded-md hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
+                      title="Delete notification"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </li>
                 ))}
               </ul>
             )}
           </div>
-          <div className="bg-gray-50 border-t border-gray-100 py-2 px-4 text-center">
-            <span className="text-xs text-gray-400 font-medium">
-              Notification system updated
-            </span>
-          </div>
+          
+          {/* <div className="bg-gray-50 border-t border-gray-100 py-3 px-5 text-center">
+            <button 
+              onClick={() => { setIsOpen(false); navigate(user?.roles?.includes('staff') ? '/staff/bookings' : '/my-bookings'); }}
+              className="text-xs text-blue-600 font-bold hover:underline"
+            >
+              View all notifications 
+            </button>
+          </div> */}
         </div>
       )}
     </div>

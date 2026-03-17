@@ -10,6 +10,7 @@ import {
   Truck,
   UserCheck,
   AlertTriangle,
+  MessageSquare,
 } from "lucide-react";
 import { logout } from "../../services/api";
 import NotificationDropdown from "./NotificationDropdown";
@@ -47,6 +48,11 @@ const StaffLayout = () => {
       label: "Driver Assignment",
       icon: <Users className="w-5 h-5" />,
       path: "/staff/assignments",
+    },
+    {
+      label: "Driver Reviews",
+      icon: <MessageSquare className="w-5 h-5" />,
+      path: "/staff/driver-reviews",
     },
     {
       label: "Handover Records",
