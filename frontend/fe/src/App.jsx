@@ -36,6 +36,7 @@ const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 
 // Staff Pages
 const StaffBookings = lazy(() => import("./pages/staff/StaffBookings"));
+const StaffOverdueBookings = lazy(() => import("./pages/staff/StaffOverdueBookings"));
 const StaffBookingDetail = lazy(() => import("./pages/staff/StaffBookingDetail"));
 const StaffAssignments = lazy(() => import("./pages/staff/StaffAssignments"));
 const StaffHandovers = lazy(() => import("./pages/staff/StaffHandovers"));
@@ -116,6 +117,10 @@ function App() {
           {/* 3. CUSTOMER ROUTES (Customer Only) */}
           {/* ============================== */}
           <Route element={<ProtectedRoute allowedRoles={["customer"]} />}>
+            {/* ============================== */}
+            {/* 3. CUSTOMER ROUTES (Customer Only) */}
+            {/* ============================== */}
+            <Route element={<ProtectedRoute allowedRoles={["customer"]} />}>
             <Route
               element={
                 <>
@@ -154,6 +159,7 @@ function App() {
             <Route path="/staff" element={<StaffLayout />}>
               <Route index element={<Navigate to="bookings" replace />} />
               <Route path="bookings" element={<StaffBookings />} />
+              <Route path="overdue-bookings" element={<StaffOverdueBookings />} />
               <Route path="bookings/:id" element={<StaffBookingDetail />} />
               <Route path="bookings/:id/assign-driver" element={<StaffAssignDriver />} />
               <Route path="assignments" element={<StaffAssignments />} />
