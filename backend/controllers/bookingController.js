@@ -70,7 +70,7 @@ export const createBooking = async (req, res) => {
     if (ongoingBooking) {
       return res.status(400).json({
         message:
-          "Bạn đang có một đơn đặt xe chưa hoàn tất. Vui lòng hoàn thành đơn hiện tại trước khi đặt mới.",
+          "You have an ongoing booking. Please complete the current booking before creating a new one.",
       });
     }
 
@@ -93,9 +93,9 @@ export const createBooking = async (req, res) => {
     if (checkIn.getTime() < today.getTime())
       return res
         .status(400)
-        .json({ message: "Ngày bắt đầu không được là ngày trong quá khứ" });
+        .json({ message: "Start date cannot be in the past" });
 
-    //3. double check (race condition - chỉ check booking đã confirmed - chỉ check booking đã confirmed)
+    //3. double check (race condition - CHECK only confirmed bookings)
     const overlappingBooking = await Booking.findOne({
       vehicle: vehicle_id,
       status: {
@@ -106,15 +106,22 @@ export const createBooking = async (req, res) => {
 
     if (overlappingBooking)
       return res.status(400).json({
-        message: "Vehicle is already booked by another customer for this period",
+        message:
+          "Vehicle is already booked by another customer for this period",
       });
 
     //4. check status vehicle
     const vehicle = await Vehicle.findById(vehicle_id);
-    if (!vehicle || vehicle.status !== "available")
-      return res
-        .status(404)
-        .json({ message: "Vehicle does not exist or is currently unavailable" });
+    if (!vehicle)
+      return res.status(404).json({
+        message: "Vehicle not found",
+      });
+
+    if (vehicle.status === "maintenance") {
+      return res.status(400).json({
+        message: "Vehicle is currently under maintenance",
+      });
+    }
 
     //5. count money (billable days: 13-16 = 3 days, exclude last day for handover)
     const diffTime = Math.abs(checkOut - checkIn);
@@ -188,18 +195,18 @@ export const createBooking = async (req, res) => {
   }
 };
 
-// ==================== HUỶ ĐƠN ====================
+// ==================== CANCEL BOOKING ====================
 // @route PUT /api/bookings/:id/cancel
-// @access Private (Customer hoặc Staff)
+// @access Private (Customer or Staff)
 export const cancelBooking = async (req, res) => {
   try {
     const bookingId = req.params.id;
 
     const booking = await Booking.findById(bookingId);
     if (!booking)
-      return res.status(404).json({ message: "Không tìm thấy đơn đặt xe." });
+      return res.status(404).json({ message: "Booking not found." });
 
-    // Chỉ huỷ khi đơn đang pending hoặc confirmed
+    // Only cancel pending or confirmed
     if (!["pending", "confirmed"].includes(booking.status)) {
       return res.status(400).json({
         message: `Booking is in status "${booking.status}", cannot cancel.`,
@@ -212,14 +219,14 @@ export const cancelBooking = async (req, res) => {
 
     if (customer) {
       if (booking.customer.toString() !== customer._id.toString()) {
-        return res
-          .status(403)
-          .json({ message: "You do not have permission to cancel this booking." });
+        return res.status(403).json({
+          message: "You do not have permission to cancel this booking.",
+        });
       }
     } else if (!staff) {
-      return res
-        .status(403)
-        .json({ message: "You do not have permission to perform this action." });
+      return res.status(403).json({
+        message: "You do not have permission to perform this action.",
+      });
     }
 
     const previousStatus = booking.status;
@@ -453,7 +460,8 @@ export const updateBooking = async (req, res) => {
 
         if (overlapping) {
           return res.status(400).json({
-            message: "Vehicle already has an overlapping booking for the new dates.",
+            message:
+              "Vehicle already has an overlapping booking for the new dates.",
           });
         }
       }
@@ -589,8 +597,8 @@ export const getVehicleBookedDates = async (req, res) => {
   try {
     const { vehicleId } = req.params;
 
-    // ONLY return confirmed/in_progress bookings (đã thanh toán cọc)
-    // Pending bookings chưa thanh toán nên không block calendar
+    // ONLY return confirmed/in_progress bookings (deposit paid)
+    // Pending bookings not paid yet so do not block calendar
     const bookings = await Booking.find({
       vehicle: vehicleId,
       status: {
