@@ -227,96 +227,95 @@ const Navbar = () => {
                   )}
                 </div>
               </div>
-              </div>
-          ) : (
-          <div className="flex items-center gap-2 md:gap-3 ml-2">
-            <Link
-              to="/login"
-              className="rounded-full border border-blue-600 px-3 md:px-6 py-1.5 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider text-blue-600
-                  hover:bg-blue-600 hover:text-white transition-all whitespace-nowrap"
-            >
-              SIGN IN
-            </Link>
-            <Link
-              to="/register"
-              className="hidden sm:block rounded-full bg-blue-600 px-3 md:px-6 py-1.5 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider text-white
-                  hover:bg-blue-700 hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all whitespace-nowrap"
-            >
-              SIGN UP
-            </Link>
-          </div>
-            )}
-
-          {/* Mobile Menu Icon */}
-          <button
-            className="md:hidden text-white cursor-pointer ml-2"
-            onClick={() => setShowMobileMenu((prev) => !prev)}
-            aria-label="Toggle mobile menu"
-          >
-            {showMobileMenu ? (
-              <X className="w-8 h-8" />
             ) : (
-              <Menu className="w-8 h-8" />
-            )}
-          </button>
-        </div>
-      </div>
-
-      {showMobileMenu && (
-        <div className="md:hidden mt-4 rounded-2xl border border-white/10 bg-black/90 backdrop-blur-lg p-4 space-y-3">
-          {menuItems.map((item) => (
-            <Link
-              key={item.title}
-              to={item.to}
-              className="block text-sm font-bold tracking-wider text-gray-200 hover:text-blue-300"
-            >
-              {item.title}
-            </Link>
-          ))}
-
-          {user ? (
-            <div className="space-y-4 pt-4 border-t border-white/10">
-              <div className="flex items-center gap-3 px-3">
-                <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
-                  {user.full_name?.[0] || user.email[0].toUpperCase()}
-                </div>
-                <div className="overflow-hidden">
-                  <p className="text-sm font-bold text-white truncate">{user.full_name || user.email}</p>
-                  <p className="text-[10px] text-gray-400 truncate">{user.email}</p>
-                </div>
+              <div className="flex items-center gap-2 md:gap-3 ml-2">
+                <Link
+                  to="/login"
+                  className="rounded-full border border-blue-600 px-3 md:px-6 py-1.5 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider text-blue-600
+                  hover:bg-blue-600 hover:text-white transition-all whitespace-nowrap"
+                >
+                  SIGN IN
+                </Link>
+                <Link
+                  to="/register"
+                  className="hidden sm:block rounded-full bg-blue-600 px-3 md:px-6 py-1.5 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider text-white
+                  hover:bg-blue-700 hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all whitespace-nowrap"
+                >
+                  SIGN UP
+                </Link>
               </div>
-              <Link
-                to="/profile"
-                className="block text-sm font-semibold text-gray-100 hover:text-blue-300"
-              >
-                My Profile
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="w-full text-left text-sm font-semibold text-red-400 hover:text-red-300"
-              >
-                Sign Out
-              </button>
-            </div>
-          ) : (
-            <div className="flex gap-2 pt-2">
-              <Link
-                to="/login"
-                className="flex-1 text-center rounded-xl border border-blue-500 px-4 py-2 text-sm font-bold text-blue-300"
-              >
-                SIGN IN
-              </Link>
-              <Link
-                to="/register"
-                className="flex-1 text-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white"
-              >
-                SIGN UP
-              </Link>
-            </div>
-          )}
+            )}
+
+            {/* Mobile Menu Icon */}
+            <button
+              className="md:hidden text-white cursor-pointer ml-2"
+              onClick={() => setShowMobileMenu((prev) => !prev)}
+              aria-label="Toggle mobile menu"
+            >
+              {showMobileMenu ? (
+                <X className="w-8 h-8" />
+              ) : (
+                <Menu className="w-8 h-8" />
+              )}
+            </button>
+          </div>
         </div>
-      )}
-    </div>
+
+        {showMobileMenu && (
+          <div className="md:hidden mt-4 rounded-2xl border border-white/10 bg-black/90 backdrop-blur-lg p-4 space-y-3">
+            {menuItems.map((item) => (
+              <Link
+                key={item.title}
+                to={item.to}
+                className="block text-sm font-bold tracking-wider text-gray-200 hover:text-blue-300"
+              >
+                {item.title}
+              </Link>
+            ))}
+
+            {user ? (
+              <div className="space-y-4 pt-4 border-t border-white/10">
+                <div className="flex items-center gap-3 px-3">
+                  <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
+                    {user.full_name?.[0] || user.email[0].toUpperCase()}
+                  </div>
+                  <div className="overflow-hidden">
+                    <p className="text-sm font-bold text-white truncate">{user.full_name || user.email}</p>
+                    <p className="text-[10px] text-gray-400 truncate">{user.email}</p>
+                  </div>
+                </div>
+                <Link
+                  to="/profile"
+                  className="block text-sm font-semibold text-gray-100 hover:text-blue-300"
+                >
+                  My Profile
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left text-sm font-semibold text-red-400 hover:text-red-300"
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2 pt-2">
+                <Link
+                  to="/login"
+                  className="flex-1 text-center rounded-xl border border-blue-500 px-4 py-2 text-sm font-bold text-blue-300"
+                >
+                  SIGN IN
+                </Link>
+                <Link
+                  to="/register"
+                  className="flex-1 text-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white"
+                >
+                  SIGN UP
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </nav >
   );
 };
