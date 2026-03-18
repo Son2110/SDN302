@@ -41,7 +41,13 @@ export default function StaffBookings() {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const res = await getAllBookings({ page, limit: 10, status: statusFilter });
+      const res = await getAllBookings({
+        page,
+        limit: 10,
+        status: statusFilter,
+        rental_type: rentalTypeFilter,
+        driver_status: driverStatusFilter,
+      });
       setBookings(res.data || []);
       setTotalPages(res.totalPages || Math.ceil((res.total || 0) / 10));
     } catch (err) {
@@ -53,7 +59,7 @@ export default function StaffBookings() {
 
   useEffect(() => {
     fetchBookings();
-  }, [page, statusFilter]);
+  }, [page, statusFilter, rentalTypeFilter, driverStatusFilter]);
 
   const handleDelete = async (id) => {
     setConfirmModal({
@@ -76,20 +82,6 @@ export default function StaffBookings() {
     }
   };
 
-  // Client-side filtering: rental type + driver status
-  const filteredBookings = bookings.filter((b) => {
-    if (rentalTypeFilter && b.rental_type !== rentalTypeFilter) return false;
-    if (driverStatusFilter === "unassigned") {
-      // Unassigned: with_driver and no driver yet
-      return b.rental_type === "with_driver" && !b.driver;
-    }
-    if (driverStatusFilter === "assigned") {
-      // Assigned: has driver
-      return !!b.driver;
-    }
-    return true;
-  });
-
   return (
     <div className="space-y-6">
       {/* Header & Actions */}
@@ -103,7 +95,10 @@ export default function StaffBookings() {
           {/* Filter: Trạng thái đơn */}
           <SelectFilter
             value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setPage(1);
+            }}
           >
             <option value="">All Statuses</option>
             <option value="pending">Pending</option>
@@ -117,7 +112,10 @@ export default function StaffBookings() {
           {/* Filter: Loại hình thuê */}
           <SelectFilter
             value={rentalTypeFilter}
-            onChange={(e) => setRentalTypeFilter(e.target.value)}
+            onChange={(e) => {
+              setRentalTypeFilter(e.target.value);
+              setPage(1);
+            }}
           >
             <option value="">All Services</option>
             <option value="self_drive">Self-drive</option>
@@ -127,7 +125,10 @@ export default function StaffBookings() {
           {/* Filter: Trạng thái tài xế */}
           <SelectFilter
             value={driverStatusFilter}
-            onChange={(e) => setDriverStatusFilter(e.target.value)}
+            onChange={(e) => {
+              setDriverStatusFilter(e.target.value);
+              setPage(1);
+            }}
           >
             <option value="">Driver Assignment</option>
             <option value="unassigned">Unassigned</option>
@@ -141,7 +142,7 @@ export default function StaffBookings() {
         <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
           <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
           <span className="font-medium">
-            {filteredBookings.length} bookings with drivers waiting for assignment
+            {bookings.length} bookings with drivers waiting for assignment
           </span>
         </div>
       )}
@@ -159,7 +160,7 @@ export default function StaffBookings() {
       ) : (
         <>
           <BookingTable
-            bookings={filteredBookings}
+            bookings={bookings}
             onDelete={handleDelete}
             onAssignSuccess={fetchBookings}
           />

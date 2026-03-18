@@ -595,11 +595,28 @@ export const deleteBooking = async (req, res) => {
 // @access Private (Staff)
 export const getAllBookings = async (req, res) => {
   try {
-    const { status, rental_type, is_overdue, page = 1, limit = 20 } = req.query;
+    const { status, rental_type, is_overdue, driver_status, page = 1, limit = 20 } = req.query;
 
     const matchFilter = {};
     if (status) matchFilter.status = status;
-    if (rental_type) matchFilter.rental_type = rental_type;
+    
+    // Build combined filters using $and to avoid key overwrite
+    const andFilters = [];
+    
+    if (rental_type) {
+      andFilters.push({ rental_type });
+    }
+
+    if (driver_status === "unassigned") {
+      andFilters.push({ rental_type: "with_driver" });
+      andFilters.push({ driver: null });
+    } else if (driver_status === "assigned") {
+      andFilters.push({ driver: { $ne: null } });
+    }
+
+    if (andFilters.length > 0) {
+      matchFilter.$and = andFilters;
+    }
 
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
