@@ -27,7 +27,7 @@ const notificationSchema = new mongoose.Schema(
       ],
       required: true,
     },
-    related_id: { type: mongoose.Schema.Types.ObjectId }, // ID của booking, payment, etc.
+    related_id: { type: mongoose.Schema.Types.ObjectId }, // ID of booking, payment, etc.
     related_model: { type: String }, // "Booking", "Payment", etc.
     event_key: { type: String, default: null }, // Dedupe key for scheduled notifications
     is_read: { type: Boolean, default: false },
