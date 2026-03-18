@@ -85,121 +85,6 @@ const DriverRegistration = () => {
 
   const formatDate = (date) => new Date(date).toLocaleDateString("vi-VN");
 
-  const DriverForm = ({ isReapply = false }) => (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2">
-          <AlertCircle size={20} />
-          <span>{error}</span>
-        </div>
-      )}
-
-      {!isReapply && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
-            <AlertCircle size={18} />
-            Requirements to become a driver
-          </h3>
-          <ul className="space-y-1 text-sm text-blue-800">
-            <li>• Valid car driving license (B1 or higher)</li>
-            <li>• License must be valid (not expired)</li>
-            <li>• At least 1 year of driving experience</li>
-          </ul>
-        </div>
-      )}
-
-      <div>
-        <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
-          <IdCard size={18} /> Driver license number *
-        </label>
-        <input
-          type="text"
-          name="license_number"
-          required
-          value={formData.license_number}
-          onChange={handleChange}
-          className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-          placeholder="Example: 012345678"
-        />
-      </div>
-
-      <div>
-        <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
-          <IdCard size={18} /> License class *
-        </label>
-        <select
-          name="license_type"
-          required
-          value={formData.license_type}
-          onChange={handleChange}
-          className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-        >
-          <option value="">Select license class</option>
-          <option value="B1">B1 - Under 9 seats (automatic)</option>
-          <option value="B2">B2 - Under 9 seats</option>
-          <option value="C">C - Trucks and tractors</option>
-          <option value="D">D - 9 seats or more</option>
-          <option value="E">E - Vehicles with trailer/semi-trailer</option>
-        </select>
-      </div>
-
-      <div>
-        <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
-          <Calendar size={18} /> Expiry date *
-        </label>
-        <input
-          type="date"
-          name="license_expiry"
-          required
-          value={formData.license_expiry}
-          onChange={handleChange}
-          min={new Date().toISOString().split("T")[0]}
-          className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-        />
-      </div>
-
-      <div>
-        <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
-          <Award size={18} /> Years of driving experience *
-        </label>
-        <input
-          type="number"
-          name="experience_years"
-          required
-          min="1"
-          max="50"
-          value={formData.experience_years}
-          onChange={handleChange}
-          className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-          placeholder="Example: 5"
-        />
-      </div>
-
-      <div className="flex gap-3 pt-2">
-        <button
-          type="submit"
-          disabled={loading}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold text-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading
-            ? "Processing..."
-            : isReapply
-              ? "Re-apply"
-              : "Driver Registration"}
-        </button>
-        {isReapply && (
-          <button
-            type="button"
-            onClick={() => setShowReapplyForm(false)}
-            className="px-6 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300 transition"
-          >
-            Cancel
-          </button>
-        )}
-      </div>
-    </form>
-  );
-
   if (pageLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -208,8 +93,40 @@ const DriverRegistration = () => {
     );
   }
 
+  // After successful submit: show success screen
+  if (success) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-32 pb-20 flex items-center justify-center px-6">
+        <div className="bg-white rounded-3xl shadow-2xl p-12 max-w-md w-full text-center">
+          <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Clock size={48} className="text-blue-600" />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            {existingStatus?.status === "rejected"
+              ? "Re-application submitted!"
+              : "Registration successful!"}
+          </h1>
+          <p className="text-gray-600 mb-6">
+            Your application is waiting for staff review.
+          </p>
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+            <p className="text-sm text-blue-800 font-semibold">
+              ⏳ Status: Pending review
+            </p>
+          </div>
+          <button
+            onClick={() => navigate("/")}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition"
+          >
+            Back to home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // === Registered: show current status ===
-  if (existingStatus && !success) {
+  if (existingStatus && !showReapplyForm) {
     const isPending = existingStatus.status === "pending";
     const isApproved =
       existingStatus.status === "available" ||
@@ -294,7 +211,7 @@ const DriverRegistration = () => {
 
               {/* Action buttons */}
               <div className="mt-6 flex gap-3">
-                {isRejected && !showReapplyForm && (
+                {isRejected && (
                   <button
                     onClick={handleOpenReapply}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition"
@@ -312,52 +229,36 @@ const DriverRegistration = () => {
               </div>
             </div>
           </div>
-
-          {/* Re-apply form (only for rejected status) */}
-          {isRejected && showReapplyForm && (
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-1 flex items-center gap-2">
-                <RefreshCw size={22} className="text-blue-600" />
-                Re-apply
-              </h2>
-              <p className="text-gray-500 text-sm mb-6">
-                Update your information and submit for review again
-              </p>
-              <DriverForm isReapply={true} />
-            </div>
-          )}
         </div>
       </div>
     );
   }
 
-  // === After successful submit ===
-  if (success) {
+  // Common props for the form
+  const formProps = {
+    formData,
+    handleChange,
+    handleSubmit,
+    loading,
+    error,
+    setShowReapplyForm,
+  };
+
+  // Re-apply form container (only for rejected status when user clicked re-apply)
+  if (showReapplyForm) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-32 pb-20 flex items-center justify-center px-6">
-        <div className="bg-white rounded-3xl shadow-2xl p-12 max-w-md w-full text-center">
-          <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Clock size={48} className="text-blue-600" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            {existingStatus?.status === "rejected"
-              ? "Re-application submitted!"
-              : "Registration successful!"}
-          </h1>
-          <p className="text-gray-600 mb-6">
-            Your application is waiting for staff review.
-          </p>
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-            <p className="text-sm text-blue-800 font-semibold">
-              ⏳ Status: Pending review
+      <div className="min-h-screen bg-gray-50 pt-28 pb-16 px-4">
+        <div className="max-w-2xl mx-auto space-y-6">
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-1 flex items-center gap-2">
+              <RefreshCw size={22} className="text-blue-600" />
+              Re-apply
+            </h2>
+            <p className="text-gray-500 text-sm mb-6">
+              Update your information and submit for review again
             </p>
+            <DriverForm isReapply={true} {...formProps} />
           </div>
-          <button
-            onClick={() => navigate("/")}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition"
-          >
-            Back to home
-          </button>
         </div>
       </div>
     );
@@ -383,7 +284,7 @@ const DriverRegistration = () => {
           </div>
 
           <div className="p-8">
-            <DriverForm isReapply={false} />
+            <DriverForm isReapply={false} {...formProps} />
           </div>
         </div>
 
@@ -415,7 +316,9 @@ const DriverRegistration = () => {
                 <CheckCircle size={24} className="text-blue-600" />
               </div>
               <h3 className="font-semibold text-gray-900 mb-1">24/7 Support</h3>
-              <p className="text-sm text-gray-600">Support team is always available</p>
+              <p className="text-sm text-gray-600">
+                Support team is always available
+              </p>
             </div>
           </div>
         </div>
@@ -423,5 +326,129 @@ const DriverRegistration = () => {
     </div>
   );
 };
+
+// Extracted DriverForm component to prevent re-mounting on every render
+const DriverForm = ({ 
+  isReapply = false, 
+  formData, 
+  handleChange, 
+  handleSubmit, 
+  loading, 
+  error, 
+  setShowReapplyForm 
+}) => (
+  <form onSubmit={handleSubmit} className="space-y-5">
+    {error && (
+      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2">
+        <AlertCircle size={20} />
+        <span>{error}</span>
+      </div>
+    )}
+
+    {!isReapply && (
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+          <AlertCircle size={18} />
+          Requirements to become a driver
+        </h3>
+        <ul className="space-y-1 text-sm text-blue-800">
+          <li>• Valid car driving license (B1 or higher)</li>
+          <li>• License must be valid (not expired)</li>
+          <li>• At least 1 year of driving experience</li>
+        </ul>
+      </div>
+    )}
+
+    <div>
+      <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
+        <IdCard size={18} /> Driver license number *
+      </label>
+      <input
+        type="text"
+        name="license_number"
+        required
+        value={formData.license_number}
+        onChange={handleChange}
+        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+        placeholder="Example: 012345678"
+      />
+    </div>
+
+    <div>
+      <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
+        <IdCard size={18} /> License class *
+      </label>
+      <select
+        name="license_type"
+        required
+        value={formData.license_type}
+        onChange={handleChange}
+        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+      >
+        <option value="">Select license class</option>
+        <option value="B1">B1 - Under 9 seats (automatic)</option>
+        <option value="B2">B2 - Under 9 seats</option>
+        <option value="C">C - Trucks and tractors</option>
+        <option value="D">D - 9 seats or more</option>
+        <option value="E">E - Vehicles with trailer/semi-trailer</option>
+      </select>
+    </div>
+
+    <div>
+      <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
+        <Calendar size={18} /> Expiry date *
+      </label>
+      <input
+        type="date"
+        name="license_expiry"
+        required
+        value={formData.license_expiry}
+        onChange={handleChange}
+        min={new Date().toISOString().split("T")[0]}
+        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+      />
+    </div>
+
+    <div>
+      <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
+        <Award size={18} /> Years of driving experience *
+      </label>
+      <input
+        type="number"
+        name="experience_years"
+        required
+        min="1"
+        max="50"
+        value={formData.experience_years}
+        onChange={handleChange}
+        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+        placeholder="Example: 5"
+      />
+    </div>
+
+    <div className="flex gap-3 pt-2">
+      <button
+        type="submit"
+        disabled={loading}
+        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold text-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {loading
+          ? "Processing..."
+          : isReapply
+            ? "Re-apply"
+            : "Driver Registration"}
+      </button>
+      {isReapply && (
+        <button
+          type="button"
+          onClick={() => setShowReapplyForm(false)}
+          className="px-6 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300 transition"
+        >
+          Cancel
+        </button>
+      )}
+    </div>
+  </form>
+);
 
 export default DriverRegistration;
