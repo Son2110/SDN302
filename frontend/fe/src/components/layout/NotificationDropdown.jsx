@@ -102,7 +102,7 @@ const NotificationDropdown = ({ isNavbar = true }) => {
     }
 
     setIsOpen(false);
-    
+
     const { related_model, related_id } = notification;
     let path = "/";
 
@@ -116,7 +116,12 @@ const NotificationDropdown = ({ isNavbar = true }) => {
       if (related_model === "DriverAssignment") path = `/driver/assignments/${related_id}`;
       else path = `/driver/assignments`;
     } else {
-      if (related_model === "Booking") path = `/bookings/${related_id}`;
+      if (related_model === "Booking") {
+        path =
+          notification.type === "payment_success"
+            ? `/bookings/${related_id}?focus=review`
+            : `/bookings/${related_id}`;
+      }
       else if (related_model === "ExtensionRequest") path = `/extensions/${related_id}`;
       else if (related_model === "Payment") path = `/my-payments`;
       else path = `/my-bookings`;
@@ -192,37 +197,34 @@ const NotificationDropdown = ({ isNavbar = true }) => {
                   <li
                     key={notification._id}
                     onClick={() => handleNotificationClick(notification)}
-                    className={`group flex items-start gap-3 p-4 transition-colors cursor-pointer hover:bg-gray-50 ${
-                      !notification.is_read ? "bg-blue-50/30" : "bg-white"
-                    }`}
+                    className={`group flex items-start gap-3 p-4 transition-colors cursor-pointer hover:bg-gray-50 ${!notification.is_read ? "bg-blue-50/30" : "bg-white"
+                      }`}
                   >
                     <div className="flex-1 min-w-0">
                       <p
-                        className={`text-sm ${
-                          !notification.is_read
+                        className={`text-sm ${!notification.is_read
                             ? "font-semibold text-gray-900"
                             : "font-medium text-gray-800"
-                        }`}
+                          }`}
                       >
                         {notification.title}
                       </p>
                       <p
-                        className={`text-xs mt-1 line-clamp-2 ${
-                          !notification.is_read
+                        className={`text-xs mt-1 line-clamp-2 ${!notification.is_read
                             ? "text-gray-700"
                             : "text-gray-500"
-                        }`}
+                          }`}
                       >
                         {notification.message}
                       </p>
-                      
+
                       <div className="flex items-center gap-3 mt-2">
                         <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
                           {formatDistanceToNow(notification.createdAt)}
                         </span>
-                        
+
                         {!notification.is_read && (
-                           <button
+                          <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleMarkAsRead(notification._id);
@@ -247,7 +249,7 @@ const NotificationDropdown = ({ isNavbar = true }) => {
               </ul>
             )}
           </div>
-          
+
           {/* <div className="bg-gray-50 border-t border-gray-100 py-3 px-5 text-center">
             <button 
               onClick={() => { setIsOpen(false); navigate(user?.roles?.includes('staff') ? '/staff/bookings' : '/my-bookings'); }}
