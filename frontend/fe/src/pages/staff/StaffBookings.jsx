@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { getAllBookings, deleteBooking } from "../../services/bookingApi";
 import BookingTable from "../../components/staff/BookingTable";
-import { Loader2, ChevronDown } from "lucide-react";
+import { Loader2, ChevronDown, AlertCircle } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 const SelectFilter = ({ value, onChange, children }) => (
   <div className="relative">
@@ -30,10 +31,23 @@ export default function StaffBookings() {
   const [rentalTypeFilter, setRentalTypeFilter] = useState("");
   const [driverStatusFilter, setDriverStatusFilter] = useState("");
 
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    id: null,
+    title: "",
+    message: "",
+  });
+
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const res = await getAllBookings({ page, limit: 10, status: statusFilter });
+      const res = await getAllBookings({
+        page,
+        limit: 10,
+        status: statusFilter,
+        rental_type: rentalTypeFilter,
+        driver_status: driverStatusFilter,
+      });
       setBookings(res.data || []);
       setTotalPages(res.totalPages || Math.ceil((res.total || 0) / 10));
     } catch (err) {
@@ -45,31 +59,28 @@ export default function StaffBookings() {
 
   useEffect(() => {
     fetchBookings();
-  }, [page, statusFilter]);
+  }, [page, statusFilter, rentalTypeFilter, driverStatusFilter]);
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this booking?")) return;
-    try {
-      await deleteBooking(id);
-      fetchBookings();
-    } catch (err) {
-      alert("Error deleting booking: " + err.message);
-    }
+    setConfirmModal({
+      isOpen: true,
+      id,
+      title: "Delete Booking",
+      message: "Are you sure you want to delete this booking? This action cannot be undone.",
+    });
   };
 
-  // Client-side filtering: rental type + driver status
-  const filteredBookings = bookings.filter((b) => {
-    if (rentalTypeFilter && b.rental_type !== rentalTypeFilter) return false;
-    if (driverStatusFilter === "unassigned") {
-      // Unassigned: with_driver and no driver yet
-      return b.rental_type === "with_driver" && !b.driver;
+  const confirmDelete = async () => {
+    const id = confirmModal.id;
+    setConfirmModal({ ...confirmModal, isOpen: false });
+    try {
+      await deleteBooking(id);
+      toast.success("Booking deleted successfully");
+      fetchBookings();
+    } catch (err) {
+      toast.error("Error deleting booking: " + err.message);
     }
-    if (driverStatusFilter === "assigned") {
-      // Assigned: has driver
-      return !!b.driver;
-    }
-    return true;
-  });
+  };
 
   return (
     <div className="space-y-6">
@@ -84,7 +95,10 @@ export default function StaffBookings() {
           {/* Filter: Trạng thái đơn */}
           <SelectFilter
             value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setPage(1);
+            }}
           >
             <option value="">All Statuses</option>
             <option value="pending">Pending</option>
@@ -98,7 +112,10 @@ export default function StaffBookings() {
           {/* Filter: Loại hình thuê */}
           <SelectFilter
             value={rentalTypeFilter}
-            onChange={(e) => setRentalTypeFilter(e.target.value)}
+            onChange={(e) => {
+              setRentalTypeFilter(e.target.value);
+              setPage(1);
+            }}
           >
             <option value="">All Services</option>
             <option value="self_drive">Self-drive</option>
@@ -108,7 +125,10 @@ export default function StaffBookings() {
           {/* Filter: Trạng thái tài xế */}
           <SelectFilter
             value={driverStatusFilter}
-            onChange={(e) => setDriverStatusFilter(e.target.value)}
+            onChange={(e) => {
+              setDriverStatusFilter(e.target.value);
+              setPage(1);
+            }}
           >
             <option value="">Driver Assignment</option>
             <option value="unassigned">Unassigned</option>
@@ -122,7 +142,7 @@ export default function StaffBookings() {
         <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
           <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
           <span className="font-medium">
-            {filteredBookings.length} bookings with drivers waiting for assignment
+            {bookings.length} bookings with drivers waiting for assignment
           </span>
         </div>
       )}
@@ -140,7 +160,7 @@ export default function StaffBookings() {
       ) : (
         <>
           <BookingTable
-            bookings={filteredBookings}
+            bookings={bookings}
             onDelete={handleDelete}
             onAssignSuccess={fetchBookings}
           />
@@ -168,6 +188,39 @@ export default function StaffBookings() {
             </div>
           )}
         </>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-scaleIn">
+            <div className="p-6 text-center">
+              <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">
+                {confirmModal.title}
+              </h3>
+              <p className="text-sm text-gray-500">{confirmModal.message}</p>
+            </div>
+            <div className="px-6 py-4 bg-gray-50 flex gap-3">
+              <button
+                onClick={() =>
+                  setConfirmModal({ ...confirmModal, isOpen: false })
+                }
+                className="flex-1 px-4 py-2 border border-gray-200 text-gray-600 rounded-lg font-medium hover:bg-gray-100 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition shadow-sm"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

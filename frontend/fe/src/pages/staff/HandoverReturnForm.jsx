@@ -23,17 +23,43 @@ export default function HandoverReturnForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validation
+    const bookingId = formData.booking_id.trim();
+    if (!bookingId) {
+      setError("Booking ID cannot be empty or contain only whitespace.");
+      return;
+    }
+
+    if (!formData.return_mileage || Number(formData.return_mileage) < 0 || isNaN(Number(formData.return_mileage))) {
+      setError("Return mileage must be a positive number.");
+      return;
+    }
+
+    if (formData.battery_level_percentage !== "") {
+      const battery = Number(formData.battery_level_percentage);
+      if (battery < 0 || battery > 100 || isNaN(battery)) {
+        setError("Battery level must be between 0 and 100.");
+        return;
+      }
+    }
+
+    if (formData.penalty_amount !== "" && (Number(formData.penalty_amount) < 0 || isNaN(Number(formData.penalty_amount)))) {
+      setError("Penalty amount cannot be negative.");
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
       setSuccessData(null);
       
       const payload = {
-        booking_id: formData.booking_id,
-        return_mileage: formData.return_mileage ? Number(formData.return_mileage) : undefined,
+        booking_id: bookingId,
+        return_mileage: Number(formData.return_mileage),
         battery_level_percentage: formData.battery_level_percentage ? Number(formData.battery_level_percentage) : undefined,
         penalty_amount: formData.penalty_amount ? Number(formData.penalty_amount) : undefined,
-        notes: formData.notes
+        notes: formData.notes.trim()
       };
 
       const res = await createReturnHandover(payload);

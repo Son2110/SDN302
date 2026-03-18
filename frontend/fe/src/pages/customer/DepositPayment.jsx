@@ -6,15 +6,12 @@ import {
   Check,
   Shield,
   AlertCircle,
-  Wallet,
   Building2,
-  Smartphone,
   X,
 } from "lucide-react";
 import { getToken } from "../../services/api";
 import { getBookingById } from "../../services/bookingApi";
 import { createVnpayPayment } from "../../services/paymentService";
-import QRPaymentModal from "../../components/payment/QRPaymentModal";
 
 const DepositPayment = () => {
   const { id: bookingId } = useParams();
@@ -24,18 +21,17 @@ const DepositPayment = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [processing, setProcessing] = useState(false);
-  const [showQRModal, setShowQRModal] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState("vnpay");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
 
-  // Payment methods - QR Code first
+  // Payment methods: only VNPay channels
   const paymentMethods = [
     {
-      id: "bank_transfer",
+      id: "vnpay_qr",
       name: "QR bank transfer",
       icon: Building2,
-      description: "Scan QR code for quick payment",
+      description: "Pay using VNPay QR",
       color: "blue",
     },
     {
@@ -46,18 +42,11 @@ const DepositPayment = () => {
       color: "blue",
     },
     {
-      id: "momo",
-      name: "MoMo",
-      icon: Wallet,
-      description: "MoMo e-wallet",
-      color: "pink",
-    },
-    {
-      id: "zalopay",
-      name: "ZaloPay",
-      icon: Smartphone,
-      description: "ZaloPay e-wallet",
-      color: "sky",
+      id: "payment_card",
+      name: "Payment card",
+      icon: CreditCard,
+      description: "Domestic card and bank account via VNPay",
+      color: "blue",
     },
   ];
 
@@ -113,38 +102,35 @@ const DepositPayment = () => {
 
     setError(null);
 
-    if (selectedMethod === "vnpay") {
-      try {
-        setProcessing(true);
-        const base = window.location.origin;
-        const response = await createVnpayPayment(
-          bookingId,
-          "deposit",
-          `${base}/payment/success`,
-        );
+    try {
+      setProcessing(true);
+      const base = window.location.origin;
 
-        if (response?.paymentUrl) {
-          window.location.href = response.paymentUrl;
-          return;
-        }
+      const bankCodeByMethod = {
+        vnpay_qr: "VNPAYQR",
+        payment_card: "VNBANK",
+      };
 
-        setError("Failed to create VNPay payment URL");
+      const response = await createVnpayPayment(
+        bookingId,
+        "deposit",
+        `${base}/payment/success`,
+        { bankCode: bankCodeByMethod[selectedMethod] },
+      );
+
+      if (response?.paymentUrl) {
+        window.location.href = response.paymentUrl;
         return;
-      } catch (err) {
-        setError(err.message || "Failed to create VNPay payment URL");
-        return;
-      } finally {
-        setProcessing(false);
       }
+
+      setError("Failed to create VNPay payment URL");
+      return;
+    } catch (err) {
+      setError(err.message || "Failed to create VNPay payment URL");
+      return;
+    } finally {
+      setProcessing(false);
     }
-
-    // Non-VNPay methods currently use QR modal flow.
-    setShowQRModal(true);
-  };
-
-  const handlePaymentSuccess = (data) => {
-    // Navigate to success page after QR payment confirmation
-    navigate(`/payment/success?booking=${bookingId}&type=deposit`);
   };
 
   const formatPrice = (price) => {
@@ -184,17 +170,6 @@ const DepositPayment = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFB] pt-32 pb-20">
-      {/* QR Payment Modal */}
-      <QRPaymentModal
-        isOpen={showQRModal}
-        onClose={() => setShowQRModal(false)}
-        bookingId={bookingId}
-        amount={depositAmount}
-        type="deposit"
-        paymentMethod={selectedMethod}
-        onSuccess={handlePaymentSuccess}
-      />
-
       {showTermsModal && (
         <div className="fixed inset-0 z-50 bg-black/45 flex items-center justify-center p-4">
           <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-gray-100">
@@ -393,8 +368,10 @@ const DepositPayment = () => {
               >
                 {processing ? (
                   "PROCESSING..."
-                ) : selectedMethod === "bank_transfer" ? (
-                  "SHOW PAYMENT QR CODE ->"
+                ) : selectedMethod === "vnpay_qr" ? (
+                  "PAY WITH VNPAY QR"
+                ) : selectedMethod === "payment_card" ? (
+                  "PAY WITH PAYMENT CARD"
                 ) : (
                   `PAY ${formatPrice(depositAmount)} VND`
                 )}

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { getExtensions, approveExtension, rejectExtension } from "../../services/extensionApi";
 import ExtensionTable from "../../components/staff/ExtensionTable";
-import { Loader2, X } from "lucide-react";
+import { Loader2, X, AlertCircle, CheckCircle2 } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 export default function StaffExtensions() {
   const [extensions, setExtensions] = useState([]);
@@ -18,6 +19,12 @@ export default function StaffExtensions() {
   const [rejectId, setRejectId] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
   const [processing, setProcessing] = useState(false);
+
+  // Approval Confirm Modal State
+  const [confirmApproveModal, setConfirmApproveModal] = useState({
+    isOpen: false,
+    id: null
+  });
 
   const fetchExtensions = async () => {
     try {
@@ -41,13 +48,22 @@ export default function StaffExtensions() {
     setPage(1);
   };
 
-  const handleApprove = async (id) => {
-    if (!window.confirm("Are you sure you want to approve this extension? The system will automatically add fees and adjust the return date.")) return;
+  const handleApprove = (id) => {
+    setConfirmApproveModal({ isOpen: true, id });
+  };
+
+  const confirmApprove = async () => {
+    const id = confirmApproveModal.id;
+    setConfirmApproveModal({ ...confirmApproveModal, isOpen: false });
     try {
+      setProcessing(true);
       await approveExtension(id);
+      toast.success("Extension approved successfully");
       fetchExtensions();
     } catch (err) {
-      alert("Error approving: " + err.message);
+      toast.error("Error approving: " + err.message);
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -62,10 +78,11 @@ export default function StaffExtensions() {
     try {
       setProcessing(true);
       await rejectExtension(rejectId, rejectReason);
+      toast.success("Extension rejected");
       setIsRejectModalOpen(false);
       fetchExtensions();
     } catch (err) {
-      alert("Error rejecting: " + err.message);
+      toast.error("Error rejecting: " + err.message);
     } finally {
       setProcessing(false);
     }
@@ -165,6 +182,38 @@ export default function StaffExtensions() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Approval Confirm Modal */}
+      {confirmApproveModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-scaleIn">
+            <div className="p-6 text-center">
+              <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Approve Extension</h3>
+              <p className="text-sm text-gray-500">
+                Are you sure you want to approve this extension? The system will automatically update the booking end date and add additional fees.
+              </p>
+            </div>
+            <div className="px-6 py-4 bg-gray-50 flex gap-3">
+              <button
+                onClick={() => setConfirmApproveModal({ ...confirmApproveModal, isOpen: false })}
+                className="flex-1 px-4 py-2 border border-gray-200 text-gray-600 rounded-lg font-medium hover:bg-gray-100 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmApprove}
+                disabled={processing}
+                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition shadow-sm flex justify-center items-center"
+              >
+                {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirm Approve"}
+              </button>
+            </div>
           </div>
         </div>
       )}

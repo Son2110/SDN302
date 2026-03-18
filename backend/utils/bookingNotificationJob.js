@@ -20,8 +20,8 @@ const notifyAndCancelOverduePendingPayments = async (now) => {
             if (booking.customer?.user) {
                 await sendNotification({
                     recipientId: booking.customer.user,
-                    title: "Quá hạn thanh toán cọc",
-                    message: `Đơn #${safeShortId(booking._id)} đã bị hủy vì quá 30 phút chưa thanh toán cọc.`,
+                    title: "Deposit payment overdue",
+                    message: `Booking #${safeShortId(booking._id)} has been cancelled due to no deposit payment within 30 minutes.`,
                     type: "payment_overdue",
                     relatedId: booking._id,
                     relatedModel: "Booking",
@@ -47,8 +47,8 @@ const notifyPickupDay = async (now) => {
 
         await sendNotification({
             recipientId: booking.customer.user,
-            title: "Đến ngày nhận xe",
-            message: `Hôm nay là ngày nhận xe ${booking.vehicle?.license_plate || ""} cho đơn #${safeShortId(booking._id)}.`,
+            title: "Car pickup day",
+            message: `Today is the pickup day for vehicle ${booking.vehicle?.license_plate || ""} (Booking #${safeShortId(booking._id)}).`,
             type: "pickup_reminder",
             relatedId: booking._id,
             relatedModel: "Booking",
@@ -72,8 +72,8 @@ const notifyReturnSoon = async (now) => {
 
         await sendNotification({
             recipientId: booking.customer.user,
-            title: "Sắp đến hạn trả xe",
-            message: `Đơn #${safeShortId(booking._id)} sẽ đến hạn trả xe trong vòng 2 tiếng nữa.`,
+            title: "Vehicle return due soon",
+            message: `Booking #${safeShortId(booking._id)} is due for return within the next 2 hours.`,
             type: "return_reminder",
             relatedId: booking._id,
             relatedModel: "Booking",
@@ -95,8 +95,8 @@ const notifyReturnOverdue = async (now) => {
 
         await sendNotification({
             recipientId: booking.customer.user,
-            title: "Quá hạn trả xe",
-            message: `Đơn #${safeShortId(booking._id)} đã quá hạn trả xe. Vui lòng liên hệ ngay với nhân viên hỗ trợ.`,
+            title: "Vehicle return overdue",
+            message: `Booking #${safeShortId(booking._id)} return is overdue. Please contact support immediately.`,
             type: "return_overdue",
             relatedId: booking._id,
             relatedModel: "Booking",

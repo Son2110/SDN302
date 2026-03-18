@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import {
   Calendar,
   MapPin,
@@ -177,6 +177,7 @@ const ReviewCard = ({
 const BookingDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -196,6 +197,7 @@ const BookingDetail = () => {
   const [editRating, setEditRating] = useState(5);
   const [editComment, setEditComment] = useState("");
   const [editSubmitting, setEditSubmitting] = useState(false);
+  const reviewsSectionRef = useRef(null);
 
   useEffect(() => {
     const token = getToken();
@@ -205,6 +207,18 @@ const BookingDetail = () => {
     }
     fetchBookingDetail();
   }, [id]);
+
+  useEffect(() => {
+    if (
+      booking?.status === "completed" &&
+      searchParams.get("focus") === "review" &&
+      reviewsSectionRef.current
+    ) {
+      setTimeout(() => {
+        reviewsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 200);
+    }
+  }, [booking, searchParams]);
 
   const fetchBookingDetail = async () => {
     setLoading(true);
@@ -561,7 +575,7 @@ const BookingDetail = () => {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
               ) : (
-                <>
+                <div ref={reviewsSectionRef}>
                   <ReviewCard
                     title="Trip review"
                     reviewType="overall"
@@ -604,7 +618,7 @@ const BookingDetail = () => {
                       onEditCancel={() => setEditingReview(null)}
                     />
                   )}
-                </>
+                </div>
               ))}
           </div>
 

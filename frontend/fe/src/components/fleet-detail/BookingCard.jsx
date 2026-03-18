@@ -587,10 +587,11 @@ const BookingCard = ({ car }) => {
               onClick={() =>
                 setFormData({ ...formData, rentalType: "self_drive" })
               }
-              className={`flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl font-semibold text-sm transition-all ${formData.rentalType === "self_drive"
+              className={`flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl font-semibold text-sm transition-all ${
+                formData.rentalType === "self_drive"
                   ? "border-blue-500 bg-blue-50 text-blue-700"
                   : "border-gray-200 text-gray-600 hover:border-gray-300"
-                }`}
+              }`}
             >
               <User size={18} />
               Self-drive
@@ -600,10 +601,11 @@ const BookingCard = ({ car }) => {
               onClick={() =>
                 setFormData({ ...formData, rentalType: "with_driver" })
               }
-              className={`flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl font-semibold text-sm transition-all ${formData.rentalType === "with_driver"
+              className={`flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl font-semibold text-sm transition-all ${
+                formData.rentalType === "with_driver"
                   ? "border-blue-500 bg-blue-50 text-blue-700"
                   : "border-gray-200 text-gray-600 hover:border-gray-300"
-                }`}
+              }`}
             >
               <Users size={18} />
               With driver
@@ -612,11 +614,7 @@ const BookingCard = ({ car }) => {
         </div>
 
         {/* Submit Button */}
-        {user?.roles?.includes("admin") ? (
-          <div className="w-full bg-gray-100 text-gray-500 py-4 rounded-xl font-bold text-sm text-center border border-gray-200 cursor-not-allowed uppercase">
-            Admin cannot create bookings
-          </div>
-        ) : (
+        {!(user?.roles?.includes("staff") || user?.roles?.includes("admin")) && (
           <button
             type="submit"
             disabled={loading}

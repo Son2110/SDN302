@@ -14,6 +14,7 @@ import {
   Clock,
 } from "lucide-react";
 import * as userApi from "../../services/userApi";
+import { toast } from "react-hot-toast";
 
 const STATUS_BADGE = {
   pending: { label: "Pending Review", cls: "bg-yellow-100 text-yellow-700" },
@@ -131,6 +132,25 @@ const DriverCard = ({
   );
 };
 
+// ─── Modal ───────────────────────────────────────────────────────────────────
+const Modal = ({ isOpen, onClose, title, children, footer }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-fadeIn">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-scaleIn">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg transition text-gray-400">
+            <X size={20} />
+          </button>
+        </div>
+        <div className="p-6">{children}</div>
+        {footer && <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3">{footer}</div>}
+      </div>
+    </div>
+  );
+};
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 const StaffDrivers = () => {
   const [activeTab, setActiveTab] = useState("list");
@@ -220,26 +240,48 @@ const StaffDrivers = () => {
     loadDrivers();
   };
 
-  const handleApprove = async (driverId) => {
-    if (!window.confirm("Approve this driver?")) return;
-    try {
-      await userApi.approveDriver(driverId);
-      loadPendingDrivers();
-      loadStats();
-    } catch (err) {
-      alert("Error: " + err.message);
-    }
+  // Modal state
+  const [modal, setModal] = useState({
+    isOpen: false,
+    type: "", // 'approve' | 'reject'
+    driverId: null,
+    reason: "Does not meet requirements",
+  });
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const openApproveModal = (driverId) => {
+    setModal({ isOpen: true, type: "approve", driverId, reason: "" });
   };
 
-  const handleReject = async (driverId) => {
-    const reason = window.prompt("Rejection reason:", "Does not meet requirements");
-    if (reason === null) return;
+  const openRejectModal = (driverId) => {
+    setModal({
+      isOpen: true,
+      type: "reject",
+      driverId,
+      reason: "Does not meet requirements",
+    });
+  };
+
+  const closeModal = () => setModal({ ...modal, isOpen: false });
+
+  const handleConfirmAction = async () => {
     try {
-      await userApi.rejectDriver(driverId, reason);
-      loadPendingDrivers();
+      setActionLoading(true);
+      if (modal.type === "approve") {
+        await userApi.approveDriver(modal.driverId);
+        toast.success("Driver approved successfully");
+      } else {
+        await userApi.rejectDriver(modal.driverId, modal.reason);
+        toast.success("Driver rejected");
+      }
+      closeModal();
+      if (activeTab === "pending") loadPendingDrivers();
+      if (activeTab === "list") loadDrivers();
       loadStats();
     } catch (err) {
-      alert("Error: " + err.message);
+      toast.error("Error: " + err.message);
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -373,7 +415,6 @@ const StaffDrivers = () => {
                 <option value="available">Available</option>
                 <option value="busy">Busy</option>
                 <option value="offline">Offline</option>
-                <option value="rejected">Rejected</option>
               </select>
               <button
                 type="submit"
@@ -405,8 +446,8 @@ const StaffDrivers = () => {
                 <DriverCard
                   key={d._id}
                   driver={d}
-                  onApprove={handleApprove}
-                  onReject={handleReject}
+                  onApprove={openApproveModal}
+                  onReject={openRejectModal}
                 />
               ))}
             </div>
@@ -443,8 +484,8 @@ const StaffDrivers = () => {
                   <DriverCard
                     key={d._id}
                     driver={d}
-                    onApprove={handleApprove}
-                    onReject={handleReject}
+                    onApprove={openApproveModal}
+                    onReject={openRejectModal}
                   />
                 ))}
               </div>
@@ -453,6 +494,53 @@ const StaffDrivers = () => {
           <Pagination state={pendingPage} setPage={setPendingPage} />
         </>
       )}
+
+      {/* Confirmation Modal */}
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        title={modal.type === "approve" ? "Confirm Approval" : "Confirm Rejection"}
+        footer={
+          <>
+            <button
+              onClick={closeModal}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmAction}
+              disabled={actionLoading}
+              className={`px-4 py-2 text-white rounded-lg text-sm font-medium transition disabled:opacity-50 ${
+                modal.type === "approve" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"
+              }`}
+            >
+              {actionLoading ? "Processing..." : modal.type === "approve" ? "Confirm Approve" : "Confirm Reject"}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600 font-medium">
+            {modal.type === "approve"
+              ? "Are you sure you want to approve this driver? They will be able to accept trips immediately."
+              : "Please provide a reason for rejecting this driver application."}
+          </p>
+
+          {modal.type === "reject" && (
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Rejection Reason</label>
+              <textarea
+                value={modal.reason}
+                onChange={(e) => setModal({ ...modal, reason: e.target.value })}
+                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-red-500 outline-none resize-none"
+                rows={3}
+                placeholder="e.g. Expired license, insufficient experience..."
+              />
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 };

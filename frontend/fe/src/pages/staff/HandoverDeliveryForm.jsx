@@ -21,15 +21,42 @@ export default function HandoverDeliveryForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validation
+    const bookingId = formData.booking_id.trim();
+    if (!bookingId) {
+      setError("Booking ID is required and cannot be only whitespace.");
+      return;
+    }
+
+    if (formData.mileage === "" || formData.mileage === undefined) {
+      setError("Current ODO Mileage is required.");
+      return;
+    }
+
+    const mileageNum = Number(formData.mileage);
+    if (isNaN(mileageNum) || mileageNum < 0) {
+      setError("Mileage must be a non-negative number.");
+      return;
+    }
+
+    if (formData.battery_level_percentage !== "") {
+      const battery = Number(formData.battery_level_percentage);
+      if (battery < 0 || battery > 100 || isNaN(battery)) {
+        setError("Battery level must be between 0 and 100.");
+        return;
+      }
+    }
+
     try {
       setLoading(true);
       setError(null);
-      
+
       const payload = {
-        booking_id: formData.booking_id,
-        mileage: formData.mileage ? Number(formData.mileage) : undefined,
-        battery_level_percentage: formData.battery_level_percentage ? Number(formData.battery_level_percentage) : undefined,
-        notes: formData.notes
+        booking_id: bookingId,
+        mileage: mileageNum,
+        battery_level_percentage: formData.battery_level_percentage !== "" ? Number(formData.battery_level_percentage) : undefined,
+        notes: formData.notes.trim()
       };
 
       await createDeliveryHandover(payload);
@@ -57,7 +84,7 @@ export default function HandoverDeliveryForm() {
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && <div className="p-4 bg-red-50 text-red-600 rounded-lg">{error}</div>}
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Booking ID <span className="text-red-500">*</span></label>
             <input

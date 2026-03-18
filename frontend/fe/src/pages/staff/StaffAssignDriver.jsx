@@ -18,7 +18,9 @@ import {
   Car,
   Calendar,
   User,
+  X,
 } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 const STATUS_BADGE = {
   available: "bg-green-100 text-green-700",
@@ -54,52 +56,70 @@ export default function StaffAssignDriver() {
     fetchBooking();
   }, [bookingId]);
 
-  // Fetch available drivers (no limit so page can grow)
-  useEffect(() => {
-    const fetchDrivers = async () => {
-      try {
-        setLoadingDrivers(true);
-        const [res, assignmentsRes] = await Promise.all([
-          getAllDrivers({ status: "available", limit: 200 }),
-          getAssignments({ booking_id: bookingId }).catch(() => ({ data: [] })),
-        ]);
+  const fetchDrivers = async () => {
+    try {
+      setLoadingDrivers(true);
+      const [res, assignmentsRes] = await Promise.all([
+        getAllDrivers({ status: "available", limit: 200 }),
+        getAssignments({ booking_id: bookingId }).catch(() => ({ data: [] })),
+      ]);
 
-        const allAssignments = assignmentsRes.data || [];
-        const pendingAssign = allAssignments.find(
-          (a) => a.status === "pending",
+      const allAssignments = assignmentsRes.data || [];
+      const pendingAssign = allAssignments.find(
+        (a) => a.status === "pending",
+      );
+
+      if (pendingAssign) {
+        const pDriverId = pendingAssign.driver?._id || pendingAssign.driver;
+        let pDriver =
+          res.data?.find((d) => d._id === pDriverId) || pendingAssign.driver;
+
+        if (pDriver && pDriver.user) {
+          setDrivers([{ ...pDriver, isPendingAssignment: true, assignmentId: pendingAssign._id }]);
+          setSelectedDriverId(pDriverId);
+        } else {
+          setDrivers([]);
+        }
+      } else {
+        const rejectedDriverIds = new Set(
+          allAssignments
+            .filter((a) => a.status === "rejected")
+            .map((a) => a.driver?._id || a.driver),
         );
 
-        if (pendingAssign) {
-          const pDriverId = pendingAssign.driver?._id || pendingAssign.driver;
-          let pDriver =
-            res.data?.find((d) => d._id === pDriverId) || pendingAssign.driver;
-
-          if (pDriver && pDriver.user) {
-            setDrivers([{ ...pDriver, isPendingAssignment: true }]);
-            setSelectedDriverId(pDriverId);
-          } else {
-            setDrivers([]);
-          }
-        } else {
-          const rejectedDriverIds = new Set(
-            allAssignments
-              .filter((a) => a.status === "rejected")
-              .map((a) => a.driver?._id || a.driver),
-          );
-
-          const availableDrivers = (res.data || []).filter(
-            (d) => !rejectedDriverIds.has(d._id),
-          );
-          setDrivers(availableDrivers);
+        const availableDrivers = (res.data || []).filter(
+          (d) => !rejectedDriverIds.has(d._id),
+        );
+        setDrivers(availableDrivers);
+        
+        // If an assignment was just accepted, show success and redirect
+        const acceptedAssign = allAssignments.find(a => a.status === "accepted");
+        if (acceptedAssign) {
+          toast.success("Driver accepted the assignment!");
+          setTimeout(() => navigate(`/staff/bookings/${bookingId}`), 2000);
         }
-      } catch (err) {
-        setError("Cannot load driver list: " + err.message);
-      } finally {
-        setLoadingDrivers(false);
       }
-    };
+    } catch (err) {
+      setError("Cannot load driver list: " + err.message);
+    } finally {
+      setLoadingDrivers(false);
+    }
+  };
+
+  // Initial fetch and polling
+  useEffect(() => {
     fetchDrivers();
-  }, []);
+    
+    // Check status every 5 seconds
+    const interval = setInterval(() => {
+      // Only poll if we have a pending assignment
+      if (drivers.some(d => d.isPendingAssignment)) {
+        fetchDrivers();
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [bookingId, drivers.some(d => d.isPendingAssignment)]);
 
   const handleAssign = async () => {
     if (!selectedDriverId) return;
@@ -110,10 +130,30 @@ export default function StaffAssignDriver() {
         booking_id: bookingId,
         driver_id: selectedDriverId,
       });
-      setSuccess(true);
-      setTimeout(() => navigate(`/staff/bookings/${bookingId}`), 1500);
+      toast.success("Assignment request sent to driver!");
+      // Re-fetch to enter "waiting" state
+      fetchDrivers();
     } catch (err) {
+      toast.error(err.message);
       setError(err.message);
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  const handleCancelAssignment = async (assignmentId) => {
+    if (!window.confirm("Are you sure you want to cancel this assignment request?")) return;
+    try {
+      setAssigning(true);
+      await fetch(`${import.meta.env.VITE_API_URL}/driver-assignment/${assignmentId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      toast.success("Assignment cancelled");
+      setSelectedDriverId(null);
+      fetchDrivers();
+    } catch (err) {
+      toast.error("Failed to cancel: " + err.message);
     } finally {
       setAssigning(false);
     }
@@ -261,39 +301,52 @@ export default function StaffAssignDriver() {
 
             {/* Action buttons */}
             <div className="flex flex-col gap-2 pt-2">
-              <button
-                onClick={handleAssign}
-                disabled={
-                  !selectedDriverId ||
-                  assigning ||
-                  success ||
-                  selectedDriver?.isPendingAssignment
-                }
-                className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {selectedDriver?.isPendingAssignment ? (
-                  <>
+              {selectedDriver?.isPendingAssignment ? (
+                <>
+                  <button
+                    disabled
+                    className="w-full py-2.5 bg-yellow-500 text-white rounded-xl font-medium flex items-center justify-center gap-2 opacity-80 cursor-not-allowed text-sm"
+                  >
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Waiting Response...
-                  </>
-                ) : assigning ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Assigning...
-                  </>
-                ) : (
-                  <>
-                    <UserCheck className="w-4 h-4" />
-                    Confirm Assignment
-                  </>
-                )}
-              </button>
-              <button
-                onClick={() => navigate(-1)}
-                className="w-full py-2.5 border border-gray-200 text-gray-600 rounded-xl font-medium hover:bg-gray-50 transition-colors text-sm"
-              >
-                Cancel
-              </button>
+                  </button>
+                  <button
+                    onClick={() => handleCancelAssignment(selectedDriver.assignmentId)}
+                    disabled={assigning}
+                    className="w-full py-2.5 bg-red-50 text-red-600 border border-red-200 rounded-xl font-medium hover:bg-red-100 transition-colors text-sm flex items-center justify-center gap-2"
+                  >
+                    {assigning ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+                    Cancel Assignment
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={handleAssign}
+                  disabled={!selectedDriverId || assigning || success}
+                  className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {assigning ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Assigning...
+                    </>
+                  ) : (
+                    <>
+                      <UserCheck className="w-4 h-4" />
+                      Confirm Assignment
+                    </>
+                  )}
+                </button>
+              )}
+              
+              {!selectedDriver?.isPendingAssignment && (
+                <button
+                  onClick={() => navigate(-1)}
+                  className="w-full py-2.5 border border-gray-200 text-gray-600 rounded-xl font-medium hover:bg-gray-50 transition-colors text-sm"
+                >
+                  Cancel
+                </button>
+              )}
             </div>
           </div>
         </div>
