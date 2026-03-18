@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createDeliveryHandover } from "../../services/handoverApi";
 import { ArrowLeft, Loader2, KeyRound } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function HandoverDeliveryForm() {
   const navigate = useNavigate();
@@ -20,19 +21,46 @@ export default function HandoverDeliveryForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validation
+    const bookingId = formData.booking_id.trim();
+    if (!bookingId) {
+      setError("Booking ID is required and cannot be only whitespace.");
+      return;
+    }
+
+    if (formData.mileage === "" || formData.mileage === undefined) {
+      setError("Current ODO Mileage is required.");
+      return;
+    }
+
+    const mileageNum = Number(formData.mileage);
+    if (isNaN(mileageNum) || mileageNum < 0) {
+      setError("Mileage must be a non-negative number.");
+      return;
+    }
+
+    if (formData.battery_level_percentage !== "") {
+      const battery = Number(formData.battery_level_percentage);
+      if (battery < 0 || battery > 100 || isNaN(battery)) {
+        setError("Battery level must be between 0 and 100.");
+        return;
+      }
+    }
+
     try {
       setLoading(true);
       setError(null);
       
       const payload = {
-        booking_id: formData.booking_id,
-        mileage: formData.mileage ? Number(formData.mileage) : undefined,
-        battery_level_percentage: formData.battery_level_percentage ? Number(formData.battery_level_percentage) : undefined,
-        notes: formData.notes
+        booking_id: bookingId,
+        mileage: mileageNum,
+        battery_level_percentage: formData.battery_level_percentage !== "" ? Number(formData.battery_level_percentage) : undefined,
+        notes: formData.notes.trim()
       };
 
       await createDeliveryHandover(payload);
-      alert("Delivery record created successfully!");
+      toast.success("Delivery record created successfully!");
       navigate("/staff/handovers");
     } catch (err) {
       setError(err.message);
@@ -73,10 +101,11 @@ export default function HandoverDeliveryForm() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Current ODO (km)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Current ODO (km) <span className="text-red-500">*</span></label>
               <input
                 type="number"
                 name="mileage"
+                required
                 value={formData.mileage}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none"

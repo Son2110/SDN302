@@ -20,6 +20,7 @@ import {
   ArrowRightLeft,
   CheckCircle2,
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 /* ─────────────────────────────────────────────────────────────
    Reusable Modal Wrapper
@@ -57,16 +58,37 @@ function DeliveryModal({ bookingId, onClose, onSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validation
+    if (form.mileage === "" || form.mileage === undefined) {
+      setError("Current ODO Mileage is required.");
+      return;
+    }
+
+    const mileageNum = Number(form.mileage);
+    if (isNaN(mileageNum) || mileageNum < 0) {
+      setError("Mileage must be a non-negative number.");
+      return;
+    }
+
+    if (form.battery_level_percentage !== "") {
+      const battery = Number(form.battery_level_percentage);
+      if (battery < 0 || battery > 100 || isNaN(battery)) {
+        setError("Battery level must be between 0 and 100.");
+        return;
+      }
+    }
+
     try {
       setLoading(true);
       setError(null);
       await createDeliveryHandover({
         booking_id: bookingId,
-        mileage: form.mileage ? Number(form.mileage) : undefined,
+        mileage: mileageNum,
         battery_level_percentage: form.battery_level_percentage
           ? Number(form.battery_level_percentage)
           : undefined,
-        notes: form.notes || undefined,
+        notes: form.notes?.trim() || undefined,
       });
       onSuccess();
     } catch (err) {
@@ -108,15 +130,16 @@ function DeliveryModal({ bookingId, onClose, onSuccess }) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Current ODO Mileage
+              Current ODO Mileage <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
               name="mileage"
+              required
               value={form.mileage}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-              placeholder="VD: 35000"
+              placeholder="e.g. 35000"
             />
           </div>
           <div>
@@ -194,17 +217,43 @@ function ReturnModal({ bookingId, onClose, onSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validation
+    if (form.return_mileage === "" || form.return_mileage === undefined) {
+      setError("Return ODO Mileage is required.");
+      return;
+    }
+
+    const returnMileageNum = Number(form.return_mileage);
+    if (isNaN(returnMileageNum) || returnMileageNum < 0) {
+      setError("Return mileage must be a non-negative number.");
+      return;
+    }
+
+    if (form.battery_level_percentage !== "") {
+      const battery = Number(form.battery_level_percentage);
+      if (battery < 0 || battery > 100 || isNaN(battery)) {
+        setError("Battery level must be between 0 and 100.");
+        return;
+      }
+    }
+
+    if (form.penalty_amount !== "" && (Number(form.penalty_amount) < 0 || isNaN(Number(form.penalty_amount)))) {
+      setError("Penalty amount cannot be negative.");
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
       const res = await createReturnHandover({
         booking_id: bookingId,
-        return_mileage: form.return_mileage ? Number(form.return_mileage) : undefined,
+        return_mileage: returnMileageNum,
         battery_level_percentage: form.battery_level_percentage
           ? Number(form.battery_level_percentage)
           : undefined,
         penalty_amount: form.penalty_amount ? Number(form.penalty_amount) : undefined,
-        notes: form.notes || undefined,
+        notes: form.notes?.trim() || undefined,
       });
       onSuccess(res.data);
     } catch (err) {
@@ -331,6 +380,92 @@ function ReturnModal({ bookingId, onClose, onSuccess }) {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   View Handover Details Modal
+───────────────────────────────────────────────────────────── */
+function ViewHandoverModal({ handover, onClose }) {
+  if (!handover) return null;
+  const isDelivery = handover.handover_type === "delivery";
+
+  return (
+    <Modal onClose={onClose}>
+      {/* Header */}
+      <div className={`flex items-center justify-between px-6 py-4 border-b border-gray-100 ${isDelivery ? 'bg-blue-50/30' : 'bg-emerald-50/30'}`}>
+        <div className="flex items-center gap-2">
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDelivery ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'}`}>
+            {isDelivery ? <KeyRound className="w-4 h-4" /> : <ArrowRightLeft className="w-4 h-4" />}
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-gray-900">
+              {isDelivery ? "Delivery Record Detail" : "Return Record Detail"}
+            </h2>
+            <p className="text-xs text-gray-500">
+              {isDelivery ? "Handed over to customer" : "Received from customer"}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          className="p-1.5 hover:bg-gray-200 rounded-lg transition text-gray-400 hover:text-gray-600"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Body */}
+      <div className="px-6 py-6 space-y-6">
+        <div className="grid grid-cols-2 gap-6">
+          <div className="space-y-1">
+            <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Time</p>
+            <p className="text-sm font-semibold text-gray-900">
+              {formatDate(handover.handover_time, true)}
+            </p>
+          </div>
+          <div className="space-y-1 text-right">
+            <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Staff in charge</p>
+            <p className="text-sm font-semibold text-gray-900">
+              {handover.staff?.user?.full_name || handover.staff_name || "N/A"}
+            </p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Odometer (ODO)</p>
+            <p className="text-sm font-semibold text-gray-900">{handover.mileage} km</p>
+          </div>
+          <div className="space-y-1 text-right">
+            <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Battery Level</p>
+            <p className="text-sm font-semibold text-gray-900">{handover.battery_level_percentage}%</p>
+          </div>
+        </div>
+
+        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 italic text-sm text-gray-600">
+          <p className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-2 not-italic">Notes</p>
+          {handover.notes || "No additional notes provided."}
+        </div>
+
+        <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl">
+           <span className="text-xs font-bold text-gray-500 uppercase">Customer Confirmation</span>
+           <div className="flex items-center gap-1.5">
+             <CheckCircle2 className={`w-4 h-4 ${handover.confirmed_by_customer ? 'text-green-500' : 'text-gray-300'}`} />
+             <span className={`text-sm font-medium ${handover.confirmed_by_customer ? 'text-green-700' : 'text-gray-400'}`}>
+               {handover.confirmed_by_customer ? "Confirmed by Customer" : "Unconfirmed"}
+             </span>
+           </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="px-6 py-4 border-t border-gray-100 flex justify-end">
+        <button
+          onClick={onClose}
+          className="px-6 py-2 bg-gray-900 text-white rounded-xl text-sm font-bold hover:bg-gray-800 transition shadow-lg shadow-gray-900/10"
+        >
+          Close Detail
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
    Main Page
 ───────────────────────────────────────────────────────────── */
 export default function StaffBookingDetail() {
@@ -358,6 +493,7 @@ export default function StaffBookingDetail() {
   // Modals
   const [showDeliveryModal, setShowDeliveryModal] = useState(false);
   const [showReturnModal, setShowReturnModal] = useState(false);
+  const [viewHandover, setViewHandover] = useState(null);
 
   // Notifications
   const [deliverySuccess, setDeliverySuccess] = useState(false);
@@ -410,30 +546,53 @@ export default function StaffBookingDetail() {
   const handleUpdate = async () => {
     try {
       setSaving(true);
-      const payload = Object.fromEntries(
-        Object.entries(editForm).filter(([_, v]) => v !== "")
-      );
-      if (payload.start_date)
-        payload.start_date = new Date(payload.start_date).toISOString();
-      if (payload.end_date)
-        payload.end_date = new Date(payload.end_date).toISOString();
+      
+      // Validation
+      if (editForm.start_date && editForm.end_date) {
+        const start = new Date(editForm.start_date);
+        const end = new Date(editForm.end_date);
+        if (start > end) {
+          toast.error("Error: Start date must be before or equal to end date.");
+          setSaving(false);
+          return;
+        }
+      }
+
+      const payload = {};
+      
+      // Only include non-empty values after trimming
+      if (editForm.vehicle_id?.trim()) payload.vehicle_id = editForm.vehicle_id.trim();
+      if (editForm.start_date) payload.start_date = new Date(editForm.start_date).toISOString();
+      if (editForm.end_date) payload.end_date = new Date(editForm.end_date).toISOString();
+      if (editForm.rental_type) payload.rental_type = editForm.rental_type;
+      if (editForm.pickup_location?.trim()) payload.pickup_location = editForm.pickup_location.trim();
+      if (editForm.return_location?.trim()) payload.return_location = editForm.return_location.trim();
+
+      if (Object.keys(payload).length === 0) {
+        toast.error("No changes to save.");
+        setSaving(false);
+        return;
+      }
+
       await updateBooking(id, payload);
+      toast.success("Booking updated successfully");
       setIsEditing(false);
       fetchData();
     } catch (err) {
-      alert("Error updating: " + err.message);
+      toast.error("Error updating: " + err.message);
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Are you sure you want to delete this booking?")) return;
     try {
+      if (!window.confirm("Are you sure you want to delete this booking?")) return;
       await deleteBooking(id);
+      toast.success("Booking deleted successfully");
       navigate("/staff/bookings");
     } catch (err) {
-      alert("Error deleting: " + err.message);
+      toast.error("Error deleting: " + err.message);
     }
   };
 
@@ -498,6 +657,13 @@ export default function StaffBookingDetail() {
           bookingId={id}
           onClose={() => setShowReturnModal(false)}
           onSuccess={handleReturnSuccess}
+        />
+      )}
+
+      {viewHandover && (
+        <ViewHandoverModal
+          handover={viewHandover}
+          onClose={() => setViewHandover(null)}
         />
       )}
 
@@ -889,9 +1055,14 @@ export default function StaffBookingDetail() {
                   Handover Records
                 </h2>
                 <div className="space-y-4">
-                  <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-blue-400" />
-                    <p className="text-sm font-bold text-blue-900">Delivery Handover</p>
+                  <button 
+                    onClick={() => setViewHandover(handovers.delivery)}
+                    className="w-full text-left p-4 bg-blue-50 border border-blue-100 rounded-xl relative overflow-hidden group hover:border-blue-300 hover:shadow-md transition-all active:scale-[0.98]"
+                  >
+                    <div className="absolute top-0 left-0 w-1 h-full bg-blue-400 group-hover:bg-blue-600 transition-colors" />
+                    <div className="flex justify-between items-start mb-1">
+                      <p className="text-sm font-bold text-blue-900">Delivery Handover</p>
+                    </div>
                     <p className="text-sm font-medium text-gray-700 mt-1">
                       {formatDate(handovers.delivery.handover_time, true)}
                     </p>
@@ -903,11 +1074,16 @@ export default function StaffBookingDetail() {
                         {handovers.delivery.mileage} km
                       </span>
                     </p>
-                  </div>
+                  </button>
                   {handovers.return && (
-                    <div className="p-4 bg-green-50 border border-green-100 rounded-xl relative overflow-hidden">
-                      <div className="absolute top-0 left-0 w-1 h-full bg-green-400" />
-                      <p className="text-sm font-bold text-green-900">Return Handover</p>
+                    <button 
+                      onClick={() => setViewHandover(handovers.return)}
+                      className="w-full text-left p-4 bg-green-50 border border-green-100 rounded-xl relative overflow-hidden group hover:border-green-300 hover:shadow-md transition-all active:scale-[0.98]"
+                    >
+                      <div className="absolute top-0 left-0 w-1 h-full bg-green-400 group-hover:bg-green-600 transition-colors" />
+                      <div className="flex justify-between items-start mb-1">
+                        <p className="text-sm font-bold text-green-900">Return Handover</p>
+                      </div>
                       <p className="text-sm font-medium text-gray-700 mt-1">
                         {formatDate(handovers.return.handover_time, true)}
                       </p>
@@ -919,7 +1095,7 @@ export default function StaffBookingDetail() {
                           Driven: {handovers.km_driven} km
                         </span>
                       </p>
-                    </div>
+                    </button>
                   )}
                 </div>
               </div>

@@ -104,10 +104,11 @@ export const createBooking = async (req, res) => {
       return_location,
     } = req.body;
 
-    // Check if user is admin
-    if (req.user.roles && req.user.roles.includes("admin")) {
+    // Check if user is admin or staff
+    if (req.user.roles && (req.user.roles.includes("admin") || req.user.roles.includes("staff"))) {
+      const roleName = req.user.roles.includes("admin") ? "Admin" : "Staff";
       return res.status(403).json({
-        message: "Admin accounts are not allowed to make bookings.",
+        message: `${roleName} accounts are not allowed to make bookings.`,
       });
     }
 

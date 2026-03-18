@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { getAllVehicles } from "../../services/vehicleApi";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 const Fleet = () => {
+  const { user } = useAuth();
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -115,9 +117,11 @@ const Fleet = () => {
                     </span>
                   </div>
 
-                  <button className="bg-gray-900 text-white text-[10px] font-bold uppercase tracking-widest px-4 py-3 rounded-xl hover:bg-blue-600 transition-colors duration-300">
-                    Book now
-                  </button>
+                  {!(user?.roles?.includes("staff") || user?.roles?.includes("admin")) && (
+                    <button className="bg-gray-900 text-white text-[10px] font-bold uppercase tracking-widest px-4 py-3 rounded-xl hover:bg-blue-600 transition-colors duration-300">
+                      Book now
+                    </button>
+                  )}
                 </div>
               </div>
             </Link>

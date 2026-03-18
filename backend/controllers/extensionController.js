@@ -9,6 +9,13 @@ export const requestExtension = async (req, res) => {
     const { booking_id, new_end_date } = req.body;
 
     // 1. Authenticate Customer
+    if (req.user.roles && (req.user.roles.includes("admin") || req.user.roles.includes("staff"))) {
+      const roleName = req.user.roles.includes("admin") ? "Admin" : "Staff";
+      return res.status(403).json({
+        message: `${roleName} accounts are not allowed to request extensions.`,
+      });
+    }
+
     const customer = await Customer.findOne({ user: req.user._id });
     if (!customer)
       return res
