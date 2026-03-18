@@ -51,6 +51,18 @@ const StaffVehicles = () => {
     image_urls: [],
   });
   const [selectedFile, setSelectedFile] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({
+    open: false,
+    type: "",
+    vehicleId: "",
+    vehicleLabel: "",
+    nextStatus: "",
+  });
+  const [feedbackModal, setFeedbackModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+  });
 
   useEffect(() => {
     loadData();
@@ -60,7 +72,7 @@ const StaffVehicles = () => {
     try {
       setLoading(true);
       const [vehicleData, typesData] = await Promise.all([
-        vehicleApi.getVehiclesForStaff({ status: statusFilter }),
+        vehicleApi.getVehiclesForStaff({ status: statusFilter, limit: 200 }),
         vehicleApi.getVehicleTypes(),
       ]);
       setVehicles(vehicleData.data);
@@ -79,8 +91,59 @@ const StaffVehicles = () => {
     }
   };
 
+  const extractBrandAndModelFromTypeName = (typeName = "") => {
+    const normalized = typeName.replace(/\s+/g, " ").trim();
+    if (!normalized) return { brand: "", model: "" };
+
+    const [mainPart] = normalized.split(/\s[-–—]\s/);
+    const namePart = (mainPart || normalized).trim();
+    const tokens = namePart.split(" ").filter(Boolean);
+
+    if (tokens.length === 0) return { brand: "", model: "" };
+    if (tokens.length === 1) return { brand: tokens[0], model: "" };
+
+    return {
+      brand: tokens[0],
+      model: tokens.slice(1).join(" "),
+    };
+  };
+
+  const handleVehicleTypeChange = (vehicleTypeId) => {
+    const selectedType = vehicleTypes.find((type) => type._id === vehicleTypeId);
+
+    setFormData((prev) => {
+      const next = {
+        ...prev,
+        vehicle_type: vehicleTypeId,
+      };
+
+      if (!selectedType || editingVehicle) return next;
+
+      const { brand, model } = extractBrandAndModelFromTypeName(
+        selectedType.type_name,
+      );
+
+      return {
+        ...next,
+        brand,
+        model,
+      };
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const hasExistingImage =
+      Array.isArray(formData.image_urls) && formData.image_urls.length > 0;
+    if (!editingVehicle && !selectedFile && !hasExistingImage) {
+      openErrorModal(
+        "Image is required",
+        "Please upload a vehicle image before adding a new vehicle.",
+      );
+      return;
+    }
+
     try {
       const payload = new FormData();
       payload.append("vehicle_type", formData.vehicle_type);
@@ -151,10 +214,43 @@ const StaffVehicles = () => {
       daily_rate: vehicle.daily_rate,
       is_electric: true,
       current_mileage: vehicle.current_mileage,
-      image_urls: vehicle.image_urls || [],
+      image_urls:
+        vehicle.image_urls?.length > 0
+          ? vehicle.image_urls
+          : vehicle.image_url
+            ? [vehicle.image_url]
+            : [],
     });
     setSelectedFile(null);
     setShowModal(true);
+  };
+
+  const openErrorModal = (title, message) => {
+    setFeedbackModal({
+      open: true,
+      title,
+      message: message || "Something went wrong. Please try again.",
+    });
+  };
+
+  const openConfirmModal = ({ type, vehicle, nextStatus = "" }) => {
+    setConfirmModal({
+      open: true,
+      type,
+      vehicleId: vehicle._id,
+      vehicleLabel: `${vehicle.brand} ${vehicle.model} (${vehicle.license_plate})`,
+      nextStatus,
+    });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal({
+      open: false,
+      type: "",
+      vehicleId: "",
+      vehicleLabel: "",
+      nextStatus: "",
+    });
   };
 
   const handleStatusChange = async (id, status) => {
@@ -162,7 +258,35 @@ const StaffVehicles = () => {
       await vehicleApi.updateVehicleStatus(id, status);
       loadData();
     } catch (err) {
-      alert(err.message);
+      openErrorModal(
+        status === "maintenance"
+          ? "Maintenance failed"
+          : "Availability update failed",
+        err.message,
+      );
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await vehicleApi.deleteVehicle(id);
+      loadData();
+    } catch (err) {
+      openErrorModal("Delete failed", err.message);
+    }
+  };
+
+  const handleConfirmAction = async () => {
+    const { type, vehicleId, nextStatus } = confirmModal;
+    closeConfirmModal();
+
+    if (type === "delete") {
+      await handleDelete(vehicleId);
+      return;
+    }
+
+    if (type === "status" && nextStatus) {
+      await handleStatusChange(vehicleId, nextStatus);
     }
   };
 
@@ -242,11 +366,11 @@ const StaffVehicles = () => {
       rented: "bg-blue-100 text-blue-700",
       maintenance: "bg-yellow-100 text-yellow-700",
     };
-const labels = {
-  available: "Available",
-  rented: "Rented",
-  maintenance: "Maintenance",
-};
+    const labels = {
+      available: "Available",
+      rented: "Rented",
+      maintenance: "Maintenance",
+    };
     return (
       <span
         className={`px-3 py-1 rounded-full text-xs font-semibold ${colors[status]}`}
@@ -255,6 +379,20 @@ const labels = {
       </span>
     );
   };
+
+  const isDeleteConfirm = confirmModal.type === "delete";
+  const isStatusToMaintenance =
+    confirmModal.type === "status" && confirmModal.nextStatus === "maintenance";
+  const confirmTitle = isDeleteConfirm
+    ? "Confirm vehicle deletion"
+    : isStatusToMaintenance
+      ? "Confirm maintenance update"
+      : "Confirm availability update";
+  const confirmMessage = isDeleteConfirm
+    ? `Do you want to delete ${confirmModal.vehicleLabel}? This action cannot be undone.`
+    : isStatusToMaintenance
+      ? `Do you want to move ${confirmModal.vehicleLabel} to maintenance?`
+      : `Do you want to move ${confirmModal.vehicleLabel} to available?`;
 
   if (loading) {
     return (
@@ -343,7 +481,11 @@ const labels = {
             className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition"
           >
             <img
-              src={vehicle.image_urls?.[0] || "/cars/default.jpg"}
+              src={
+                vehicle.image_urls?.[0] ||
+                vehicle.image_url ||
+                "/cars/default.jpg"
+              }
               alt={`${vehicle.brand} ${vehicle.model}`}
               className="w-full h-48 object-cover"
             />
@@ -394,7 +536,11 @@ const labels = {
                     {vehicle.status === "available" ? (
                       <button
                         onClick={() =>
-                          handleStatusChange(vehicle._id, "maintenance")
+                          openConfirmModal({
+                            type: "status",
+                            vehicle,
+                            nextStatus: "maintenance",
+                          })
                         }
                         className="flex-1 bg-yellow-500 text-white py-2 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-yellow-600 transition"
                       >
@@ -404,7 +550,11 @@ const labels = {
                     ) : (
                       <button
                         onClick={() =>
-                          handleStatusChange(vehicle._id, "available")
+                          openConfirmModal({
+                            type: "status",
+                            vehicle,
+                            nextStatus: "available",
+                          })
                         }
                         className="flex-1 bg-green-500 text-white py-2 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-green-600 transition"
                       >
@@ -413,7 +563,9 @@ const labels = {
                       </button>
                     )}
                     <button
-                      onClick={() => handleDelete(vehicle._id)}
+                      onClick={() =>
+                        openConfirmModal({ type: "delete", vehicle })
+                      }
                       className="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition"
                     >
                       <Trash2 size={16} />
@@ -427,9 +579,7 @@ const labels = {
       </div>
 
       {filteredVehicles.length === 0 && (
-        <div className="text-center py-12 text-gray-500">
-          No vehicles found
-        </div>
+        <div className="text-center py-12 text-gray-500">No vehicles found</div>
       )}
 
       {/* ── Add / Edit Vehicle Modal ── */}
@@ -481,12 +631,7 @@ const labels = {
                     <select
                       required
                       value={formData.vehicle_type}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          vehicle_type: e.target.value,
-                        })
-                      }
+                      onChange={(e) => handleVehicleTypeChange(e.target.value)}
                       className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-300 focus:outline-none bg-gray-50"
                     >
                       <option value="">Select vehicle type</option>
@@ -898,6 +1043,87 @@ const labels = {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {confirmModal.open && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-60"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeConfirmModal();
+          }}
+        >
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-yellow-100 text-yellow-700 flex items-center justify-center">
+                <AlertCircle size={20} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">
+                  {confirmTitle}
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">{confirmMessage}</p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={closeConfirmModal}
+                className="flex-1 py-2.5 border border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmAction}
+                className={`flex-1 py-2.5 text-white rounded-xl font-semibold transition ${
+                  isDeleteConfirm
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-yellow-500 hover:bg-yellow-600"
+                }`}
+              >
+                {isDeleteConfirm ? "Delete" : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {feedbackModal.open && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-70"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setFeedbackModal({ open: false, title: "", message: "" });
+            }
+          }}
+        >
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-red-100 text-red-700 flex items-center justify-center">
+                <AlertCircle size={20} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">
+                  {feedbackModal.title}
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  {feedbackModal.message}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                setFeedbackModal({ open: false, title: "", message: "" })
+              }
+              className="w-full py-2.5 bg-gray-900 text-white rounded-xl font-semibold hover:bg-gray-700 transition"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
