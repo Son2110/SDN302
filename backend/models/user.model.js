@@ -44,9 +44,9 @@ const driverSchema = new mongoose.Schema({
   license_number: { type: String, required: true, unique: true },
   license_type: { type: String, required: true }, // B2, C, D...
   license_expiry: { type: Date, required: true },
-  experience_years: { type: Number, required: true },
-  rating: { type: Number, default: 0.0 },
-  total_trips: { type: Number, default: 0 },
+  experience_years: { type: Number, required: true, min: 0 },
+  rating: { type: Number, default: 0.0, min: 0, max: 5 },
+  total_trips: { type: Number, default: 0, min: 0 },
   status: {
     type: String,
     enum: ["pending", "available", "busy", "offline", "rejected"],

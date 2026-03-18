@@ -8,7 +8,10 @@ import { getUserRoles } from "../middlewares/authMiddleware.js";
 // @access Admin only
 export const getRevenueStats = async (req, res) => {
   try {
-    const year = Number(req.query.year) || new Date().getFullYear();
+    let year = parseInt(req.query.year) || new Date().getFullYear();
+    if (isNaN(year) || year < 2020 || year > 2100) {
+      year = new Date().getFullYear();
+    }
     const startOfYear = new Date(`${year}-01-01T00:00:00.000Z`);
     const endOfYear = new Date(`${year + 1}-01-01T00:00:00.000Z`);
 
@@ -124,7 +127,11 @@ export const getRevenueStats = async (req, res) => {
 // @access Admin only
 export const getAllUsersAdmin = async (req, res) => {
   try {
-    const { page = 1, limit = 20, search = "" } = req.query;
+    let { page = 1, limit = 20, search = "" } = req.query;
+
+    // Clamp pagination
+    page = Math.max(1, parseInt(page) || 1);
+    limit = Math.min(100, Math.max(1, parseInt(limit) || 20));
 
     let query = {};
     if (search) {

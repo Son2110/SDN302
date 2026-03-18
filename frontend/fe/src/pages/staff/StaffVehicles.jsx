@@ -59,11 +59,7 @@ const StaffVehicles = () => {
     vehicleLabel: "",
     nextStatus: "",
   });
-  const [feedbackModal, setFeedbackModal] = useState({
-    open: false,
-    title: "",
-    message: "",
-  });
+
 
   useEffect(() => {
     loadData();
@@ -138,10 +134,7 @@ const StaffVehicles = () => {
     const hasExistingImage =
       Array.isArray(formData.image_urls) && formData.image_urls.length > 0;
     if (!editingVehicle && !selectedFile && !hasExistingImage) {
-      openErrorModal(
-        "Image is required",
-        "Please upload a vehicle image before adding a new vehicle.",
-      );
+      toast.error("Please upload a vehicle image before adding a new vehicle.");
       return;
     }
 
@@ -157,34 +150,12 @@ const StaffVehicles = () => {
       payload.append("is_electric", formData.is_electric);
       payload.append("current_mileage", formData.current_mileage);
 
-      // --- Handle Single Image Upload ---
       if (selectedFile) {
-        // If uploading new file, ignore old URL
         payload.append("images", selectedFile);
-        // We can explicitly clear image_urls on backend if needed, or rely on our controller logic
-        // Current controller logic appends if we send both.
-        // We should send empty "image_urls" to clear old ones if we are uploading new one?
-        // Or if we don't send "image_urls", controller keeps old ones?
-        // Controller logic:
-        // if (req.files > 0 || req.body.image_urls) updates = finalImageUrls
-        // if req.body.image_urls is undefined, it might not update.
-        // Let's send empty string to clear if we have new file?
-        // Actually, if we want to REPLACE, we should ensure only the new one is there.
-        // The backend logic: if (req.files) newImages. if (req.body.image_urls) oldImages. final = [...old, ...new].
-        // So if we have selectedFile, we strictly DO NOT send image_urls.
-        // Backend will see no image_urls in body, but has files.
-        // But Controller has:
-        // if (req.body.image_urls) { bodyImages = ... }
-        // if (req.files || req.body.image_urls) { final = [...body, ...uploaded] }
-        // If we don't send image_urls, bodyImages is empty.
-        // So final = [newFile]. That's correct for replacement!
       } else {
-        // If NO new file, we must send the existing URL to keep it
         if (formData.image_urls && formData.image_urls.length > 0) {
           payload.append("image_urls", formData.image_urls[0]);
         } else {
-          // Case: No file, No URL (User deleted image?)
-          // Send empty string to clear?
           payload.append("image_urls", "");
         }
       }
@@ -194,6 +165,7 @@ const StaffVehicles = () => {
       } else {
         await vehicleApi.createVehicle(payload);
       }
+      toast.success(editingVehicle ? "Vehicle updated successfully" : "Vehicle added successfully");
       setShowModal(false);
       setEditingVehicle(null);
       resetForm();
@@ -226,13 +198,7 @@ const StaffVehicles = () => {
     setShowModal(true);
   };
 
-  const openErrorModal = (title, message) => {
-    setFeedbackModal({
-      open: true,
-      title,
-      message: message || "Something went wrong. Please try again.",
-    });
-  };
+
 
   const openConfirmModal = ({ type, vehicle, nextStatus = "" }) => {
     setConfirmModal({
@@ -259,12 +225,7 @@ const StaffVehicles = () => {
       await vehicleApi.updateVehicleStatus(id, status);
       loadData();
     } catch (err) {
-      openErrorModal(
-        status === "maintenance"
-          ? "Maintenance failed"
-          : "Availability update failed",
-        err.message,
-      );
+      toast.error(err.message || "Failed to update vehicle status");
     }
   };
 
@@ -274,7 +235,7 @@ const StaffVehicles = () => {
       toast.success("Vehicle deleted successfully");
       loadData();
     } catch (err) {
-      openErrorModal("Delete failed", err.message);
+      toast.error(err.message || "Failed to delete vehicle");
     }
   };
 
@@ -288,7 +249,7 @@ const StaffVehicles = () => {
     }
 
     if (type === "status" && nextStatus) {
-      await handleStatusChange(id || vehicleId, nextStatus);
+      await handleStatusChange(vehicleId, nextStatus);
       toast.success("Vehicle status updated");
     }
   };
@@ -305,10 +266,18 @@ const StaffVehicles = () => {
         fuel_type: typeFormData.fuel_type,
         base_price_per_day: parseInt(typeFormData.base_price_per_day),
       };
-      if (typeFormData.battery_capacity_kwh)
-        payload.battery_capacity_kwh = parseFloat(
-          typeFormData.battery_capacity_kwh,
-        );
+      if (isNaN(payload.seat_capacity) || payload.seat_capacity < 1) {
+        throw new Error("Seat capacity must be at least 1");
+      }
+      if (isNaN(payload.base_price_per_day) || payload.base_price_per_day < 0) {
+        throw new Error("Base price must be a non-negative number");
+      }
+      if (typeFormData.battery_capacity_kwh) {
+        payload.battery_capacity_kwh = parseFloat(typeFormData.battery_capacity_kwh);
+        if (isNaN(payload.battery_capacity_kwh) || payload.battery_capacity_kwh < 0) {
+          throw new Error("Battery capacity must be a non-negative number");
+        }
+      }
       if (typeFormData.charging_cost_per_kwh)
         payload.charging_cost_per_kwh = parseFloat(
           typeFormData.charging_cost_per_kwh,
@@ -622,7 +591,7 @@ const StaffVehicles = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
-              {/* Section: Loại & biển số */}
+              {/* Section: Basic Info */}
               <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
                   Basic Information
@@ -714,7 +683,33 @@ const StaffVehicles = () => {
                 </div>
               </div>
 
-              {/* Section: Giá & km */}
+              {/* Section: Vehicle Options */}
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                  Maintenance & Availability
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="is_electric"
+                      checked={formData.is_electric}
+                      onChange={(e) =>
+                        setFormData({ ...formData, is_electric: e.target.checked })
+                      }
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <label
+                      htmlFor="is_electric"
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      Electric Vehicle
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section: Price & Mileage */}
               <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
                   Price & Condition
@@ -722,25 +717,12 @@ const StaffVehicles = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Color
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.color}
-                      onChange={(e) =>
-                        setFormData({ ...formData, color: e.target.value })
-                      }
-                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-300 focus:outline-none bg-gray-50"
-                      placeholder="Black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
                       Rental/Day (VND) *
                     </label>
                     <input
                       type="number"
                       required
+                      min="0"
                       value={formData.daily_rate}
                       onChange={(e) =>
                         setFormData({
@@ -757,6 +739,7 @@ const StaffVehicles = () => {
                     </label>
                     <input
                       type="number"
+                      min="0"
                       value={formData.current_mileage}
                       onChange={(e) =>
                         setFormData({
@@ -764,21 +747,13 @@ const StaffVehicles = () => {
                           current_mileage: parseInt(e.target.value),
                         })
                       }
-                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-300 focus:outline-none bg-gray-50"
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-gray-300 focus:outline-none bg-gray-50"
                     />
-                  </div>
-                  <div className="flex items-end pb-1">
-                    <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
-                      <Zap size={14} className="text-green-600" />
-                      <span className="text-sm font-medium text-green-700">
-                        Electric Vehicle
-                      </span>
-                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Section: Ảnh */}
+              {/* Section: Image */}
               <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
                   Images (Only 1 image)
@@ -1082,11 +1057,10 @@ const StaffVehicles = () => {
               <button
                 type="button"
                 onClick={handleConfirmAction}
-                className={`flex-1 py-2.5 text-white rounded-xl font-semibold transition ${
-                  isDeleteConfirm
+                className={`flex-1 py-2.5 text-white rounded-xl font-semibold transition ${isDeleteConfirm
                     ? "bg-red-600 hover:bg-red-700"
                     : "bg-yellow-500 hover:bg-yellow-600"
-                }`}
+                  }`}
               >
                 {isDeleteConfirm ? "Delete" : "Confirm"}
               </button>
@@ -1095,42 +1069,7 @@ const StaffVehicles = () => {
         </div>
       )}
 
-      {feedbackModal.open && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-70"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setFeedbackModal({ open: false, title: "", message: "" });
-            }
-          }}
-        >
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-red-100 text-red-700 flex items-center justify-center">
-                <AlertCircle size={20} />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">
-                  {feedbackModal.title}
-                </h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  {feedbackModal.message}
-                </p>
-              </div>
-            </div>
 
-            <button
-              type="button"
-              onClick={() =>
-                setFeedbackModal({ open: false, title: "", message: "" })
-              }
-              className="w-full py-2.5 bg-gray-900 text-white rounded-xl font-semibold hover:bg-gray-700 transition"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

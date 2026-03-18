@@ -21,7 +21,7 @@ export default function HandoverDeliveryForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validation
     const bookingId = formData.booking_id.trim();
     if (!bookingId) {
@@ -51,7 +51,7 @@ export default function HandoverDeliveryForm() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const payload = {
         booking_id: bookingId,
         mileage: mileageNum,
@@ -84,7 +84,7 @@ export default function HandoverDeliveryForm() {
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && <div className="p-4 bg-red-50 text-red-600 rounded-lg">{error}</div>}
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Booking ID <span className="text-red-500">*</span></label>
             <input
@@ -106,6 +106,7 @@ export default function HandoverDeliveryForm() {
                 type="number"
                 name="mileage"
                 required
+                min="0"
                 value={formData.mileage}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none"
