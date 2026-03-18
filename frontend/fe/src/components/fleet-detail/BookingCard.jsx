@@ -11,6 +11,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { createBooking } from "../../services/bookingApi";
 import { getVehicleBookedDates } from "../../services/vehicleApi";
+import { getMyDriverStatus } from "../../services/userApi";
 import { getToken } from "../../services/api";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -90,6 +91,7 @@ const BookingCard = ({ car }) => {
   const [error, setError] = useState("");
   const [bookedDates, setBookedDates] = useState([]);
   const [loadingDates, setLoadingDates] = useState(true);
+  const [driverOnDuty, setDriverOnDuty] = useState(false);
 
   const pickupRef = useRef(null);
   const returnRef = useRef(null);
@@ -114,6 +116,22 @@ const BookingCard = ({ car }) => {
 
     fetchBookedDates();
   }, [car._id]);
+
+  // Check if logged-in user is a driver on duty (available or busy)
+  useEffect(() => {
+    const checkDriverStatus = async () => {
+      if (!user?.roles?.includes("driver")) return;
+      try {
+        const driverData = await getMyDriverStatus();
+        if (driverData && ["available", "busy"].includes(driverData.status)) {
+          setDriverOnDuty(true);
+        }
+      } catch (err) {
+        console.error("Error checking driver status:", err);
+      }
+    };
+    checkDriverStatus();
+  }, [user]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -235,6 +253,13 @@ const BookingCard = ({ car }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    // Block booking if driver is on duty
+    if (driverOnDuty) {
+      setError("You are currently on duty as a driver. Please complete your assignment before making a booking.");
+      toast.error("Cannot book while on duty as a driver.");
+      return;
+    }
 
     // Validation
     if (!formData.pickupLocation.trim()) {
@@ -432,6 +457,12 @@ const BookingCard = ({ car }) => {
         </div>
       )}
 
+      {driverOnDuty && (
+        <div className="mb-4 p-3 bg-amber-50 border border-amber-300 rounded-lg text-amber-800 text-sm font-medium">
+          ⚠️ You are currently on duty as a driver. Complete your assignment before making a booking.
+        </div>
+      )}
+
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
           {error}
@@ -617,10 +648,10 @@ const BookingCard = ({ car }) => {
         {!(user?.roles?.includes("staff") || user?.roles?.includes("admin")) && (
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || driverOnDuty}
             className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed shadow-lg shadow-blue-600/30"
           >
-            {loading ? "PROCESSING..." : "BOOK NOW →"}
+            {loading ? "PROCESSING..." : driverOnDuty ? "ON DUTY — CANNOT BOOK" : "BOOK NOW →"}
           </button>
         )}
       </form>
