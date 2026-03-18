@@ -184,15 +184,15 @@ export const getAllDrivers = async (req, res) => {
     const { page = 1, limit = 10, search = "", status = "" } = req.query;
     const skip = (page - 1) * limit;
 
-    // Build driver query — never show pending here (pending-only tab handles those)
+    // Build driver query — never show pending or rejected here (they have their own contexts)
     let driverQuery = {};
     if (
       status &&
-      ["available", "busy", "offline", "rejected"].includes(status)
+      ["available", "busy", "offline"].includes(status)
     ) {
       driverQuery.status = status;
     } else {
-      driverQuery.status = { $ne: "pending" };
+      driverQuery.status = { $nin: ["pending", "rejected"] };
     }
 
     // Build search query for user
@@ -640,7 +640,7 @@ export const getPendingDrivers = async (req, res) => {
  */
 export const getDriverStats = async (req, res) => {
   try {
-    const total = await Driver.countDocuments();
+    const total = await Driver.countDocuments({ status: { $ne: "rejected" } });
     const pending = await Driver.countDocuments({ status: "pending" });
     const available = await Driver.countDocuments({ status: "available" });
     const busy = await Driver.countDocuments({ status: "busy" });

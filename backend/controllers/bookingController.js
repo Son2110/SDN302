@@ -104,10 +104,11 @@ export const createBooking = async (req, res) => {
       return_location,
     } = req.body;
 
-    // Check if user is admin
-    if (req.user.roles && req.user.roles.includes("admin")) {
+    // Check if user is admin or staff
+    if (req.user.roles && (req.user.roles.includes("admin") || req.user.roles.includes("staff"))) {
+      const roleName = req.user.roles.includes("admin") ? "Admin" : "Staff";
       return res.status(403).json({
-        message: "Admin accounts are not allowed to make bookings.",
+        message: `${roleName} accounts are not allowed to make bookings.`,
       });
     }
 
@@ -264,7 +265,7 @@ export const cancelBooking = async (req, res) => {
       });
     }
 
-    // Kiểm tra quyền: customer chỉ huỷ đơn của mình, staff huỷ bất kỳ
+    // Check permissions: customer can only cancel their own, staff can cancel any
     const customer = await Customer.findOne({ user: req.user._id });
     const staff = await Staff.findOne({ user: req.user._id });
 
@@ -282,7 +283,7 @@ export const cancelBooking = async (req, res) => {
 
     const previousStatus = booking.status;
 
-    // Nếu đơn đã confirmed (đã cọc) → tạo record hoàn tiền
+    // If booking confirmed (deposit paid) -> create refund record
     if (previousStatus === "confirmed") {
       await Payment.create({
         booking: booking._id,
@@ -305,8 +306,8 @@ export const cancelBooking = async (req, res) => {
       for (const staffMember of allStaff) {
         await sendNotification({
           recipientId: staffMember.user,
-          title: "Đơn bị huỷ",
-          message: `Khách hàng vừa huỷ đơn đặt xe #${booking._id.toString().slice(-6)}.`,
+          title: "Booking Cancelled",
+          message: `Customer has cancelled booking #${booking._id.toString().slice(-6)}.`,
           type: "general",
           relatedId: booking._id,
           relatedModel: "Booking",
@@ -331,7 +332,7 @@ export const cancelBooking = async (req, res) => {
   }
 };
 
-// ==================== XEM ĐƠN CỦA TÔI (Customer) ====================
+// ==================== VIEW MY BOOKINGS (Customer) ====================
 // @route GET /api/bookings/my-bookings
 // @access Private (Customer)
 export const getMyBookings = async (req, res) => {
@@ -369,7 +370,7 @@ export const getMyBookings = async (req, res) => {
   }
 };
 
-// ==================== XEM CHI TIẾT ĐƠN ====================
+// ==================== VIEW BOOKING DETAILS ====================
 // @route GET /api/bookings/:id
 // @access Private
 export const getBookingById = async (req, res) => {
@@ -389,9 +390,9 @@ export const getBookingById = async (req, res) => {
       });
 
     if (!booking)
-      return res.status(404).json({ message: "Không tìm thấy đơn đặt xe." });
+      return res.status(404).json({ message: "Booking not found." });
 
-    // Customer chỉ xem đơn của mình
+    // Customer can only view their own bookings
     const customer = await Customer.findOne({ user: req.user._id });
     const staff = await Staff.findOne({ user: req.user._id });
 
@@ -414,7 +415,7 @@ export const getBookingById = async (req, res) => {
   }
 };
 
-// ==================== STAFF CẬP NHẬT ĐƠN ====================
+// ==================== STAFF UPDATE BOOKING ====================
 // @route PUT /api/bookings/:id
 // @access Private (Staff)
 export const updateBooking = async (req, res) => {
@@ -428,9 +429,9 @@ export const updateBooking = async (req, res) => {
 
     const booking = await Booking.findById(req.params.id);
     if (!booking)
-      return res.status(404).json({ message: "Không tìm thấy đơn đặt xe." });
+      return res.status(404).json({ message: "Booking not found." });
 
-    // Chỉ cho sửa khi đơn pending hoặc confirmed
+    // Only allow editing for pending or confirmed status
     if (!["pending", "confirmed"].includes(booking.status)) {
       return res.status(400).json({
         message: `Booking is in status "${booking.status}", cannot edit.`,
@@ -446,7 +447,7 @@ export const updateBooking = async (req, res) => {
       rental_type,
     } = req.body;
 
-    // Cập nhật ngày nếu có
+    // Update dates if provided
     const checkIn = start_date ? new Date(start_date) : booking.start_date;
     const checkOut = end_date ? new Date(end_date) : booking.end_date;
 
@@ -456,10 +457,10 @@ export const updateBooking = async (req, res) => {
         .json({ message: "End date must be after start date." });
     }
 
-    // Đổi xe nếu có
+    // Change vehicle if provided
     let vehicle;
     if (vehicle_id && vehicle_id !== booking.vehicle.toString()) {
-      // Check xe mới có available không
+      // Check if new vehicle is available
       vehicle = await Vehicle.findById(vehicle_id);
       if (!vehicle || vehicle.status !== "available") {
         return res
@@ -467,7 +468,7 @@ export const updateBooking = async (req, res) => {
           .json({ message: "New vehicle does not exist or is not available." });
       }
 
-      // Check trùng lịch xe mới
+      // Check for scheduling conflicts with new vehicle
       const overlapping = await Booking.findOne({
         _id: { $ne: booking._id },
         vehicle: vehicle_id,
@@ -490,7 +491,7 @@ export const updateBooking = async (req, res) => {
     } else {
       vehicle = await Vehicle.findById(booking.vehicle);
 
-      // Check trùng lịch nếu đổi ngày
+      // Check for scheduling conflicts if dates changed
       if (start_date || end_date) {
         const overlapping = await Booking.findOne({
           _id: { $ne: booking._id },
@@ -518,14 +519,14 @@ export const updateBooking = async (req, res) => {
       }
     }
 
-    // Cập nhật fields
+    // Update fields
     if (start_date) booking.start_date = checkIn;
     if (end_date) booking.end_date = checkOut;
     if (pickup_location) booking.pickup_location = pickup_location;
     if (return_location) booking.return_location = return_location;
     if (rental_type) booking.rental_type = rental_type;
 
-    // Tính lại tiền
+    // Recalculate cost
     const diffTime = Math.abs(booking.end_date - booking.start_date);
     const rentalDay = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     const actualDays = rentalDay > 0 ? rentalDay : 1;
@@ -555,7 +556,7 @@ export const updateBooking = async (req, res) => {
   }
 };
 
-// ==================== STAFF XOÁ ĐƠN ====================
+// ==================== STAFF DELETE BOOKING ====================
 // @route DELETE /api/bookings/:id
 // @access Private (Staff)
 export const deleteBooking = async (req, res) => {
@@ -569,9 +570,9 @@ export const deleteBooking = async (req, res) => {
 
     const booking = await Booking.findById(req.params.id);
     if (!booking)
-      return res.status(404).json({ message: "Không tìm thấy đơn đặt xe." });
+      return res.status(404).json({ message: "Booking not found." });
 
-    // Chỉ cho xoá khi đơn đã cancelled hoặc đang pending
+    // Only allow deletion for cancelled or pending status
     if (!["pending", "cancelled"].includes(booking.status)) {
       return res.status(400).json({
         message: `Booking is in status "${booking.status}", cannot delete. Only pending or cancelled bookings can be deleted.`,
@@ -589,7 +590,7 @@ export const deleteBooking = async (req, res) => {
   }
 };
 
-// ==================== STAFF XEM TẤT CẢ ĐƠN ====================
+// ==================== STAFF VIEW ALL BOOKINGS ====================
 // @route GET /api/bookings/all
 // @access Private (Staff)
 export const getAllBookings = async (req, res) => {
@@ -607,7 +608,7 @@ export const getAllBookings = async (req, res) => {
 
     if (is_overdue === "true") {
       matchFilter.end_date = { $lt: todayStart };
-      // Nếu có status trên query thì nọ overwrite đoạn code này của is_overdue (nhưng is_overdue thường fetch với filter là All trạng thái)
+      // If status is provided in query, it won't overwrite this block (is_overdue usually fetches for all statuses)
       if (!status) {
         matchFilter.status = {
           $nin: ["completed", "vehicle_returned", "cancelled", "pending"],
@@ -641,7 +642,7 @@ export const getAllBookings = async (req, res) => {
   }
 };
 
-// ==================== LẤY CÁC NGÀY ĐÃ ĐƯỢC BOOK CỦA XE ====================
+// ==================== GET BOOKED DATES FOR VEHICLE ====================
 // @route GET /api/bookings/vehicle/:vehicleId/booked-dates
 // @access Public
 export const getVehicleBookedDates = async (req, res) => {

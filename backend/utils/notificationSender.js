@@ -1,14 +1,14 @@
 import Notification from "../models/notification.model.js";
 
 /**
- * Tạo và lưu thông báo vào database
+ * Create and save notification to database
  * @param {Object} data
- * @param {string} data.recipientId - ID của User nhận tin
- * @param {string} data.title - Tiêu đề
- * @param {string} data.message - Nội dung
- * @param {string} data.type - Loại thông báo
- * @param {string} [data.relatedId] - ID object liên quan (BookingId, PaymentId...)
- * @param {string} [data.relatedModel] - Tên Model liên quan
+ * @param {string} data.recipientId - ID of recipient User
+ * @param {string} data.title - Title
+ * @param {string} data.message - Content
+ * @param {string} data.type - Notification type
+ * @param {string} [data.relatedId] - ID of related object (BookingId, PaymentId...)
+ * @param {string} [data.relatedModel] - Name of related Model
  */
 export const sendNotification = async ({
   recipientId,
@@ -41,12 +41,12 @@ export const sendNotification = async ({
       event_key: eventKey,
     });
 
-    // TODO: Nếu sau này làm Socket.io (Realtime), sẽ emit sự kiện ở đây
+    // TODO: If Socket.io (Realtime) is added, emit event here
     // io.to(recipientId).emit("new_notification", notification);
 
     return notification;
   } catch (error) {
     console.error("Error creating notification:", error);
-    // Không throw error để tránh làm hỏng luồng chính (booking, payment...)
+    // Do not throw error to avoid breaking main flow (booking, payment...)
   }
 };

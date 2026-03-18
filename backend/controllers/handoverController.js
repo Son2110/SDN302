@@ -67,8 +67,8 @@ export const createDeliveryHandover = async (req, res) => {
     });
 
     // 6. 🟢 UPDATE BOOKING & VEHICLE STATUS
-    // Booking transitions to in-progress
-    booking.updateStatus("in_progress");
+    // Booking transitions to vehicle_delivered (Waiting for customer confirmation)
+    booking.updateStatus("vehicle_delivered");
     await booking.save();
 
     // Vehicle transitions to rented status (so other processes can't use this vehicle)
@@ -183,28 +183,13 @@ export const createReturnHandover = async (req, res) => {
       customer_signature: customer_signature || null,
     });
 
-    // 4.5 CALCULATE CHARGING FEE
-    let charging_fee = 0;
-    if (deliveryHandover && battery_level_percentage != null) {
-      const batteryUsed =
-        deliveryHandover.battery_level_percentage - battery_level_percentage;
-      if (batteryUsed > 0) {
-        // Get vehicle type info to calculate battery capacity & charging cost
-        const vehicleType = await VehicleType.findById(vehicle.vehicle_type);
-        if (vehicleType && vehicleType.battery_capacity_kwh) {
-          const kwhUsed =
-            (batteryUsed / 100) * vehicleType.battery_capacity_kwh;
-          const costPerKwh = vehicleType.charging_cost_per_kwh || 3500; // Default 3,500 VND/kWh
-          charging_fee = Math.round(kwhUsed * costPerKwh);
-        }
-      }
-    }
-
     // 5. CALCULATE FINAL AMOUNT
-    // final_amount = Total rental + Charging fee + Penalty (if any) - Deposit paid
+    // Include penalty in total_amount so it reflects the absolute final cost
     const penalty = penalty_amount || 0;
-    const final_amount =
-      booking.total_amount + charging_fee + penalty - booking.deposit_amount;
+    booking.total_amount += penalty;
+    
+    // final_amount = Current Total - Deposit paid
+    const final_amount = booking.total_amount - booking.deposit_amount;
 
     // 6. UPDATE BOOKING & VEHICLE STATUS
     booking.actual_return_date = new Date(); // Record actual return time
@@ -256,7 +241,6 @@ export const createReturnHandover = async (req, res) => {
         "Vehicle returned successfully! Please guide the customer to pay the remaining balance.",
       data: {
         handover: newHandover,
-        charging_fee,
         penalty_amount: penalty,
         final_amount_to_pay: booking.final_amount,
         booking_status: booking.status,
@@ -477,13 +461,22 @@ export const confirmDeliveryReceipt = async (req, res) => {
 
     await handover.save();
 
+    // If this is a delivery handover, officially transition booking to 'in_progress'
+    if (handover.handover_type === "delivery") {
+      booking.updateStatus("in_progress");
+      await booking.save();
+    }
+
     return res.status(200).json({
       success: true,
       message:
         handover.handover_type === "delivery"
-          ? "Vehicle pickup confirmed successfully."
+          ? "Vehicle pickup confirmed successfully. Your trip has officially started!"
           : "Vehicle return confirmed successfully.",
-      data: handover,
+      data: {
+        handover,
+        booking_status: booking.status
+      },
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });

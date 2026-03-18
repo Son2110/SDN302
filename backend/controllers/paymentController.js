@@ -26,30 +26,30 @@ export const processDepositPayment = async (req, res) => {
     if (!validMethods.includes(payment_method))
       return res
         .status(400)
-        .json({ message: "Phương thức thanh toán không hợp lệ" });
+        .json({ message: "Invalid payment method" });
 
     //2. check auth
     const customer = await Customer.findOne({ user: req.user._id });
     if (!customer)
       return res
         .status(403)
-        .json({ message: "Chỉ khách hàng mới có thể thanh toán" });
+        .json({ message: "Only customers can pay" });
 
     //3. find booking
     const booking = await Booking.findById(booking_id);
     if (!booking)
-      return res.status(404).json({ message: "Không tìm thấy đơn đặt xe" });
+      return res.status(404).json({ message: "Booking not found" });
 
     //4. check customer
     if (booking.customer.toString() !== customer._id.toString())
       return res
         .status(403)
-        .json({ message: "Bạn không có quyền thanh toán cho đơn này" });
+        .json({ message: "You don't have permission to pay for this booking" });
 
     //5. check status booking
     if (booking.status !== "pending")
       return res.status(400).json({
-        message: `Đơn đang ở trạng thái "${booking.status}", không thể thanh toán`,
+        message: `Booking is in "${booking.status}" status, cannot pay`,
       });
 
     //6. Save payment
@@ -71,8 +71,8 @@ export const processDepositPayment = async (req, res) => {
     // Notify Customer
     await sendNotification({
       recipientId: customer.user,
-      title: "Đơn đã được duyệt",
-      message: `Đơn đặt xe #${booking._id.toString().slice(-6)} đã được duyệt sau khi thanh toán cọc thành công.`,
+      title: "Booking approved",
+      message: `Booking #${booking._id.toString().slice(-6)} has been approved after successful deposit payment.`,
       type: "booking_approved",
       relatedId: booking._id,
       relatedModel: "Booking",
@@ -83,8 +83,8 @@ export const processDepositPayment = async (req, res) => {
     for (const staffMember of allStaff) {
       await sendNotification({
         recipientId: staffMember.user,
-        title: "Đơn được xác nhận",
-        message: `Khách hàng đã thanh toán cọc thành công cho đơn đặt xe #${booking._id.toString().slice(-6)}.`,
+        title: "Booking confirmed",
+        message: `Customer has successfully paid the deposit for booking #${booking._id.toString().slice(-6)}.`,
         type: "payment_success",
         relatedId: booking._id,
         relatedModel: "Booking",
@@ -94,7 +94,7 @@ export const processDepositPayment = async (req, res) => {
     //8 response
     res.status(200).json({
       success: true,
-      message: "Thanh toán cọc thành công. Đơn đặt xe đã được xác nhận",
+      message: "Deposit payment successful. Booking confirmed",
       data: {
         payment_id: newPayment._id,
         amount_paid: newPayment.amount,
@@ -108,12 +108,12 @@ export const processDepositPayment = async (req, res) => {
 };
 
 // @route POST /api/payments/final
-// @access Private (Chỉ Customer)
+// @access Private (Customer only)
 export const processFinalPayment = async (req, res) => {
   try {
     const { booking_id, payment_method, transaction_id } = req.body;
 
-    // 0. Validate phương thức thanh toán
+    // 0. Validate payment method
     const validMethods = [
       "cash",
       "card",
@@ -125,34 +125,34 @@ export const processFinalPayment = async (req, res) => {
     if (!validMethods.includes(payment_method))
       return res
         .status(400)
-        .json({ message: "Phương thức thanh toán không hợp lệ." });
+        .json({ message: "Invalid payment method." });
 
-    // 1. Xác thực Customer
+    // 1. Authenticate Customer
     const customer = await Customer.findOne({ user: req.user._id });
     if (!customer)
       return res
         .status(403)
-        .json({ message: "Chỉ khách hàng mới có quyền thanh toán." });
+        .json({ message: "Only customers have permission to pay." });
 
-    // 2. Tìm đơn hàng
+    // 2. Find booking
     const booking = await Booking.findById(booking_id);
     if (!booking)
-      return res.status(404).json({ message: "Không tìm thấy đơn đặt xe." });
+      return res.status(404).json({ message: "Booking not found." });
 
     if (booking.customer.toString() !== customer._id.toString()) {
       return res
         .status(403)
-        .json({ message: "Bạn không có quyền thanh toán cho đơn này." });
+        .json({ message: "You don't have permission to pay for this booking." });
     }
 
-    // 3. Kiểm tra trạng thái: Chỉ thanh toán khi đã trả xe
+    // 3. Check status: Only pay when vehicle is returned
     if (booking.status !== "vehicle_returned") {
       return res.status(400).json({
-        message: `Đơn hàng đang ở trạng thái ${booking.status}. Không thể thanh toán chốt sổ lúc này.`,
+        message: `Booking is in ${booking.status} status. Cannot make final payment at this time.`,
       });
     }
 
-    // 4. Kiểm tra đã thanh toán chốt sổ chưa (tránh trùng)
+    // 4. Check if final payment is already made (avoid duplication)
     const existingFinalPayment = await Payment.findOne({
       booking: booking._id,
       payment_type: "rental_fee",
@@ -160,43 +160,43 @@ export const processFinalPayment = async (req, res) => {
     });
     if (existingFinalPayment) {
       return res.status(400).json({
-        message: "Đơn này đã được thanh toán chốt sổ rồi.",
+        message: "This booking has already been final paid.",
       });
     }
 
-    // 5. Kiểm tra số tiền cần thanh toán
+    // 5. Check payment amount
     if (booking.final_amount <= 0) {
-      // Nếu không còn nợ đồng nào (hoặc được thối lại tiền), tự động đóng đơn luôn
+      // If no debt remains (or refund), automatically close the booking
       booking.updateStatus("completed");
       await booking.save();
       return res.status(200).json({
         success: true,
         message:
-          "Đơn hàng không phát sinh chi phí thêm. Đã tự động đóng hợp đồng!",
+          "The booking has no additional costs. Contract automatically closed!",
         data: { booking_status: booking.status },
       });
     }
 
-    // 5. TẠO HÓA ĐƠN THANH TOÁN PHẦN CÒN LẠI (RENTAL FEE / PENALTY)
+    // 5. CREATE FINAL PAYMENT INVOICE (RENTAL FEE / PENALTY)
     const newPayment = await Payment.create({
       booking: booking._id,
       customer: customer._id,
-      payment_type: "rental_fee", // Thu tiền thuê (và các khoản cộng dồn)
+      payment_type: "rental_fee", // Collect rental fee (and accumulated amounts)
       amount: booking.final_amount,
       payment_method: payment_method,
       status: "completed",
       transaction_id: transaction_id || `FINAL_TXN_${Date.now()}`,
     });
 
-    // 6. ĐÓNG HỢP ĐỒNG (COMPLETED)
+    // 6. CLOSE CONTRACT (COMPLETED)
     booking.updateStatus("completed");
     await booking.save();
 
     // Notify Customer
     await sendNotification({
       recipientId: customer.user,
-      title: "Thanh toán hoàn tất",
-      message: `Đơn hàng #${booking._id.toString().slice(-6)} đã được thanh toán đầy đủ và hoàn tất.`,
+      title: "Payment completed",
+      message: `Booking #${booking._id.toString().slice(-6)} has been fully paid and completed.`,
       type: "payment_success",
       relatedId: newPayment._id,
       relatedModel: "Payment",
@@ -207,15 +207,15 @@ export const processFinalPayment = async (req, res) => {
     for (const staffMember of allStaff) {
       await sendNotification({
         recipientId: staffMember.user,
-        title: "Thanh toán chốt sổ",
-        message: `Đơn hàng #${booking._id.toString().slice(-6)} đã được thanh toán phần còn lại và hoàn tất.`,
+        title: "Final payment",
+        message: `Booking #${booking._id.toString().slice(-6)} has been final paid and completed.`,
         type: "payment_success",
         relatedId: booking._id,
         relatedModel: "Booking",
       });
     }
 
-    // 7. Cộng điểm Loyalty cho khách hàng
+    // 7. Add Loyalty points for customer
     customer.loyalty_points += Math.floor(booking.total_amount / 100000);
     customer.total_bookings += 1;
     customer.total_spent += booking.total_amount;
@@ -223,7 +223,7 @@ export const processFinalPayment = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Thanh toán hoàn tất. Cảm ơn quý khách đã sử dụng dịch vụ!",
+      message: "Payment completed. Thank you for using our service!",
       data: {
         payment_id: newPayment._id,
         amount_paid: newPayment.amount,
@@ -235,7 +235,7 @@ export const processFinalPayment = async (req, res) => {
   }
 };
 
-// ==================== STAFF: XEM TẤT CẢ GIAO DỊCH ====================
+// ==================== STAFF: VIEW ALL TRANSACTIONS ====================
 // @route GET /api/payments
 // @access Private (Staff)
 export const getAllPayments = async (req, res) => {
@@ -262,7 +262,7 @@ export const getAllPayments = async (req, res) => {
       ) {
         return res.status(400).json({
           message:
-            "payment_type không hợp lệ. Chấp nhận: deposit, rental_fee, extension_fee, penalty, refund.",
+            "invalid payment_type. Accepted: deposit, rental_fee, extension_fee, penalty, refund.",
         });
       }
       filter.payment_type = payment_type;
@@ -304,7 +304,7 @@ export const getAllPayments = async (req, res) => {
   }
 };
 
-// ==================== XEM CHI TIẾT 1 GIAO DỊCH ====================
+// ==================== VIEW TRANSACTION DETAILS ====================
 // @route GET /api/payments/:id
 // @access Private (Staff)
 export const getPaymentById = async (req, res) => {
@@ -331,7 +331,7 @@ export const getPaymentById = async (req, res) => {
     if (!payment) {
       return res
         .status(404)
-        .json({ message: "Không tìm thấy giao dịch thanh toán." });
+        .json({ message: "Payment transaction not found." });
     }
 
     res.status(200).json({
@@ -343,7 +343,7 @@ export const getPaymentById = async (req, res) => {
   }
 };
 
-// ==================== CUSTOMER: XEM LỊCH SỪ THANH TOÁN CỦA MÌNH ====================
+// ==================== CUSTOMER: VIEW OWN PAYMENT HISTORY ====================
 // @route GET /api/payments/my-payments
 // @access Private (Customer)
 export const getMyPayments = async (req, res) => {
@@ -352,7 +352,7 @@ export const getMyPayments = async (req, res) => {
     if (!customer) {
       return res
         .status(403)
-        .json({ message: "Chỉ khách hàng mới xem được lịch sử thanh toán." });
+        .json({ message: "Only customers can view payment history." });
     }
 
     const { payment_type, status, page = 1, limit = 10 } = req.query;
@@ -389,20 +389,20 @@ export const getMyPayments = async (req, res) => {
   }
 };
 
-// ==================== XEM GIAO DỊCH THEO ĐƠN ĐẶT XE ====================
+// ==================== VIEW TRANSACTIONS BY BOOKING ====================
 // @route GET /api/payments/booking/:bookingId
-// @access Private (Staff / Customer chủ đơn)
+// @access Private (Staff / Booking owner)
 export const getPaymentsByBooking = async (req, res) => {
   try {
     const { bookingId } = req.params;
 
-    // Tìm booking để kiểm tra quyền
+    // Find booking to check permissions
     const booking = await Booking.findById(bookingId);
     if (!booking) {
-      return res.status(404).json({ message: "Không tìm thấy đơn đặt xe." });
+      return res.status(404).json({ message: "Booking not found." });
     }
 
-    // Kiểm tra quyền: Staff xem bất kỳ, Customer chỉ xem đơn của mình
+    // Check permissions: Staff view any, Customer view own only
     const staff = await Staff.findOne({ user: req.user._id });
     const customer = await Customer.findOne({ user: req.user._id });
 
@@ -413,7 +413,7 @@ export const getPaymentsByBooking = async (req, res) => {
     ) {
       return res
         .status(403)
-        .json({ message: "Bạn không có quyền xem giao dịch của đơn này." });
+        .json({ message: "You don't have permission to view transactions for this booking." });
     }
 
     const payments = await Payment.find({ booking: bookingId })
@@ -427,7 +427,7 @@ export const getPaymentsByBooking = async (req, res) => {
       })
       .sort({ payment_date: 1 });
 
-    // Tóm tắt tài chính của đơn
+    // Financial summary for booking
     const totalPaid = payments
       .filter((p) => p.status === "completed" && p.payment_type !== "refund")
       .reduce((sum, p) => sum + p.amount, 0);
@@ -444,10 +444,7 @@ export const getPaymentsByBooking = async (req, res) => {
         final_amount: booking.final_amount,
         total_paid: totalPaid,
         total_refunded: totalRefunded,
-        remaining:
-          (booking.final_amount || 0) > 0
-            ? booking.final_amount - (totalPaid - booking.deposit_amount)
-            : 0,
+        remaining: Math.max(0, booking.total_amount - (totalPaid - totalRefunded)),
       },
       data: payments,
     });
@@ -541,7 +538,7 @@ export const createVnpayPayment = async (req, res) => {
         req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
         req.socket?.remoteAddress ||
         "127.0.0.1",
-      vnp_Locale: "vn",
+      vnp_Locale: "en",
       vnp_OrderInfo: `Payment ${isDeposit ? "deposit" : "final"} ${booking._id
         .toString()
         .slice(-8)}`,

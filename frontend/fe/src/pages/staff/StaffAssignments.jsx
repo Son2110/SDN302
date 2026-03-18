@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { getAssignments, assignDriver, updateAssignment, deleteAssignment } from "../../services/driverAssignmentApi";
 import AssignmentTable from "../../components/staff/AssignmentTable";
-import { Loader2, Plus, X, Save } from "lucide-react";
+import { Loader2, Plus, X, Save, AlertCircle } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 export default function StaffAssignments() {
   const [assignments, setAssignments] = useState([]);
@@ -14,6 +15,13 @@ export default function StaffAssignments() {
   const [editingId, setEditingId] = useState(null); // null means "Create", string means "Edit"
   const [formData, setFormData] = useState({ booking_id: "", driver_id: "" });
   const [processing, setProcessing] = useState(false);
+  
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    id: null,
+    title: "",
+    message: ""
+  });
 
   const fetchAssignments = async () => {
     try {
@@ -32,12 +40,23 @@ export default function StaffAssignments() {
   }, [statusFilter]);
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to cancel this assignment?")) return;
+    setConfirmModal({
+      isOpen: true,
+      id,
+      title: "Cancel Assignment",
+      message: "Are you sure you want to cancel this driver assignment? This action cannot be undone."
+    });
+  };
+
+  const confirmDelete = async () => {
+    const id = confirmModal.id;
+    setConfirmModal({ ...confirmModal, isOpen: false });
     try {
       await deleteAssignment(id);
+      toast.success("Assignment cancelled successfully");
       fetchAssignments();
     } catch (err) {
-      alert("Error cancelling: " + err.message);
+      toast.error("Error cancelling: " + err.message);
     }
   };
 
@@ -66,10 +85,11 @@ export default function StaffAssignments() {
       } else {
         await assignDriver(formData);
       }
+      toast.success(editingId ? "Assignment updated" : "Driver assigned successfully");
       setIsModalOpen(false);
       fetchAssignments();
     } catch (err) {
-      alert("Error: " + err.message);
+      toast.error("Error: " + err.message);
     } finally {
       setProcessing(false);
     }
@@ -175,6 +195,35 @@ export default function StaffAssignments() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-scaleIn">
+            <div className="p-6 text-center">
+              <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">{confirmModal.title}</h3>
+              <p className="text-sm text-gray-500">{confirmModal.message}</p>
+            </div>
+            <div className="px-6 py-4 bg-gray-50 flex gap-3">
+              <button
+                onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+                className="flex-1 px-4 py-2 border border-gray-200 text-gray-600 rounded-lg font-medium hover:bg-gray-100 transition"
+              >
+                No, Keep it
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition shadow-sm"
+              >
+                Yes, Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

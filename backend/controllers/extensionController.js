@@ -3,81 +3,88 @@ import { Customer, Staff } from "../models/user.model.js";
 import { sendNotification } from "../utils/notificationSender.js";
 
 // @route POST /api/extensions/request
-// @access Private (Chỉ Customer)
+// @access Private (Customer only)
 export const requestExtension = async (req, res) => {
   try {
     const { booking_id, new_end_date } = req.body;
 
-    // 1. Xác thực khách hàng
+    // 1. Authenticate Customer
+    if (req.user.roles && (req.user.roles.includes("admin") || req.user.roles.includes("staff"))) {
+      const roleName = req.user.roles.includes("admin") ? "Admin" : "Staff";
+      return res.status(403).json({
+        message: `${roleName} accounts are not allowed to request extensions.`,
+      });
+    }
+
     const customer = await Customer.findOne({ user: req.user._id });
     if (!customer)
       return res
         .status(403)
-        .json({ message: "Chỉ khách hàng mới có thể yêu cầu gia hạn." });
+        .json({ message: "Only customers can request extensions." });
 
-    // 2. Tìm đơn hàng
+    // 2. Find booking
     const booking = await Booking.findById(booking_id).populate("vehicle");
     if (!booking)
-      return res.status(404).json({ message: "Không tìm thấy đơn đặt xe." });
+      return res.status(404).json({ message: "Booking not found." });
 
-    // Đảm bảo đơn này là của ông khách đang login
+    // Ensure this booking belongs to the logged-in customer
     if (booking.customer.toString() !== customer._id.toString()) {
       return res
         .status(403)
-        .json({ message: "Bạn không có quyền thao tác trên đơn này." });
+        .json({ message: "You don't have permission to modify this booking." });
     }
 
-    // Chỉ cho phép gia hạn khi xe đang được thuê hoặc chuẩn bị lấy
+    // Only allow extension when vehicle is rented or about to be picked up
     if (!["confirmed", "in_progress"].includes(booking.status)) {
       return res.status(400).json({
-        message: `Đơn hàng đang ở trạng thái ${booking.status}, không thể gia hạn.`,
+        message: `Booking is in ${booking.status} status, cannot extend.`,
       });
     }
 
-    // 3. Validate thời gian mới
+    // 3. Validate new time
     const currentEndDate = new Date(booking.end_date);
     const requestedEndDate = new Date(new_end_date);
 
     if (requestedEndDate <= currentEndDate) {
       return res
         .status(400)
-        .json({ message: "Ngày gia hạn phải lớn hơn ngày trả xe hiện tại." });
+        .json({ message: "Extension date must be after current return date." });
     }
 
-    // Tính số ngày gia hạn thêm (Làm tròn lên)
+    // Calculate number of extension days (Round up)
     const diffTime = Math.abs(requestedEndDate - currentEndDate);
     const daysExtended = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    // 4. Tính toán tiền phát sinh:
-    // - Gia hạn trước khi xe đang chạy (status = confirmed) => giá ngày thường
-    // - Gia hạn trong thời gian thuê thực tế (status = in_progress) => +10%
+    // 4. Calculate additional fee:
+    // - Extension before rental (status = confirmed) => normal daily rate
+    // - Extension during actual rental period (status = in_progress) => +10% surcharge
     const dailyRate = booking.vehicle.daily_rate;
     const isDuringRental = booking.status === "in_progress";
     const extensionDailyRate = isDuringRental ? dailyRate * 1.1 : dailyRate;
     let additionalAmount = daysExtended * extensionDailyRate;
 
     if (booking.rental_type === "with_driver") {
-      const DRIVER_FEE_PER_DAY = 500000; // Có thể lấy từ Config DB
+      const DRIVER_FEE_PER_DAY = 500000; // Can be fetched from Config DB
       additionalAmount += daysExtended * DRIVER_FEE_PER_DAY;
     }
 
-    // 5. KIỂM TRA ĐỤNG LỊCH (CRITICAL STEP)
-    // Có ai đó đã đặt chiếc xe này từ ngày trả hiện tại đến ngày gia hạn mới không?
+    // 5. CHECK FOR CONFLICTS (CRITICAL STEP)
+    // Is anyone else booking this vehicle from the current return date to the new extension date?
     const conflictingBooking = await Booking.findOne({
-      _id: { $ne: booking._id }, // Loại trừ chính cái đơn hiện tại ra
+      _id: { $ne: booking._id }, // Exclude the current booking
       vehicle: booking.vehicle._id,
       status: {
         $nin: ["cancelled", "completed", "deposit_lost", "vehicle_returned"],
       },
       $and: [
-        { start_date: { $lt: requestedEndDate } }, // Ngày người khác lấy xe < Ngày khách muốn trả (mới)
-        { end_date: { $gt: currentEndDate } }, // Ngày người khác trả xe > Ngày khách định trả (cũ)
+        { start_date: { $lt: requestedEndDate } }, // Someone else pickups < When customer intends to return (new)
+        { end_date: { $gt: currentEndDate } }, // Someone else returns > When customer intended to return (old)
       ],
     });
 
     const hasConflict = !!conflictingBooking;
 
-    // NẾU CÓ XUNG ĐỘT, TỰ ĐỘNG TỪ CHỐI NGAY LẬP TỨC
+    // IF CONFLICT EXISTS, AUTOMATICALLY REJECT IMMEDIATELY
     if (hasConflict) {
       const extensionRequest = await ExtensionRequest.create({
         booking: booking._id,
@@ -87,19 +94,19 @@ export const requestExtension = async (req, res) => {
         days_extended: daysExtended,
         has_conflict: true,
         additional_amount: additionalAmount,
-        status: "rejected", // Tự động từ chối khi có xung đột
-        reject_reason: "Xe đã có người đặt trong khoảng thời gian gia hạn.",
+        status: "rejected", // Auto-reject when conflict exists
+        reject_reason: "Vehicle has already been booked by another customer during the extension period.",
       });
 
       return res.status(200).json({
         success: false,
         message:
-          "Yêu cầu gia hạn bị từ chối do xe đã có người đặt trong khoảng thời gian này.",
+          "Extension request rejected as vehicle has already been booked during this period.",
         data: extensionRequest,
       });
     }
 
-    // 6. TẠO RECORD YÊU CẦU GIA HẠN (Không có xung đột, gửi cho Staff duyệt)
+    // 6. CREATE EXTENSION REQUEST RECORD (No conflict, send to Staff for approval)
     const extensionRequest = await ExtensionRequest.create({
       booking: booking._id,
       customer: customer._id,
@@ -108,14 +115,14 @@ export const requestExtension = async (req, res) => {
       days_extended: daysExtended,
       has_conflict: false,
       additional_amount: additionalAmount,
-      status: "pending", // Chờ Staff duyệt
+      status: "pending", // Waiting for Staff approval
     });
 
     // Notify Customer about pending request
     await sendNotification({
       recipientId: customer.user,
-      title: "Yêu cầu gia hạn",
-      message: `Yêu cầu gia hạn đến ${new Date(new_end_date).toLocaleDateString()} đang chờ duyệt.`,
+      title: "Extension Request",
+      message: `Your request to extend until ${new Date(new_end_date).toLocaleDateString()} is pending approval.`,
       type: "extension_status",
       relatedId: extensionRequest._id,
       relatedModel: "ExtensionRequest",
@@ -126,8 +133,8 @@ export const requestExtension = async (req, res) => {
     for (const staffMember of allStaff) {
       await sendNotification({
         recipientId: staffMember.user,
-        title: "Yêu cầu gia hạn mới",
-        message: `Khách hàng vừa gửi yêu cầu gia hạn cho đơn #${booking._id.toString().slice(-6)}. Vui lòng kiểm tra và duyệt.`,
+        title: "New Extension Request",
+        message: `Customer has requested an extension for booking #${booking._id.toString().slice(-6)}. Please review and approve.`,
         type: "extension_status",
         relatedId: extensionRequest._id,
         relatedModel: "ExtensionRequest",
@@ -136,7 +143,7 @@ export const requestExtension = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Đã gửi yêu cầu gia hạn. Vui lòng chờ nhân viên xác nhận.",
+      message: "Extension request sent. Please wait for staff confirmation.",
       data: extensionRequest,
     });
   } catch (error) {
@@ -145,71 +152,71 @@ export const requestExtension = async (req, res) => {
 };
 
 // @route PUT /api/extensions/:id/approve
-// @access Private (Chỉ Staff/Admin)
+// @access Private (Staff/Admin only)
 export const approveExtension = async (req, res) => {
   try {
     const extensionId = req.params.id;
 
-    // 1. Xác thực Staff đang xử lý
+    // 1. Authenticate Staff
     const staff = await Staff.findOne({ user: req.user._id });
     if (!staff) {
       return res
         .status(403)
-        .json({ message: "Chỉ nhân viên mới có quyền duyệt gia hạn." });
+        .json({ message: "Only staff members have permission to approve extensions." });
     }
 
-    // 2. Tìm yêu cầu gia hạn
+    // 2. Find extension request
     const extensionRequest = await ExtensionRequest.findById(extensionId);
     if (!extensionRequest) {
       return res
         .status(404)
-        .json({ message: "Không tìm thấy yêu cầu gia hạn này." });
+        .json({ message: "Extension request not found." });
     }
 
     if (extensionRequest.status !== "pending") {
       return res.status(400).json({
-        message: `Yêu cầu này đã được xử lý (Trạng thái: ${extensionRequest.status}).`,
+        message: `This request has already been processed (Status: ${extensionRequest.status}).`,
       });
     }
 
-    // 3. Tìm Booking gốc
+    // 3. Find original Booking
     const booking = await Booking.findById(extensionRequest.booking)
       .populate("customer")
       .populate("vehicle");
     if (!booking) {
       return res
         .status(404)
-        .json({ message: "Không tìm thấy đơn đặt xe gốc." });
+        .json({ message: "Original booking not found." });
     }
 
-    // 3.5. Kiểm tra đơn còn hợp lệ để gia hạn không
+    // 3.5. Check if booking is still valid for extension
     if (!["confirmed", "in_progress"].includes(booking.status)) {
       return res.status(400).json({
-        message: `Đơn đang ở trạng thái "${booking.status}", không thể duyệt gia hạn.`,
+        message: `Booking is in "${booking.status}" status, cannot approve extension.`,
       });
     }
 
-    // 4. CẬP NHẬT BOOKING GỐC (HỢP ĐỒNG)
-    // Kéo dài thời gian trả xe
+    // 4. UPDATE ORIGINAL BOOKING (CONTRACT)
+    // Extend return time
     booking.end_date = extensionRequest.new_end_date;
-    // Cộng thêm tiền thuê phát sinh vào tổng tiền (Khách sẽ trả lúc kết thúc chuyến đi)
+    // Add additional rental fee to total amount (Customer will pay at end of trip)
     booking.total_amount += extensionRequest.additional_amount;
 
     await booking.save();
 
-    // 5. CẬP NHẬT TRẠNG THÁI YÊU CẦU GIA HẠN
+    // 5. UPDATE EXTENSION REQUEST STATUS
     extensionRequest.status = "approved";
-    extensionRequest.processed_by = staff._id; // Lưu lại vết nhân viên duyệt
-    // Note: Trường updatedAt sẽ tự động được Mongoose đổi thành 'processed_at' nhờ cấu hình schema của bạn
+    extensionRequest.processed_by = staff._id; // Keep track of approving staff
+    // Note: updatedAt field will automatically be changed to 'processed_at' if configured in schema
     await extensionRequest.save();
 
     // Notify Customer: Approved
     if (booking.customer && booking.customer.user) {
       await sendNotification({
         recipientId: booking.customer.user,
-        title: "Gia hạn thành công",
-        message: `Yêu cầu gia hạn xe ${booking.vehicle?.license_plate || ""
-          } đến ${new Date(extensionRequest.new_end_date).toLocaleDateString()} đã được chấp thuận.`,
+        title: "Extension Successful",
+        message: `The extension request for vehicle ${booking.vehicle?.license_plate || ""
+          } until ${new Date(extensionRequest.new_end_date).toLocaleDateString()} has been approved.`,
         type: "extension_status",
         relatedId: extensionRequest._id,
         relatedModel: "ExtensionRequest",
@@ -218,7 +225,7 @@ export const approveExtension = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Đã duyệt gia hạn thành công! Hợp đồng đã được cập nhật.",
+      message: "Extension approved successfully! Contract has been updated.",
       data: {
         extension_status: extensionRequest.status,
         new_end_date: booking.end_date,
@@ -231,35 +238,35 @@ export const approveExtension = async (req, res) => {
 };
 
 // @route PUT /api/extensions/:id/reject
-// @access Private (Chỉ Staff)
+// @access Private (Staff only)
 export const rejectExtension = async (req, res) => {
   try {
     const extensionId = req.params.id;
     const { reject_reason } = req.body;
 
-    // 1. Xác thực Staff
+    // 1. Authenticate Staff
     const staff = await Staff.findOne({ user: req.user._id });
     if (!staff) {
       return res
         .status(403)
-        .json({ message: "Chỉ nhân viên mới có quyền từ chối gia hạn." });
+        .json({ message: "Only staff members have permission to reject extensions." });
     }
 
-    // 2. Tìm yêu cầu gia hạn
+    // 2. Find extension request
     const extensionRequest = await ExtensionRequest.findById(extensionId);
     if (!extensionRequest) {
       return res
         .status(404)
-        .json({ message: "Không tìm thấy yêu cầu gia hạn này." });
+        .json({ message: "Extension request not found." });
     }
 
     if (extensionRequest.status !== "pending") {
       return res.status(400).json({
-        message: `Yêu cầu này đã được xử lý (Trạng thái: ${extensionRequest.status}).`,
+        message: `This request has already been processed (Status: ${extensionRequest.status}).`,
       });
     }
 
-    // 3. Cập nhật trạng thái
+    // 3. Update status
     extensionRequest.status = "rejected";
     extensionRequest.processed_by = staff._id;
     if (reject_reason) {
@@ -275,9 +282,9 @@ export const rejectExtension = async (req, res) => {
     if (booking?.customer?.user) {
       await sendNotification({
         recipientId: booking.customer.user._id || booking.customer.user,
-        title: "Gia hạn bị từ chối",
-        message: `Yêu cầu gia hạn xe ${booking.vehicle?.license_plate || ""
-          } bị từ chối. Lý do: ${reject_reason || "Không có lý do"}`,
+        title: "Extension Rejected",
+        message: `The extension request for vehicle ${booking.vehicle?.license_plate || ""
+          } was rejected. Reason: ${reject_reason || "Not specified"}`,
         type: "extension_status",
         relatedId: extensionRequest._id,
         relatedModel: "ExtensionRequest",
@@ -286,7 +293,7 @@ export const rejectExtension = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Đã từ chối yêu cầu gia hạn.",
+      message: "Extension request rejected.",
       data: {
         extension_status: extensionRequest.status,
       },
@@ -296,7 +303,7 @@ export const rejectExtension = async (req, res) => {
   }
 };
 
-// ==================== STAFF: XEM TẤT CẢ YÊU CẦU GIA HẠN ====================
+// ==================== STAFF: VIEW ALL EXTENSION REQUESTS ====================
 // @route GET /api/extensions
 // @access Private (Staff)
 export const getAllExtensions = async (req, res) => {
@@ -312,7 +319,7 @@ export const getAllExtensions = async (req, res) => {
       ) {
         return res.status(400).json({
           message:
-            "status không hợp lệ. Chấp nhận: pending, approved, rejected, alternative_offered.",
+            "invalid status. Accepted: pending, approved, rejected, alternative_offered.",
         });
       }
       filter.status = status;
@@ -355,7 +362,7 @@ export const getAllExtensions = async (req, res) => {
   }
 };
 
-// ==================== XEM CHI TIẾT 1 YÊU CẦU GIA HẠN ====================
+// ==================== VIEW EXTENSION REQUEST DETAILS ====================
 // @route GET /api/extensions/:id
 // @access Private (Staff / Customer chủ yêu cầu)
 export const getExtensionById = async (req, res) => {
@@ -391,10 +398,10 @@ export const getExtensionById = async (req, res) => {
     if (!extension) {
       return res
         .status(404)
-        .json({ message: "Không tìm thấy yêu cầu gia hạn." });
+        .json({ message: "Extension request not found." });
     }
 
-    // Customer chỉ xem yêu cầu của mình
+    // Customer can only view their own requests
     const customer = await Customer.findOne({ user: req.user._id });
     const staff = await Staff.findOne({ user: req.user._id });
 
@@ -405,7 +412,7 @@ export const getExtensionById = async (req, res) => {
     ) {
       return res
         .status(403)
-        .json({ message: "Bạn không có quyền xem yêu cầu gia hạn này." });
+        .json({ message: "You don't have permission to view this extension request." });
     }
 
     res.status(200).json({
@@ -417,7 +424,7 @@ export const getExtensionById = async (req, res) => {
   }
 };
 
-// ==================== CUSTOMER: XEM YÊU CẦU GIA HẠN CỦA MÌNH ====================
+// ==================== CUSTOMER: VIEW OWN EXTENSION REQUESTS ====================
 // @route GET /api/extensions/my-requests
 // @access Private (Customer)
 export const getMyExtensions = async (req, res) => {
@@ -426,7 +433,7 @@ export const getMyExtensions = async (req, res) => {
     if (!customer) {
       return res
         .status(403)
-        .json({ message: "Chỉ khách hàng mới xem được yêu cầu gia hạn." });
+        .json({ message: "Only customers can view extension requests." });
     }
 
     const { status, page = 1, limit = 10 } = req.query;

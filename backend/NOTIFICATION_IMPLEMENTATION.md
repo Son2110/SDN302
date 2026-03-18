@@ -1,9 +1,9 @@
 # Car Rental Notification System Implementation
 
 ## 1. Overview
-Hệ thống thông báo (Notification System) được xây dựng để cập nhật trạng thái thời gian thực (hoặc gần thời gian thực) cho người dùng trong suốt vòng đời thuê xe (Booking Lifecycle).
+The Notification System is built to provide real-time (or near real-time) status updates to users throughout the car rental lifecycle (Booking Lifecycle).
 
-Hệ thống hiện tại sử dụng **Polling** (Client gọi API) để lấy thông báo mới. Cấu trúc đã sẵn sàng để tích hợp **Socket.io** cho Realtime sau này.
+The current system uses **Polling** (Client calls API) to fetch new notifications. The structure is ready to integrate **Socket.io** for real-time updates in the future.
 
 ---
 
@@ -13,23 +13,23 @@ File: `backend/models/notification.model.js`
 
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| `recipient` | ObjectId (User) | Người nhận thông báo (Customer, Driver, Staff). |
-| `title` | String | Tiêu đề ngắn gọn của thông báo. |
-| `message` | String | Nội dung chi tiết. |
-| `type` | String (Enum) | Loại thông báo để Client dễ dàng filter hoặc hiển thị icon phù hợp. |
-| `related_id` | ObjectId | ID của đối tượng liên quan (BookingID, PaymentID...). |
-| `related_model` | String | Tên Model liên quan ("Booking", "Payment"...). |
-| `is_read` | Boolean | Trạng thái đã đọc hay chưa. |
-| `createdAt` | DateTime | Thời gian tạo. |
+| `recipient` | ObjectId (User) | Notification recipient (Customer, Driver, Staff). |
+| `title` | String | Brief title of the notification. |
+| `message` | String | Detailed content. |
+| `type` | String (Enum) | Notification type for easy Client filtering or icon display. |
+| `related_id` | ObjectId | ID of the related object (BookingID, PaymentID...). |
+| `related_model` | String | Name of the related Model ("Booking", "Payment"...). |
+| `is_read` | Boolean | Read status. |
+| `createdAt` | DateTime | Creation time. |
 
 ### Supported Notification Types:
-- `booking_created`: Khi khách hàng tạo đơn mới.
-- `payment_success`: Khi thanh toán (cọc/trả hết) thành công.
-- `driver_assigned`: Khi tài xế được phân công hoặc tài xế nhận chuyến.
-- `vehicle_handover`: Khi giao xe hoặc nhận xe trả.
-- `extension_status`: Liên quan đến yêu cầu gia hạn (gửi yêu cầu, duyệt, từ chối).
-- `vehicle_return`: Khi hoàn tất trả xe.
-- `general`: Thông báo chung.
+- `booking_created`: When customer creates a new booking.
+- `payment_success`: When payment (deposit/final) is successful.
+- `driver_assigned`: When driver is assigned or accepts a trip.
+- `vehicle_handover`: When vehicle is delivered or returned.
+- `extension_status`: Related to extension requests (sent, approved, rejected).
+- `vehicle_return`: When vehicle return is completed.
+- `general`: General notifications.
 
 ---
 
@@ -37,15 +37,15 @@ File: `backend/models/notification.model.js`
 
 File: `backend/utils/notificationSender.js`
 
-Hàm tiện ích dùng chung cho toàn bộ backend để tạo thông báo. Hàm này được thiết kế để **không throw error** làm gián đoạn luồng chính (như thanh toán, đặt xe).
+A utility function shared across the backend to create notifications. This function is designed to **not throw errors** to avoid interrupting the main flow (e.g., payment, booking).
 
 ```javascript
 import { sendNotification } from "../utils/notificationSender.js";
 
 await sendNotification({
   recipientId: user._id,
-  title: "Tiêu đề",
-  message: "Nội dung thông báo",
+  title: "Title",
+  message: "Notification content",
   type: "general",
   relatedId: relatedObject._id,
   relatedModel: "RelatedModelName" 
@@ -54,49 +54,49 @@ await sendNotification({
 
 ---
 
-## 4. Implemented Triggers (Các sự kiện gửi thông báo)
+## 4. Implemented Triggers (Events that send notifications)
 
-Hệ thống đã tích hợp thông báo vào các luồng nghiệp vụ sau:
+The system has integrated notifications into the following business flows:
 
 ### A. Booking Flow (`bookingController.js`)
-- **Sự kiện**: Khách hàng tạo Booking thành công.
-- **Người nhận**: Khách hàng (Customer).
-- **Loại**: `booking_created`.
+- **Event**: Customer creates Booking successfully.
+- **Recipient**: Customer.
+- **Type**: `booking_created`.
 
 ### B. Payment Flow (`paymentController.js`)
-- **Sự kiện 1**: Thanh toán cọc (Deposit) thành công.
-- **Sự kiện 2**: Thanh toán phần còn lại (Final Payment) thành công.
-- **Người nhận**: Khách hàng.
-- **Loại**: `payment_success`.
+- **Event 1**: Deposit payment successful.
+- **Event 2**: Final Payment successful.
+- **Recipient**: Customer.
+- **Type**: `payment_success`.
 
 ### C. Driver Assignment (`driverAssignmentController.js`)
-- **Sự kiện 1 (Staff -> Driver)**: Staff phân công chuyến cho tài xế.
-  - **Người nhận**: Tài xế (Driver).
-  - **Thông điệp**: "Bạn được phân công cho đơn #..."
-- **Sự kiện 2 (Driver -> Customer)**: Tài xế chấp nhận (Accept) chuyến đi.
-  - **Người nhận**: Khách hàng.
-  - **Thông điệp**: "Tài xế đã nhận chuyến..."
-  - **Loại**: `driver_assigned`.
+- **Event 1 (Staff -> Driver)**: Staff assigns a trip to a driver.
+  - **Recipient**: Driver.
+  - **Message**: "You have been assigned to booking #..."
+- **Event 2 (Driver -> Customer)**: Driver accepts the trip.
+  - **Recipient**: Customer.
+  - **Message**: "Driver has accepted the trip..."
+  - **Type**: `driver_assigned`.
 
 ### D. Vehicle Handover (`handoverController.js`)
-- **Sự kiện 1 (Delivery)**: Tài xế/Staff giao xe cho khách (status: `in_progress`).
-  - **Người nhận**: Khách hàng.
-  - **Thông điệp**: "Xe đã được bàn giao. Chúc quý khách thượng lộ bình an!"
-- **Sự kiện 2 (Return)**: Khách trả xe thành công (status: `completed`).
-  - **Người nhận**: Khách hàng.
-  - **Thông điệp**: "Cảm ơn quý khách đã sử dụng dịch vụ..."
-  - **Loại**: `vehicle_handover` / `vehicle_return`.
+- **Event 1 (Delivery)**: Driver/Staff delivers vehicle to customer (status: `in_progress`).
+  - **Recipient**: Customer.
+  - **Message**: "Vehicle has been handed over. Have a safe trip!"
+- **Event 2 (Return)**: Customer successfully returns vehicle (status: `completed`).
+  - **Recipient**: Customer.
+  - **Message**: "Thank you for using our service..."
+  - **Type**: `vehicle_handover` / `vehicle_return`.
 
 ### E. Extension Flow (`extensionController.js`)
-- **Sự kiện 1 (Request)**: Khách gửi yêu cầu gia hạn.
-  - **Người nhận**: Khách hàng (xác nhận yêu cầu đang chờ duyệt).
-- **Sự kiện 2 (Approve)**: Staff duyệt yêu cầu.
-  - **Người nhận**: Khách hàng.
-  - **Thông điệp**: "Yêu cầu gia hạn ... đã được chấp thuận."
-- **Sự kiện 3 (Reject)**: Staff từ chối yêu cầu.
-  - **Người nhận**: Khách hàng.
-  - **Thông điệp**: Kèm lý do từ chối.
-  - **Loại**: `extension_status`.
+- **Event 1 (Request)**: Customer sends extension request.
+  - **Recipient**: Customer (confirmation that request is pending).
+- **Event 2 (Approve)**: Staff approves request.
+  - **Recipient**: Customer.
+  - **Message**: "Extension request ... has been approved."
+- **Event 3 (Reject)**: Staff rejects request.
+  - **Recipient**: Customer.
+  - **Message**: Includes rejection reason.
+  - **Type**: `extension_status`.
 
 ---
 
@@ -106,14 +106,14 @@ File: `backend/routes/notificationRoutes.js` -> `backend/controllers/notificatio
 
 | Method | Endpoint | Access | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/notifications` | Private (All Users) | Lấy danh sách thông báo của người dùng hiện tại (sắp xếp mới nhất). |
-| `PUT` | `/api/notifications/:id/read` | Private (All Users) | Đánh dấu một thông báo là "đã đọc". |
-| `PUT` | `/api/notifications/read-all` | Private (All Users) | Đánh dấu **tất cả** thông báo là "đã đọc". |
-| `DELETE` | `/api/notifications/:id` | Private (All Users) | Xóa một thông báo. |
+| `GET` | `/api/notifications` | Private (All Users) | Get the list of notifications for the current user (sorted by latest). |
+| `PUT` | `/api/notifications/:id/read` | Private (All Users) | Mark a notification as "read". |
+| `PUT` | `/api/notifications/read-all` | Private (All Users) | Mark **all** notifications as "read". |
+| `DELETE` | `/api/notifications/:id` | Private (All Users) | Delete a notification. |
 
 ---
 
 ## 6. Future Improvements
-- **Realtime (Socket.io)**: Cập nhật `sendNotification` để emit event socket ngay khi tạo record, giúp client hiển thị popup ngay lập tức mà không cần reload.
-- **Push Notifications (FCM)**: Tích hợp Firebase Cloud Messaging cho Mobile App.
-- **Email Integration**: Gửi email song song cho các thông báo quan trọng (Booking mới, Hóa đơn).
+- **Real-time (Socket.io)**: Update `sendNotification` to emit a socket event immediately upon record creation, helping the client display popups instantly without reloading.
+- **Push Notifications (FCM)**: Integrate Firebase Cloud Messaging for the Mobile App.
+- **Email Integration**: Send parallel emails for critical notifications (New Booking, Invoices).
