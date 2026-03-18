@@ -15,6 +15,7 @@ import {
   Settings,
 } from "lucide-react";
 import * as vehicleApi from "../../services/vehicleApi";
+import { toast } from "react-hot-toast";
 
 const StaffVehicles = () => {
   const [vehicles, setVehicles] = useState([]);
@@ -198,7 +199,7 @@ const StaffVehicles = () => {
       resetForm();
       loadData();
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     }
   };
 
@@ -270,6 +271,7 @@ const StaffVehicles = () => {
   const handleDelete = async (id) => {
     try {
       await vehicleApi.deleteVehicle(id);
+      toast.success("Vehicle deleted successfully");
       loadData();
     } catch (err) {
       openErrorModal("Delete failed", err.message);
@@ -286,7 +288,8 @@ const StaffVehicles = () => {
     }
 
     if (type === "status" && nextStatus) {
-      await handleStatusChange(vehicleId, nextStatus);
+      await handleStatusChange(id || vehicleId, nextStatus);
+      toast.success("Vehicle status updated");
     }
   };
 
@@ -325,8 +328,9 @@ const StaffVehicles = () => {
         image_url: "",
       });
       loadData();
+      toast.success("Vehicle type added successfully");
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     } finally {
       setTypeSubmitting(false);
     }
