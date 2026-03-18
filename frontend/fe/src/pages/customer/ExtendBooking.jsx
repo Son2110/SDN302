@@ -25,6 +25,46 @@ const ExtendBooking = () => {
   const [newEndDate, setNewEndDate] = useState(null);
   const [bookedDates, setBookedDates] = useState([]);
 
+  const normalizeDate = (date) => {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+
+  const getMinExtendDate = () => {
+    if (!booking) return null;
+    const min = normalizeDate(booking.end_date);
+    min.setDate(min.getDate() + 1);
+    return min;
+  };
+
+  const getMaxExtendDate = () => {
+    if (!booking) return null;
+
+    const currentEnd = normalizeDate(booking.end_date);
+    const maxByPolicy = new Date(currentEnd);
+    maxByPolicy.setDate(maxByPolicy.getDate() + 30);
+
+    const nextBookedStart = bookedDates
+      .map((range) => normalizeDate(range.start))
+      .filter((startDate) => startDate > currentEnd)
+      .sort((a, b) => a - b)[0];
+
+    if (!nextBookedStart) return maxByPolicy;
+
+    const maxByConflict = new Date(nextBookedStart);
+    maxByConflict.setDate(maxByConflict.getDate() - 1);
+
+    return maxByConflict < maxByPolicy ? maxByConflict : maxByPolicy;
+  };
+
+  const hasAvailableExtensionDate = () => {
+    const minDate = getMinExtendDate();
+    const maxDate = getMaxExtendDate();
+    if (!minDate || !maxDate) return false;
+    return maxDate >= minDate;
+  };
+
   useEffect(() => {
     const token = getToken();
     if (!token) {
@@ -58,23 +98,25 @@ const ExtendBooking = () => {
   };
 
   const isDateBooked = (date) => {
-    const checkDate = new Date(date);
-    checkDate.setHours(0, 0, 0, 0);
+    const checkDate = normalizeDate(date);
 
     return bookedDates.some((range) => {
-      const start = new Date(range.start);
-      const end = new Date(range.end);
-      start.setHours(0, 0, 0, 0);
-      end.setHours(0, 0, 0, 0);
-
-      // Exclude current booking's dates
-      if (booking && range.booking_id === booking._id) {
-        return false;
-      }
+      const start = normalizeDate(range.start);
+      const end = normalizeDate(range.end);
 
       return checkDate >= start && checkDate <= end;
     });
   };
+
+  useEffect(() => {
+    if (!newEndDate) return;
+    const maxDate = getMaxExtendDate();
+    const minDate = getMinExtendDate();
+    const selected = normalizeDate(newEndDate);
+    if (!maxDate || !minDate || selected < minDate || selected > maxDate) {
+      setNewEndDate(null);
+    }
+  }, [booking, bookedDates]);
 
   const calculateExtensionDays = () => {
     if (!booking || !newEndDate) return 0;
@@ -86,6 +128,24 @@ const ExtendBooking = () => {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
+  const hasDriverService = () => {
+    if (!booking) return false;
+
+    if (booking.rental_type === "with_driver" || !!booking.driver) {
+      return true;
+    }
+
+    const start = new Date(booking.start_date);
+    const end = new Date(booking.end_date);
+    const rentalDays = Math.max(
+      1,
+      Math.ceil((end - start) / (1000 * 60 * 60 * 24)),
+    );
+    const selfDriveTotal = rentalDays * (booking.vehicle?.daily_rate || 0);
+
+    return booking.total_amount >= selfDriveTotal + rentalDays * 500000;
+  };
+
   const calculateExtensionCost = () => {
     const days = calculateExtensionDays();
     if (days <= 0 || !booking) return 0;
@@ -95,10 +155,13 @@ const ExtendBooking = () => {
     const extensionDailyRate = isDuringRental ? dailyRate * 1.1 : dailyRate;
     let cost = days * extensionDailyRate;
 
-    // Add driver fee if with_driver
-    if (booking.rental_type === "with_driver") {
+    // Add driver fee if this booking includes driver service
+    if (hasDriverService()) {
       const DRIVER_FEE_PER_DAY = 500000;
-      cost += days * DRIVER_FEE_PER_DAY;
+      const extensionDriverDailyRate = isDuringRental
+        ? DRIVER_FEE_PER_DAY * 1.1
+        : DRIVER_FEE_PER_DAY;
+      cost += days * extensionDriverDailyRate;
     }
 
     return cost;
@@ -131,7 +194,10 @@ const ExtendBooking = () => {
 
     try {
       setSubmitting(true);
-      const formattedDate = newEndDate.toISOString().split("T")[0];
+      const year = newEndDate.getFullYear();
+      const month = String(newEndDate.getMonth() + 1).padStart(2, "0");
+      const day = String(newEndDate.getDate()).padStart(2, "0");
+      const formattedDate = `${year}-${month}-${day}`;
 
       const response = await requestExtension(booking._id, formattedDate);
 
@@ -255,22 +321,32 @@ const ExtendBooking = () => {
               <DatePicker
                 selected={newEndDate}
                 onChange={(date) => setNewEndDate(date)}
-                minDate={
-                  new Date(new Date(booking.end_date).getTime() + 86400000)
-                } // Next day after current end
-                maxDate={
-                  new Date(new Date(booking.end_date).getTime() + 30 * 86400000)
-                } // Max 30 days
-                filterDate={(date) => !isDateBooked(date)}
+                minDate={getMinExtendDate()}
+                maxDate={getMaxExtendDate()}
+                filterDate={(date) => {
+                  if (!hasAvailableExtensionDate()) return false;
+                  const checkDate = normalizeDate(date);
+                  const minDate = getMinExtendDate();
+                  const maxDate = getMaxExtendDate();
+                  if (!minDate || !maxDate) return false;
+                  if (checkDate < minDate || checkDate > maxDate) return false;
+                  return !isDateBooked(checkDate);
+                }}
                 dateFormat="dd/MM/yyyy"
                 placeholderText="Select date..."
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
                 calendarClassName="shadow-xl"
+                disabled={!hasAvailableExtensionDate()}
               />
-              <p className="text-xs text-gray-500 mt-2">
-                * You can extend up to 30 days. Blocked dates are already
-                booked by other customers.
-              </p>
+              {hasAvailableExtensionDate() ? (
+                <p className="text-xs text-gray-500 mt-2">
+                  * You can extend up to 30 days. Dates after the nearest booking are blocked.
+                </p>
+              ) : (
+                <p className="text-xs text-red-600 mt-2">
+                  * This vehicle is already booked immediately after your current end date, so extension is not available.
+                </p>
+              )}
             </div>
 
             {/* Extension Summary */}
@@ -317,7 +393,7 @@ const ExtendBooking = () => {
                       * Standard daily rate is applied because the trip has not started yet.
                     </p>
                   )}
-                  {booking.rental_type === "with_driver" && (
+                  {hasDriverService() && (
                     <p className="text-xs text-gray-600 italic">
                       * Includes driver fee (500,000 VND/day).
                     </p>

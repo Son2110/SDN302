@@ -10,6 +10,20 @@ import {
   getConfig,
 } from "../utils/vnpay.js";
 
+const sendCompletedBookingReviewNotification = async ({ recipientId, bookingId }) => {
+  if (!recipientId || !bookingId) return;
+
+  await sendNotification({
+    recipientId,
+    title: "Trip completed",
+    message: `Booking #${bookingId.toString().slice(-6)} is completed. Tap to view details and submit your trip/driver review.`,
+    type: "payment_success",
+    relatedId: bookingId,
+    relatedModel: "Booking",
+    eventKey: `booking_completed:${bookingId.toString()}`,
+  });
+};
+
 export const processDepositPayment = async (req, res) => {
   try {
     const { booking_id, payment_method, transaction_id } = req.body;
@@ -169,6 +183,12 @@ export const processFinalPayment = async (req, res) => {
       // If no debt remains (or refund), automatically close the booking
       booking.updateStatus("completed");
       await booking.save();
+
+      await sendCompletedBookingReviewNotification({
+        recipientId: customer.user,
+        bookingId: booking._id,
+      });
+
       return res.status(200).json({
         success: true,
         message:
@@ -193,13 +213,9 @@ export const processFinalPayment = async (req, res) => {
     await booking.save();
 
     // Notify Customer
-    await sendNotification({
+    await sendCompletedBookingReviewNotification({
       recipientId: customer.user,
-      title: "Payment completed",
-      message: `Booking #${booking._id.toString().slice(-6)} has been fully paid and completed.`,
-      type: "payment_success",
-      relatedId: newPayment._id,
-      relatedModel: "Payment",
+      bookingId: booking._id,
     });
 
     // Notify all Staff
@@ -463,7 +479,7 @@ export const getPaymentsByBooking = async (req, res) => {
  */
 export const createVnpayPayment = async (req, res) => {
   try {
-    const { booking_id, payment_type } = req.body;
+    const { booking_id, payment_type, bank_code } = req.body;
 
     if (!["deposit", "rental_fee"].includes(payment_type)) {
       return res
@@ -498,6 +514,13 @@ export const createVnpayPayment = async (req, res) => {
       return res
         .status(400)
         .json({ message: "Final payment is only allowed after return" });
+    }
+
+    const supportedBankCodes = ["VNPAYQR", "VNBANK"];
+    if (bank_code && !supportedBankCodes.includes(bank_code)) {
+      return res.status(400).json({
+        message: "Invalid bank_code. Supported values: VNPAYQR, VNBANK",
+      });
     }
 
     let payment = await Payment.findOne({
@@ -545,6 +568,7 @@ export const createVnpayPayment = async (req, res) => {
       vnp_OrderType: "other",
       vnp_ReturnUrl: returnUrl,
       vnp_TxnRef: payment._id.toString(),
+      ...(bank_code ? { vnp_BankCode: bank_code } : {}),
     };
 
     const paymentUrl = buildVnpayUrl(vnpParams);
@@ -601,6 +625,12 @@ export const vnpayReturn = async (req, res) => {
           } else if (payment.payment_type === "rental_fee") {
             booking.updateStatus("completed");
             await booking.save();
+
+            const bookingCustomer = await Customer.findById(booking.customer).select("user");
+            await sendCompletedBookingReviewNotification({
+              recipientId: bookingCustomer?.user,
+              bookingId: booking._id,
+            });
           }
         }
       } else {
@@ -658,6 +688,12 @@ export const vnpayIpn = async (req, res) => {
         } else if (payment.payment_type === "rental_fee") {
           booking.updateStatus("completed");
           await booking.save();
+
+          const bookingCustomer = await Customer.findById(booking.customer).select("user");
+          await sendCompletedBookingReviewNotification({
+            recipientId: bookingCustomer?.user,
+            bookingId: booking._id,
+          });
         }
       }
     } else {
@@ -732,6 +768,11 @@ export const verifyVnpayPayment = async (req, res) => {
           } else if (payment.payment_type === "rental_fee") {
             booking.updateStatus("completed");
             await booking.save();
+
+            await sendCompletedBookingReviewNotification({
+              recipientId: customer.user,
+              bookingId: booking._id,
+            });
           }
         }
       } else {

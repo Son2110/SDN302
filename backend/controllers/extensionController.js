@@ -63,9 +63,25 @@ export const requestExtension = async (req, res) => {
     const extensionDailyRate = isDuringRental ? dailyRate * 1.1 : dailyRate;
     let additionalAmount = daysExtended * extensionDailyRate;
 
-    if (booking.rental_type === "with_driver") {
+    const MS_PER_DAY = 1000 * 60 * 60 * 24;
+    const originalRentalDays = Math.max(
+      1,
+      Math.ceil(
+        (new Date(booking.end_date) - new Date(booking.start_date)) / MS_PER_DAY,
+      ),
+    );
+    const expectedSelfDriveTotal = originalRentalDays * dailyRate;
+    const hasDriverService =
+      booking.rental_type === "with_driver" ||
+      !!booking.driver ||
+      booking.total_amount >= expectedSelfDriveTotal + originalRentalDays * 500000;
+
+    if (hasDriverService) {
       const DRIVER_FEE_PER_DAY = 500000; // Can be fetched from Config DB
-      additionalAmount += daysExtended * DRIVER_FEE_PER_DAY;
+      const extensionDriverDailyRate = isDuringRental
+        ? DRIVER_FEE_PER_DAY * 1.1
+        : DRIVER_FEE_PER_DAY;
+      additionalAmount += daysExtended * extensionDriverDailyRate;
     }
 
     // 5. CHECK FOR CONFLICTS (CRITICAL STEP)

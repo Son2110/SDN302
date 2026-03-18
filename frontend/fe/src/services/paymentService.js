@@ -246,9 +246,15 @@ export const processPayment = async (id, transactionId) => {
  * @param {string} bookingId - Booking ID
  * @param {string} paymentType - 'deposit' | 'rental_fee'
  * @param {string} [returnUrl] - Frontend return URL (backend uses its own redirect URL)
+ * @param {{ bankCode?: string }} [options] - Optional VNPay channel options
  * @returns {Promise<{ paymentUrl: string, payment_id: string, txn_ref: string }>}
  */
-export const createVnpayPayment = async (bookingId, paymentType, returnUrl) => {
+export const createVnpayPayment = async (
+  bookingId,
+  paymentType,
+  returnUrl,
+  options = {},
+) => {
   const token = getToken();
   const response = await fetch(`${API_URL}/payments/vnpay/create`, {
     method: 'POST',
@@ -256,7 +262,11 @@ export const createVnpayPayment = async (bookingId, paymentType, returnUrl) => {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ booking_id: bookingId, payment_type: paymentType }),
+    body: JSON.stringify({
+      booking_id: bookingId,
+      payment_type: paymentType,
+      ...(options?.bankCode ? { bank_code: options.bankCode } : {}),
+    }),
   });
   const data = await response.json();
   if (!response.ok) throw new Error(data.message || 'Failed to create VNPay payment');
