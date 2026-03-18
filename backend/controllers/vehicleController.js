@@ -7,6 +7,8 @@ import { Booking } from "../models/booking.model.js";
 export const getAllVehicles = async (req, res) => {
   try {
     const { status, brand, page = 1, limit = 20 } = req.query;
+    const pageNumber = Number(page) || 1;
+    const limitNumber = Number(limit) || 20;
 
     const filter = {};
     if (status) filter.status = status;
@@ -14,9 +16,10 @@ export const getAllVehicles = async (req, res) => {
 
     const vehicles = await Vehicle.find(filter)
       .populate("vehicle_type")
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(Number(limit));
+      // Vehicle schema currently has no timestamps, so sort by _id for newest-first.
+      .sort({ _id: -1 })
+      .skip((pageNumber - 1) * limitNumber)
+      .limit(limitNumber);
 
     const total = await Vehicle.countDocuments(filter);
 
@@ -24,8 +27,8 @@ export const getAllVehicles = async (req, res) => {
       success: true,
       count: vehicles.length,
       total,
-      page: Number(page),
-      totalPages: Math.ceil(total / limit),
+      page: pageNumber,
+      totalPages: Math.ceil(total / limitNumber),
       data: vehicles,
     });
   } catch (error) {
@@ -82,6 +85,10 @@ export const createVehicle = async (req, res) => {
         ? req.body.image_urls
         : [req.body.image_urls];
       image_urls = [...image_urls, ...bodyImages];
+    }
+    // 3. Backward compatibility: accept a single `image_url` field as well
+    if (req.body.image_url) {
+      image_urls = [...image_urls, req.body.image_url];
     }
 
     // Validate vehicle_type tồn tại
@@ -170,8 +177,15 @@ export const updateVehicle = async (req, res) => {
         ? req.body.image_urls
         : [req.body.image_urls];
     }
+    if (req.body.image_url) {
+      bodyImages = [...bodyImages, req.body.image_url];
+    }
     // Only update if there's any change requested (upload or body urls provided)
-    if ((req.files && req.files.length > 0) || req.body.image_urls) {
+    if (
+      (req.files && req.files.length > 0) ||
+      req.body.image_urls ||
+      req.body.image_url
+    ) {
       finalImageUrls = [...bodyImages, ...uploadedImages];
     } else if (req.body.image_urls === "") {
       // Case: user wants to clear all images? Or just didn't send anything?
