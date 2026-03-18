@@ -444,10 +444,7 @@ export const getPaymentsByBooking = async (req, res) => {
         final_amount: booking.final_amount,
         total_paid: totalPaid,
         total_refunded: totalRefunded,
-        remaining:
-          (booking.final_amount || 0) > 0
-            ? booking.final_amount - (totalPaid - booking.deposit_amount)
-            : 0,
+        remaining: Math.max(0, booking.total_amount - (totalPaid - totalRefunded)),
       },
       data: payments,
     });

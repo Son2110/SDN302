@@ -475,7 +475,9 @@ export default function StaffBookingDetail() {
   const canDelete =
     booking.status === "pending" || booking.status === "cancelled";
   const canDelivery =
-    booking.status === "confirmed" && !handovers?.delivery;
+    booking.status === "confirmed" &&
+    !handovers?.delivery &&
+    (booking.rental_type !== "with_driver" || booking.driver);
   const canReturn =
     booking.status === "in_progress" &&
     handovers?.delivery &&
@@ -590,12 +592,6 @@ export default function StaffBookingDetail() {
               </div>
             </div>
             <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Charging Fee:</span>
-                <span className="font-semibold text-gray-900">
-                  {formatCurrency(returnSuccessData.charging_fee)}
-                </span>
-              </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Penalty Amount:</span>
                 <span className="font-semibold text-gray-900">
@@ -869,9 +865,17 @@ export default function StaffBookingDetail() {
                     </div>
                     <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg mt-2">
                       <span className="text-gray-800 font-bold">Remaining Balance</span>
-                      <span className="font-bold text-red-600 text-lg">
-                        {formatCurrency(payments.summary.remaining)}
-                      </span>
+                      {booking.status === "completed" ? (
+                        <span className="font-bold text-green-600 text-lg flex items-center gap-1">
+                          <CheckCircle2 className="w-5 h-5" /> Paid Full
+                        </span>
+                      ) : (
+                        <span className="font-bold text-red-600 text-lg">
+                          {formatCurrency(
+                            Math.max(0, booking.total_amount - payments.summary.total_paid)
+                          )}
+                        </span>
+                      )}
                     </div>
                   </>
                 )}
