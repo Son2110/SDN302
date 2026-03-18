@@ -72,8 +72,8 @@ const vehicleHandoverSchema = new mongoose.Schema({
   handover_type: { type: String, enum: ["delivery", "return"], required: true },
   handover_time: { type: Date, default: Date.now },
 
-  mileage: { type: Number },
-  battery_level_percentage: { type: Number }, // % pin lúc bàn giao (xe điện)
+  mileage: { type: Number, min: 0 },
+  battery_level_percentage: { type: Number, min: 0, max: 100 }, // % pin lúc bàn giao (xe điện)
   notes: { type: String },
 
   confirmed_by_customer: { type: Boolean, default: false },

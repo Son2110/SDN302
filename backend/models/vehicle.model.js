@@ -8,15 +8,15 @@ const vehicleTypeSchema = new mongoose.Schema({
     enum: ["sedan", "suv", "van", "luxury"],
     default: "sedan",
   },
-  seat_capacity: { type: Number, required: true },
+  seat_capacity: { type: Number, required: true, min: 1 },
   transmission: { type: String, enum: ["auto", "manual"], default: "auto" },
   fuel_type: {
     type: String,
     enum: ["gasoline", "diesel", "electric", "hybrid"],
   },
-  battery_capacity_kwh: { type: Number }, // Dung lượng pin (kWh) — chỉ dùng cho xe điện/hybrid
-  base_price_per_day: { type: Number, required: true },
-  charging_cost_per_kwh: { type: Number, default: 3500 }, // Giá sạc VND/kWh (mặc định 3,500đ)
+  battery_capacity_kwh: { type: Number, min: 0 }, // Dung lượng pin (kWh) — chỉ dùng cho xe điện/hybrid
+  base_price_per_day: { type: Number, required: true, min: 0 },
+  charging_cost_per_kwh: { type: Number, default: 3500, min: 0 }, // Giá sạc VND/kWh (mặc định 3,500đ)
   image_url: { type: String },
 });
 
@@ -30,7 +30,7 @@ const vehicleSchema = new mongoose.Schema({
   license_plate: { type: String, required: true, unique: true },
   brand: { type: String, required: true },
   model: { type: String, required: true },
-  year: { type: Number, required: true },
+  year: { type: Number, required: true, min: 1900 },
   color: { type: String },
   status: {
     type: String,
@@ -38,9 +38,9 @@ const vehicleSchema = new mongoose.Schema({
     default: "available",
     required: true,
   },
-  daily_rate: { type: Number, required: true }, // Giá thực tế của xe này
+  daily_rate: { type: Number, required: true, min: 0 }, // Giá thực tế của xe này
   is_electric: { type: Boolean, default: false },
-  current_mileage: { type: Number, default: 0 },
+  current_mileage: { type: Number, default: 0, min: 0 },
   image_urls: [{ type: String }], // Array string thay vì json thuần
 });
 

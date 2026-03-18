@@ -14,6 +14,22 @@ export const register = async (req, res) => {
   try {
     const { email, password, full_name, phone, id_card } = req.body;
 
+    // Basic validation
+    if (!email || !email.includes("@")) {
+      return res.status(400).json({ message: "Invalid email" });
+    }
+    if (!password || password.length < 6) {
+      return res
+        .status(400)
+        .json({ message: "The password must be at least 6 characters long." });
+    }
+    if (!full_name || full_name.trim().length < 2) {
+      return res.status(400).json({ message: "Invalid name" });
+    }
+    if (!phone || phone.length < 10) {
+      return res.status(400).json({ message: "Invalid phone number" });
+    }
+
     const userExists = await User.findOne({ email });
     //check mail
     if (userExists)

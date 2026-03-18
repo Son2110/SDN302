@@ -181,7 +181,9 @@ export const updateCustomer = async (req, res) => {
  */
 export const getAllDrivers = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = "", status = "" } = req.query;
+    const { search = "", status = "" } = req.query;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 10));
     const skip = (page - 1) * limit;
 
     // Build driver query — never show pending here (pending-only tab handles those)
@@ -359,8 +361,16 @@ export const updateDriver = async (req, res) => {
 
     if (license_type) driver.license_type = license_type;
     if (license_expiry) driver.license_expiry = license_expiry;
-    if (experience_years !== undefined)
-      driver.experience_years = experience_years;
+    if (experience_years !== undefined) {
+      const parsedYears = parseInt(experience_years);
+      if (isNaN(parsedYears) || parsedYears < 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Experience years must be a non-negative number",
+        });
+      }
+      driver.experience_years = parsedYears;
+    }
 
 
 
@@ -430,6 +440,15 @@ export const registerAsDriver = async (req, res) => {
       });
     }
 
+    // Validate experience_years
+    const parsedExperienceYears = parseInt(experience_years);
+    if (isNaN(parsedExperienceYears) || parsedExperienceYears < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Experience years must be at least 1",
+      });
+    }
+
     // Validate license_expiry is in the future
     const expiryDate = new Date(license_expiry);
     if (expiryDate < new Date()) {
@@ -445,7 +464,7 @@ export const registerAsDriver = async (req, res) => {
       license_number,
       license_type,
       license_expiry: expiryDate,
-      experience_years: parseInt(experience_years),
+      experience_years: parsedExperienceYears,
       status: "pending", // Awaiting staff approval
     });
 
@@ -513,6 +532,15 @@ export const reapplyAsDriver = async (req, res) => {
       });
     }
 
+    // Validate experience_years
+    const parsedExperienceYears = parseInt(experience_years);
+    if (isNaN(parsedExperienceYears) || parsedExperienceYears < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Experience years must be at least 1",
+      });
+    }
+
     // Check license_expiry is in the future
     const expiryDate = new Date(license_expiry);
     if (expiryDate < new Date()) {
@@ -538,7 +566,7 @@ export const reapplyAsDriver = async (req, res) => {
     existingDriver.license_number = license_number;
     existingDriver.license_type = license_type;
     existingDriver.license_expiry = expiryDate;
-    existingDriver.experience_years = parseInt(experience_years);
+    existingDriver.experience_years = parsedExperienceYears;
 
     // Auto-update customer's driver_license field
     await Customer.findOneAndUpdate(
@@ -602,7 +630,8 @@ export const getMyDriverStatus = async (req, res) => {
  */
 export const getPendingDrivers = async (req, res) => {
   try {
-    const { page = 1, limit = 20 } = req.query;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
     const skip = (page - 1) * limit;
 
     // Get pending drivers only

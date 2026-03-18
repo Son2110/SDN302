@@ -198,7 +198,7 @@ const StaffVehicles = () => {
       resetForm();
       loadData();
     } catch (err) {
-      alert(err.message);
+      openErrorModal("Save Failed", err.message);
     }
   };
 
@@ -302,10 +302,18 @@ const StaffVehicles = () => {
         fuel_type: typeFormData.fuel_type,
         base_price_per_day: parseInt(typeFormData.base_price_per_day),
       };
-      if (typeFormData.battery_capacity_kwh)
-        payload.battery_capacity_kwh = parseFloat(
-          typeFormData.battery_capacity_kwh,
-        );
+      if (isNaN(payload.seat_capacity) || payload.seat_capacity < 1) {
+        throw new Error("Seat capacity must be at least 1");
+      }
+      if (isNaN(payload.base_price_per_day) || payload.base_price_per_day < 0) {
+        throw new Error("Base price must be a non-negative number");
+      }
+      if (typeFormData.battery_capacity_kwh) {
+        payload.battery_capacity_kwh = parseFloat(typeFormData.battery_capacity_kwh);
+        if (isNaN(payload.battery_capacity_kwh) || payload.battery_capacity_kwh < 0) {
+          throw new Error("Battery capacity must be a non-negative number");
+        }
+      }
       if (typeFormData.charging_cost_per_kwh)
         payload.charging_cost_per_kwh = parseFloat(
           typeFormData.charging_cost_per_kwh,
@@ -326,7 +334,7 @@ const StaffVehicles = () => {
       });
       loadData();
     } catch (err) {
-      alert(err.message);
+      openErrorModal("Entry Failed", err.message);
     } finally {
       setTypeSubmitting(false);
     }
@@ -710,6 +718,32 @@ const StaffVehicles = () => {
                 </div>
               </div>
 
+              {/* Section: Loại xe nâng cao */}
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                  Maintenance & Availability
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="is_electric"
+                      checked={formData.is_electric}
+                      onChange={(e) =>
+                        setFormData({ ...formData, is_electric: e.target.checked })
+                      }
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <label
+                      htmlFor="is_electric"
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      Electric Vehicle
+                    </label>
+                  </div>
+                </div>
+              </div>
+
               {/* Section: Giá & km */}
               <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
@@ -718,25 +752,12 @@ const StaffVehicles = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Color
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.color}
-                      onChange={(e) =>
-                        setFormData({ ...formData, color: e.target.value })
-                      }
-                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-300 focus:outline-none bg-gray-50"
-                      placeholder="Black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
                       Rental/Day (VND) *
                     </label>
                     <input
                       type="number"
                       required
+                      min="0"
                       value={formData.daily_rate}
                       onChange={(e) =>
                         setFormData({
@@ -753,6 +774,7 @@ const StaffVehicles = () => {
                     </label>
                     <input
                       type="number"
+                      min="0"
                       value={formData.current_mileage}
                       onChange={(e) =>
                         setFormData({
@@ -760,16 +782,8 @@ const StaffVehicles = () => {
                           current_mileage: parseInt(e.target.value),
                         })
                       }
-                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-300 focus:outline-none bg-gray-50"
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-gray-300 focus:outline-none bg-gray-50"
                     />
-                  </div>
-                  <div className="flex items-end pb-1">
-                    <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
-                      <Zap size={14} className="text-green-600" />
-                      <span className="text-sm font-medium text-green-700">
-                        Electric Vehicle
-                      </span>
-                    </div>
                   </div>
                 </div>
               </div>

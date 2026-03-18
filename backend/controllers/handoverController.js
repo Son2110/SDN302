@@ -53,14 +53,29 @@ export const createDeliveryHandover = async (req, res) => {
         .status(404)
         .json({ message: "Error: Vehicle data not found." });
 
+    // 4.5. Validate numeric inputs
+    const deliveryMileage = mileage != null ? Number(mileage) : vehicle.current_mileage;
+    if (isNaN(deliveryMileage) || deliveryMileage < 0) {
+      return res.status(400).json({
+        message: "Mileage must be a non-negative number.",
+      });
+    }
+
+    const deliveryBattery = battery_level_percentage != null ? Number(battery_level_percentage) : 100;
+    if (isNaN(deliveryBattery) || deliveryBattery < 0 || deliveryBattery > 100) {
+      return res.status(400).json({
+        message: "Battery level percentage must be between 0 and 100.",
+      });
+    }
+
     // 5. 🟢 CREATE HANDOVER RECORD (DELIVERY TO CUSTOMER)
     const newHandover = await VehicleHandover.create({
       booking: booking._id,
       vehicle: vehicle._id,
       staff: staff._id,
       handover_type: "delivery", // Record type: Delivery
-      mileage: mileage || vehicle.current_mileage, // Mileage at delivery
-      battery_level_percentage: battery_level_percentage ?? 100, // Battery % at delivery
+      mileage: deliveryMileage, // Mileage at delivery
+      battery_level_percentage: deliveryBattery, // Battery % at delivery
       notes: notes || "Vehicle in normal condition, full battery, all documents provided.",
       confirmed_by_customer: !!customer_signature,
       customer_signature: customer_signature || null,
@@ -152,10 +167,30 @@ export const createReturnHandover = async (req, res) => {
     }
 
     // 3.6. Validate return mileage
-    if (return_mileage == null || return_mileage < 0) {
+    if (return_mileage == null || isNaN(Number(return_mileage)) || Number(return_mileage) < 0) {
       return res.status(400).json({
         message: "Please enter a valid return mileage.",
       });
+    }
+
+    // 3.7. Validate battery_level_percentage
+    if (battery_level_percentage != null) {
+      const batteryVal = Number(battery_level_percentage);
+      if (isNaN(batteryVal) || batteryVal < 0 || batteryVal > 100) {
+        return res.status(400).json({
+          message: "Battery level percentage must be between 0 and 100.",
+        });
+      }
+    }
+
+    // 3.8. Validate penalty_amount
+    if (penalty_amount != null) {
+      const penaltyVal = Number(penalty_amount);
+      if (isNaN(penaltyVal) || penaltyVal < 0) {
+        return res.status(400).json({
+          message: "Penalty amount must be a non-negative number.",
+        });
+      }
     }
 
     // (Optional) Find delivery handover to compare mileage
@@ -273,7 +308,9 @@ export const createReturnHandover = async (req, res) => {
 // @access Private (Staff)
 export const getAllHandovers = async (req, res) => {
   try {
-    const { handover_type, booking_id, page = 1, limit = 20 } = req.query;
+    const { handover_type, booking_id } = req.query;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
 
     const filter = {};
     if (handover_type) {

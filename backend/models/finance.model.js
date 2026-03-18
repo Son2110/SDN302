@@ -19,7 +19,7 @@ const paymentSchema = new mongoose.Schema(
       enum: ["deposit", "rental_fee", "extension_fee", "penalty", "refund"],
       required: true,
     },
-    amount: { type: Number, required: true },
+    amount: { type: Number, required: true, min: 0 },
     payment_method: {
       type: String,
       enum: ["cash", "card", "momo", "zalopay", "vnpay", "bank_transfer"],

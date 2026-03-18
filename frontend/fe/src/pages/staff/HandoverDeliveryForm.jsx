@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createDeliveryHandover } from "../../services/handoverApi";
 import { ArrowLeft, Loader2, KeyRound } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function HandoverDeliveryForm() {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ export default function HandoverDeliveryForm() {
       };
 
       await createDeliveryHandover(payload);
-      alert("Delivery record created successfully!");
+      toast.success("Delivery record created successfully!");
       navigate("/staff/handovers");
     } catch (err) {
       setError(err.message);
@@ -73,10 +74,12 @@ export default function HandoverDeliveryForm() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Current ODO (km)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Current ODO (km) <span className="text-red-500">*</span></label>
               <input
                 type="number"
                 name="mileage"
+                required
+                min="0"
                 value={formData.mileage}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none"

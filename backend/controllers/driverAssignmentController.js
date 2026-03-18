@@ -118,6 +118,9 @@ export const respondToAssignment = async (req, res) => {
     }
     assignment.status = status;
     if (response_note) {
+      if (response_note.length > 1000) {
+        return res.status(400).json({ message: "Response note must not exceed 1000 characters." });
+      }
       assignment.response_note = response_note;
     }
     await assignment.save();

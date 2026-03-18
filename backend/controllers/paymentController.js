@@ -240,7 +240,7 @@ export const processFinalPayment = async (req, res) => {
 // @access Private (Staff)
 export const getAllPayments = async (req, res) => {
   try {
-    const {
+    let {
       payment_type,
       status,
       payment_method,
@@ -248,6 +248,10 @@ export const getAllPayments = async (req, res) => {
       page = 1,
       limit = 20,
     } = req.query;
+
+    // Clamp pagination
+    page = Math.max(1, parseInt(page) || 1);
+    limit = Math.min(100, Math.max(1, parseInt(limit) || 20));
 
     const filter = {};
     if (payment_type) {
@@ -355,7 +359,11 @@ export const getMyPayments = async (req, res) => {
         .json({ message: "Chỉ khách hàng mới xem được lịch sử thanh toán." });
     }
 
-    const { payment_type, status, page = 1, limit = 10 } = req.query;
+    let { payment_type, status, page = 1, limit = 10 } = req.query;
+
+    // Clamp pagination
+    page = Math.max(1, parseInt(page) || 1);
+    limit = Math.min(100, Math.max(1, parseInt(limit) || 10));
 
     const filter = { customer: customer._id };
     if (payment_type) filter.payment_type = payment_type;

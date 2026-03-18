@@ -6,20 +6,41 @@ import { Booking } from "../models/booking.model.js";
 // @access Private (Staff)
 export const getAllVehicles = async (req, res) => {
   try {
-    const { status, brand, page = 1, limit = 20 } = req.query;
-    const pageNumber = Number(page) || 1;
-    const limitNumber = Number(limit) || 20;
+    let { status, plate, brand, category, page = 1, limit = 10 } = req.query;
+
+    // Clamp pagination
+    page = Math.max(1, parseInt(page) || 1);
+    limit = Math.min(100, Math.max(1, parseInt(limit) || 10));
 
     const filter = {};
     if (status) filter.status = status;
     if (brand) filter.brand = { $regex: brand, $options: "i" };
+    if (plate) filter.license_plate = { $regex: plate, $options: "i" };
+    if (category) {
+      // Find vehicle types by category and then filter vehicles
+      const vehicleTypes = await VehicleType.find({ category: { $regex: category, $options: "i" } }).select('_id');
+      const typeIds = vehicleTypes.map(type => type._id);
+      if (typeIds.length > 0) {
+        filter.vehicle_type = { $in: typeIds };
+      } else {
+        // If no types match the category, return empty result
+        return res.status(200).json({
+          success: true,
+          count: 0,
+          total: 0,
+          page: page,
+          totalPages: 0,
+          data: [],
+        });
+      }
+    }
 
     const vehicles = await Vehicle.find(filter)
       .populate("vehicle_type")
       // Vehicle schema currently has no timestamps, so sort by _id for newest-first.
       .sort({ _id: -1 })
-      .skip((pageNumber - 1) * limitNumber)
-      .limit(limitNumber);
+      .skip((page - 1) * limit)
+      .limit(limit);
 
     const total = await Vehicle.countDocuments(filter);
 
@@ -27,8 +48,8 @@ export const getAllVehicles = async (req, res) => {
       success: true,
       count: vehicles.length,
       total,
-      page: pageNumber,
-      totalPages: Math.ceil(total / limitNumber),
+      page: page,
+      totalPages: Math.ceil(total / limit),
       data: vehicles,
     });
   } catch (error) {
@@ -98,16 +119,35 @@ export const createVehicle = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Loại xe không tồn tại." });
 
+    // Validate year, daily_rate, current_mileage
+    const dailyRateNum = parseInt(daily_rate);
+    const yearNum = parseInt(year);
+    const mileageNum = parseInt(current_mileage) || 0;
+
+    if (isNaN(dailyRateNum) || dailyRateNum < 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Daily rate must be a non-negative number." });
+    }
+    if (isNaN(yearNum) || yearNum < 1900 || yearNum > new Date().getFullYear() + 1) {
+      return res.status(400).json({ success: false, message: "Invalid manufactured year." });
+    }
+    if (isNaN(mileageNum) || mileageNum < 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Mileage must be a non-negative number." });
+    }
+
     const vehicle = await Vehicle.create({
       vehicle_type,
       license_plate,
       brand,
       model,
-      year,
+      year: yearNum,
       color,
-      daily_rate,
+      daily_rate: dailyRateNum,
       is_electric: is_electric ?? false,
-      current_mileage: current_mileage ?? 0,
+      current_mileage: mileageNum,
       image_urls: image_urls,
       status: "available",
     });
@@ -191,6 +231,7 @@ export const updateVehicle = async (req, res) => {
       // Case: user wants to clear all images? Or just didn't send anything?
       // If image_urls explicitly empty string/array -> clear?
       // Let's assume sending empty array clears it. Empty string -> ignore.
+      finalImageUrls = []; // Clear images if an empty string is sent for image_urls
     }
 
     // Validate vehicle_type nếu có đổi
@@ -202,18 +243,46 @@ export const updateVehicle = async (req, res) => {
           .json({ success: false, message: "Loại xe không tồn tại." });
     }
 
-    const updates = {
-      ...(vehicle_type && { vehicle_type }),
-      ...(license_plate && { license_plate }),
-      ...(brand && { brand }),
-      ...(model && { model }),
-      ...(year && { year }),
-      ...(color && { color }),
-      ...(daily_rate && { daily_rate }),
-      ...(is_electric !== undefined && { is_electric }),
-      ...(current_mileage !== undefined && { current_mileage }),
-      ...(finalImageUrls !== undefined && { image_urls: finalImageUrls }),
-    };
+    // Prepare updates with validation for year, daily_rate, current_mileage
+    const updates = {};
+    if (vehicle_type) updates.vehicle_type = vehicle_type;
+    if (license_plate) updates.license_plate = license_plate;
+    if (brand) updates.brand = brand;
+    if (model) updates.model = model;
+    if (color) updates.color = color;
+    if (is_electric !== undefined) updates.is_electric = is_electric;
+
+    if (year !== undefined) {
+      const yearNum = parseInt(year);
+      if (isNaN(yearNum) || yearNum < 1900 || yearNum > new Date().getFullYear() + 1) {
+        return res.status(400).json({ success: false, message: "Invalid manufactured year." });
+      }
+      updates.year = yearNum;
+    }
+
+    if (daily_rate !== undefined) {
+      const dailyRateNum = parseInt(daily_rate);
+      if (isNaN(dailyRateNum) || dailyRateNum < 0) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Daily rate must be a non-negative number." });
+      }
+      updates.daily_rate = dailyRateNum;
+    }
+
+    if (current_mileage !== undefined) {
+      const mileageNum = parseInt(current_mileage);
+      if (isNaN(mileageNum) || mileageNum < 0) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Mileage must be a non-negative number." });
+      }
+      updates.current_mileage = mileageNum;
+    }
+
+    if (finalImageUrls !== undefined) {
+      updates.image_urls = finalImageUrls;
+    }
 
     const updated = await Vehicle.findByIdAndUpdate(
       req.params.id,

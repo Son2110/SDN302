@@ -324,14 +324,36 @@ export const updateReview = async (req, res) => {
 // @access Private (Staff)
 export const getAllDriverReviews = async (req, res) => {
   try {
-    const { page = 1, limit = 12, search = "", min_rating, max_rating, driver_id } = req.query;
+    let {
+      page = 1,
+      limit = 12,
+      search = "",
+      min_rating,
+      max_rating,
+      driver_id,
+    } = req.query;
+
+    // Clamp pagination
+    page = Math.max(1, parseInt(page) || 1);
+    limit = Math.min(100, Math.max(1, parseInt(limit) || 12));
 
     const filter = { review_type: "driver" };
     if (driver_id) filter.driver = driver_id;
+
     if (min_rating || max_rating) {
       filter.rating = {};
-      if (min_rating) filter.rating.$gte = Number(min_rating);
-      if (max_rating) filter.rating.$lte = Number(max_rating);
+      if (min_rating) {
+        const minRatingNum = Number(min_rating);
+        if (!isNaN(minRatingNum)) {
+          filter.rating.$gte = Math.min(5, Math.max(1, minRatingNum));
+        }
+      }
+      if (max_rating) {
+        const maxRatingNum = Number(max_rating);
+        if (!isNaN(maxRatingNum)) {
+          filter.rating.$lte = Math.min(5, Math.max(1, maxRatingNum));
+        }
+      }
     }
 
     const reviews = await Review.find(filter)
